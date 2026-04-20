@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #090e1c;
+  --foreground: #f1f5f9;
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Suaviza scroll em dispositivos com alta taxa de atualização */
+  scroll-padding-top: 1rem;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Evita jank de scroll em iOS */
+  overscroll-behavior-y: none;
+}
+
+@layer components {
+  .input-field {
+    @apply w-full bg-stage-700 border border-stage-500 rounded-xl px-4 py-3
+           text-gray-200 placeholder-gray-600 outline-none
+           font-body text-sm;
+    /* Só transiciona as props que realmente mudam — muito mais rápido que transition-all */
+    transition: border-color 150ms ease, box-shadow 200ms ease, background-color 150ms ease;
+    will-change: border-color, box-shadow;
+  }
+  .input-field:focus {
+    border-color: #263550; /* stage-400 */
+    box-shadow:
+      0 0 0 3px rgba(38, 53, 80, 0.35),
+      0 0 16px rgba(38, 53, 80, 0.15);
+    background-color: #121932; /* stage-700 slightly brighter */
+  }
+  .input-field:hover:not(:focus) {
+    border-color: #1d2740; /* stage-500 */
+  }
+
+  .label {
+    @apply block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 font-body;
+  }
+
+  .btn-primary {
+    @apply flex items-center justify-center gap-2 w-full py-4 rounded-xl
+           bg-gold-500 text-stage-900 font-bold text-base
+           select-none font-body
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    /* Específico — sem transition-all */
+    transition:
+      background-color 150ms ease,
+      box-shadow 200ms ease,
+      transform 100ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 20px rgba(245, 194, 0, 0.15);
+    will-change: transform, box-shadow;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-color: #ffd035; /* gold-400 */
+    box-shadow: 0 6px 28px rgba(245, 194, 0, 0.28);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: scale(0.97);
+    box-shadow: 0 2px 10px rgba(245, 194, 0, 0.12);
+  }
+  .btn-primary:disabled {
+    transition: none;
+  }
+
+  .card {
+    @apply bg-stage-800 border border-stage-600 rounded-2xl p-4;
+    transition: border-color 200ms ease, box-shadow 250ms ease;
+  }
+}
+
+/* Entrada suave dos cards com spring easing */
+.card {
+  animation: fade-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Stagger com incremento menor = página "abre" mais rápido */
+.space-y-6 > .card:nth-child(1)  { animation-delay:  0ms; }
+.space-y-6 > .card:nth-child(2)  { animation-delay: 30ms; }
+.space-y-6 > .card:nth-child(3)  { animation-delay: 60ms; }
+.space-y-6 > .card:nth-child(4)  { animation-delay: 90ms; }
+.space-y-6 > .card:nth-child(5)  { animation-delay: 120ms; }
+.space-y-6 > .card:nth-child(6)  { animation-delay: 150ms; }
+.space-y-6 > .card:nth-child(7)  { animation-delay: 180ms; }
+.space-y-6 > .card:nth-child(8)  { animation-delay: 210ms; }
+.space-y-6 > .card:nth-child(9)  { animation-delay: 240ms; }
+.space-y-6 > .card:nth-child(10) { animation-delay: 270ms; }
+
+/* Checkbox */
+input[type="checkbox"] {
+  transition: transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 150ms ease;
+}
+input[type="checkbox"]:checked {
+  transform: scale(1.1);
+}
+
+/* Select arrow */
+select.input-field {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8.825L1.175 4 2.238 2.938 6 6.7l3.763-3.763L10.825 4z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 2.5rem;
+}
+
+/* Focus visível via teclado — acessibilidade */
+:focus-visible {
+  outline: 2px solid rgba(245, 194, 0, 0.6);
+  outline-offset: 2px;
+}
+/* Remove outline do mouse/touch */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Usuários que preferem menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}

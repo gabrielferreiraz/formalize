@@ -1,0 +1,164 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // URL is configured in prisma.config.ts (for CLI) and via adapter (for runtime)
+}
+
+// ------------------------------------------------------------------
+// Enums
+// ------------------------------------------------------------------
+
+enum UserRole {
+  SUPER_ADMIN
+  ARTIST_ADMIN
+}
+
+enum ArtistStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum ArtistRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DocumentType {
+  BUDGET
+  CONTRACT
+  PORTFOLIO
+  STAGE_MAP
+}
+
+// ------------------------------------------------------------------
+// Models
+// ------------------------------------------------------------------
+
+/// Tenant principal — cada artista é um tenant isolado
+model Artist {
+  id           String      @id @default(cuid())
+  name         String
+  subdomain    String      @unique
+  customDomain String?     @unique
+  logoUrl      String?
+  backgroundUrl String?
+  basePdfUrl          String?
+  baseContractPdfUrl  String?
+  paperWidth          String?   // cm, ex: "34.44"
+  paperHeight         String?   // cm, ex: "48.71"
+  instruments         String?   // ex: "Bateria, Percussão, Guitarra, Baixo, Sanfona"
+
+  primaryColor   String  @default("#000000")
+  secondaryColor String  @default("#ffffff")
+
+  whatsapp  String?
+  email     String?
+  instagram String?
+  spotify   String?
+  x         String?
+  youtube   String?
+
+  pixKey   String?
+  bankInfo Json?
+
+  website    String?
+  legalName  String?
+  cnpj       String?
+  address    Json?
+
+  orcamentoFontScale Int @default(100)
+  contratoFontScale  Int @default(100)
+  orcamentoLogoScale Int @default(100)
+  contratoLogoScale  Int @default(100)
+
+  status ArtistStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     User[]
+  documents Document[]
+  templates Template[]
+}
+
+model User {
+  id       String   @id @default(cuid())
+  email    String
+  password String
+  name     String?
+  role     UserRole @default(ARTIST_ADMIN)
+
+  artistId String?
+  artist   Artist? @relation(fields: [artistId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@unique([email, artistId])
+  @@index([artistId])
+}
+
+/// Documentos gerados (orçamentos, contratos, etc.)
+model Document {
+  id       String       @id @default(cuid())
+  artistId String
+  artist   Artist       @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  type  DocumentType
+  title String
+
+  /// URL do PDF armazenado no Cloudflare R2
+  pdfUrl String?
+
+  /// Dados estruturados do documento (campos do formulário)
+  data Json
+
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([artistId])
+  @@index([artistId, type])
+}
+
+/// Templates HTML por artista (um por tipo de documento)
+model Template {
+  id       String @id @default(cuid())
+  artistId String
+  artist   Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  type DocumentType
+
+  /// URL do template HTML armazenado no Cloudflare R2
+  htmlUrl   String
+  isDefault Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([artistId, type])
+  @@index([artistId])
+}
+
+/// Requisições de onboarding de novos artistas
+model ArtistRequest {
+  id         String @id @default(cuid())
+  name       String
+  email      String
+  whatsapp   String
+  artistName String
+  subdomain  String
+
+  message String?
+
+  status        ArtistRequestStatus @default(PENDING)
+  rejectedNote  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
