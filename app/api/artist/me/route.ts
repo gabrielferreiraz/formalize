@@ -68,8 +68,12 @@ export async function PUT(req: NextRequest) {
   const update: Record<string, unknown> = {};
   for (const field of ALLOWED_FIELDS) {
     if (field in body) {
-      if ((field === "address" || field === "bankInfo") && typeof body[field] === "object") {
-        update[field] = JSON.stringify(body[field]);
+      if (
+        (field === "address" || field === "bankInfo") &&
+        typeof body[field] === "object" &&
+        body[field] !== null
+      ) {
+        update[field] = body[field];
       } else {
         update[field] = body[field];
       }
