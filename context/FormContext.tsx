@@ -4,7 +4,16 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 import { type OrcamentoValues, defaultOrcamentoValues } from "@/components/forms/FormOrcamento";
 import { type ContratoValues, defaultContratoValues } from "@/components/forms/FormContrato";
 
+export type ArtistBootstrap = {
+  name: string;
+  orcamentoFontScale: number;
+  contratoFontScale: number;
+  orcamentoLogoScale: number;
+  contratoLogoScale: number;
+};
+
 interface FormContextType {
+  artistDisplayName: string;
   orcamento: OrcamentoValues;
   setOrcamento: (v: OrcamentoValues) => void;
   contrato: ContratoValues;
@@ -25,32 +34,53 @@ interface FormContextType {
 
 const FormContext = createContext<FormContextType | undefined>(undefined);
 
-export function FormProvider({ children }: { children: ReactNode }) {
+export function FormProvider({
+  children,
+  initialArtist,
+}: {
+  children: ReactNode;
+  initialArtist?: ArtistBootstrap | null;
+}) {
   const [orcamento, setOrcamento] = useState<OrcamentoValues>(defaultOrcamentoValues());
   const [contrato, setContrato] = useState<ContratoValues>(defaultContratoValues());
   const [numeroOrc, setNumeroOrc] = useState("");
   const [numeroCtr, setNumeroCtr] = useState("");
-  const [orcamentoFontScale, setOrcamentoFontScale] = useState(100);
-  const [contratoFontScale, setContratoFontScale] = useState(100);
-  const [orcamentoLogoScale, setOrcamentoLogoScale] = useState(100);
-  const [contratoLogoScale, setContratoLogoScale] = useState(100);
+  const [orcamentoFontScale, setOrcamentoFontScale] = useState(
+    initialArtist?.orcamentoFontScale ?? 100
+  );
+  const [contratoFontScale, setContratoFontScale] = useState(
+    initialArtist?.contratoFontScale ?? 100
+  );
+  const [orcamentoLogoScale, setOrcamentoLogoScale] = useState(
+    initialArtist?.orcamentoLogoScale ?? 100
+  );
+  const [contratoLogoScale, setContratoLogoScale] = useState(
+    initialArtist?.contratoLogoScale ?? 100
+  );
 
-  // Carregar escalas iniciais do artista
+  const [artistDisplayName, setArtistDisplayName] = useState(
+    initialArtist?.name ?? "Artista"
+  );
+
   React.useEffect(() => {
-    fetch("/api/artist/me")
-      .then(r => r.json())
-      .then(d => {
-        if (d.orcamentoFontScale) setOrcamentoFontScale(d.orcamentoFontScale);
-        if (d.contratoFontScale) setContratoFontScale(d.contratoFontScale);
-        if (d.orcamentoLogoScale) setOrcamentoLogoScale(d.orcamentoLogoScale);
-        if (d.contratoLogoScale) setContratoLogoScale(d.contratoLogoScale);
-      })
-      .catch(() => {});
-  }, []);
+    if (!initialArtist) return;
+    setArtistDisplayName(initialArtist.name);
+    setOrcamentoFontScale(initialArtist.orcamentoFontScale);
+    setContratoFontScale(initialArtist.contratoFontScale);
+    setOrcamentoLogoScale(initialArtist.orcamentoLogoScale);
+    setContratoLogoScale(initialArtist.contratoLogoScale);
+  }, [
+    initialArtist?.name,
+    initialArtist?.orcamentoFontScale,
+    initialArtist?.contratoFontScale,
+    initialArtist?.orcamentoLogoScale,
+    initialArtist?.contratoLogoScale,
+  ]);
 
   return (
-    <FormContext.Provider value={{ 
-      orcamento, setOrcamento, 
+    <FormContext.Provider value={{
+      artistDisplayName,
+      orcamento, setOrcamento,
       contrato, setContrato,
       numeroOrc, setNumeroOrc,
       numeroCtr, setNumeroCtr,

@@ -30,10 +30,177 @@ interface ArtistConfig {
   } | null;
   paperWidth: string | null;
   paperHeight: string | null;
+  contractPaperWidth: string | null;
+  contractPaperHeight: string | null;
   logoUrl: string | null;
   backgroundUrl: string | null;
   basePdfUrl: string | null;
   baseContractPdfUrl: string | null;
+}
+
+const PDF_PRESETS = [
+  { id: "a4", label: "A4", sub: "21 × 29,7 cm", w: "21.0", h: "29.7" },
+  { id: "a3", label: "A3", sub: "29,7 × 42 cm", w: "29.7", h: "42.0" },
+  { id: "large", label: "Grande", sub: "34 × 49 cm", w: "34.44", h: "48.71" },
+] as const;
+
+const CM_STEP = 0.5;
+const CM_MIN = 10;
+const CM_MAX = 120;
+
+function parseCm(s: string | null | undefined, whenEmpty = 21): number {
+  const raw = String(s ?? "").trim().replace(",", ".");
+  if (!raw) return whenEmpty;
+  const n = parseFloat(raw);
+  return Number.isFinite(n) ? n : whenEmpty;
+}
+
+function formatCmPtBr(n: number): string {
+  const rounded = Math.round(n * 100) / 100;
+  return rounded.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function presetActive(
+  w: string | null,
+  h: string | null,
+  pw: string,
+  ph: string,
+  wEmpty = 21,
+  hEmpty = 29.7
+): boolean {
+  return (
+    Math.abs(parseCm(w, wEmpty) - parseFloat(pw)) < 0.06 &&
+    Math.abs(parseCm(h, hEmpty) - parseFloat(ph)) < 0.06
+  );
+}
+
+type PaperWKey = "paperWidth" | "contractPaperWidth";
+type PaperHKey = "paperHeight" | "contractPaperHeight";
+
+function PdfPaperControls({
+  data,
+  title,
+  hint,
+  wKey,
+  hKey,
+  wEmpty,
+  hEmpty,
+  onPatch,
+}: {
+  data: ArtistConfig;
+  title: string;
+  hint: string;
+  wKey: PaperWKey;
+  hKey: PaperHKey;
+  wEmpty: number;
+  hEmpty: number;
+  onPatch: (patch: Partial<ArtistConfig>) => void;
+}) {
+  const wCur = parseCm(data[wKey], wEmpty);
+  const hCur = parseCm(data[hKey], hEmpty);
+
+  const step = (key: PaperWKey | PaperHKey, delta: number, emptyFallback: number) => {
+    const cur = parseCm(data[key] as string | null, emptyFallback);
+    const next = Math.min(CM_MAX, Math.max(CM_MIN, Math.round((cur + delta) * 2) / 2));
+    onPatch({ [key]: next.toFixed(2) } as Partial<ArtistConfig>);
+  };
+
+  return (
+    <div className="rounded-xl border border-stage-700 bg-stage-800/40 p-5 space-y-5">
+      <div>
+        <h3 className="text-base font-bold text-gray-200">{title}</h3>
+        <p className="text-xs text-gray-500 mt-1">{hint}</p>
+      </div>
+
+      <div>
+        <p className="label mb-3">Formato rápido</p>
+        <div className="flex flex-wrap gap-2">
+          {PDF_PRESETS.map((p) => {
+            const on = presetActive(data[wKey], data[hKey], p.w, p.h, wEmpty, hEmpty);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onPatch({ [wKey]: p.w, [hKey]: p.h } as Partial<ArtistConfig>)}
+                className={`rounded-xl border px-4 py-2.5 text-left transition-colors duration-150 min-w-[7.5rem] ${
+                  on
+                    ? "border-gold-500 bg-gold-500/15 text-gold-400 ring-1 ring-gold-500/40"
+                    : "border-stage-500 bg-stage-900/80 text-gray-300 hover:border-stage-400 hover:bg-stage-700/40"
+                }`}
+              >
+                <span className="block text-sm font-bold">{p.label}</span>
+                <span className="block text-[11px] text-gray-500 mt-0.5">{p.sub}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="rounded-xl border border-stage-600 bg-stage-900/50 p-4">
+          <span className="label mb-3">Largura</span>
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              aria-label="Diminuir largura"
+              onClick={() => step(wKey, -CM_STEP, wEmpty)}
+              disabled={wCur <= CM_MIN}
+              className="shrink-0 w-11 h-11 rounded-xl border border-stage-500 text-lg font-bold text-gray-200 hover:bg-stage-700 hover:border-gold-600/50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
+            >
+              −
+            </button>
+            <div className="flex-1 text-center min-w-0">
+              <span className="text-2xl font-black text-gray-100 tabular-nums tracking-tight">
+                {formatCmPtBr(wCur)}
+              </span>
+              <span className="text-sm text-gray-500 ml-1">cm</span>
+            </div>
+            <button
+              type="button"
+              aria-label="Aumentar largura"
+              onClick={() => step(wKey, CM_STEP, wEmpty)}
+              disabled={wCur >= CM_MAX}
+              className="shrink-0 w-11 h-11 rounded-xl border border-stage-500 text-lg font-bold text-gray-200 hover:bg-stage-700 hover:border-gold-600/50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
+            >
+              +
+            </button>
+          </div>
+          <p className="text-[11px] text-gray-600 mt-2 text-center">passo {CM_STEP} cm</p>
+        </div>
+
+        <div className="rounded-xl border border-stage-600 bg-stage-900/50 p-4">
+          <span className="label mb-3">Altura</span>
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              aria-label="Diminuir altura"
+              onClick={() => step(hKey, -CM_STEP, hEmpty)}
+              disabled={hCur <= CM_MIN}
+              className="shrink-0 w-11 h-11 rounded-xl border border-stage-500 text-lg font-bold text-gray-200 hover:bg-stage-700 hover:border-gold-600/50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
+            >
+              −
+            </button>
+            <div className="flex-1 text-center min-w-0">
+              <span className="text-2xl font-black text-gray-100 tabular-nums tracking-tight">
+                {formatCmPtBr(hCur)}
+              </span>
+              <span className="text-sm text-gray-500 ml-1">cm</span>
+            </div>
+            <button
+              type="button"
+              aria-label="Aumentar altura"
+              onClick={() => step(hKey, CM_STEP, hEmpty)}
+              disabled={hCur >= CM_MAX}
+              className="shrink-0 w-11 h-11 rounded-xl border border-stage-500 text-lg font-bold text-gray-200 hover:bg-stage-700 hover:border-gold-600/50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
+            >
+              +
+            </button>
+          </div>
+          <p className="text-[11px] text-gray-600 mt-2 text-center">passo {CM_STEP} cm</p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function ConfiguracoesPage() {
@@ -80,6 +247,10 @@ export default function ConfiguracoesPage() {
       ...data,
       bankInfo: { ...data.bankInfo, [field]: value } as any,
     });
+  };
+
+  const patchPaper = (patch: Partial<ArtistConfig>) => {
+    setData((prev) => (prev ? { ...prev, ...patch } : null));
   };
 
   const handleUpload = async (type: string, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -171,7 +342,7 @@ export default function ConfiguracoesPage() {
               <label className="label">Logo do Artista</label>
               {data.logoUrl && (
                 <div className="mb-2 w-32 h-16 relative flex items-center justify-center bg-stage-800 rounded">
-                  <img src={data.logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
+                  <img src={data.logoUrl} alt="Logo" loading="lazy" decoding="async" className="max-w-full max-h-full object-contain" />
                 </div>
               )}
               <input 
@@ -189,7 +360,7 @@ export default function ConfiguracoesPage() {
               <label className="label">Imagem de Fundo</label>
               {data.backgroundUrl && (
                 <div className="mb-2 w-32 h-16 relative flex items-center justify-center bg-stage-800 rounded overflow-hidden">
-                  <img src={data.backgroundUrl} alt="Background" className="max-w-full max-h-full object-cover" />
+                  <img src={data.backgroundUrl} alt="Background" loading="lazy" decoding="async" className="max-w-full max-h-full object-cover" />
                 </div>
               )}
               <input 
@@ -356,19 +527,31 @@ export default function ConfiguracoesPage() {
           </div>
         </section>
 
-        {/* PDF */}
-        <section className="bg-stage-800 p-6 rounded-xl border border-stage-700">
-          <h2 className="text-lg font-bold text-gray-200 mb-4">Configurações de PDF</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Largura do Documento Base (cm)</label>
-              <input type="text" className="input-field" value={data.paperWidth || ""} onChange={(e) => handleChange("paperWidth", e.target.value)} placeholder="Ex: 21.0" />
-            </div>
-            <div>
-              <label className="label">Altura do Documento Base (cm)</label>
-              <input type="text" className="input-field" value={data.paperHeight || ""} onChange={(e) => handleChange("paperHeight", e.target.value)} placeholder="Ex: 29.7" />
-            </div>
-          </div>
+        {/* PDF — tamanhos de papel */}
+        <section className="bg-stage-800 p-6 rounded-xl border border-stage-700 space-y-6">
+          <h2 className="text-lg font-bold text-gray-200">Configurações de PDF</h2>
+
+          <PdfPaperControls
+            data={data}
+            title="Orçamento"
+            hint="Tamanho do papel usado na geração do PDF de orçamento."
+            wKey="paperWidth"
+            hKey="paperHeight"
+            wEmpty={21}
+            hEmpty={29.7}
+            onPatch={patchPaper}
+          />
+
+          <PdfPaperControls
+            data={data}
+            title="Contrato"
+            hint="Tamanho do papel usado na geração do PDF de contrato. Se nunca salvou, usa A4 (21 × 29,7 cm) até você alterar aqui."
+            wKey="contractPaperWidth"
+            hKey="contractPaperHeight"
+            wEmpty={21}
+            hEmpty={29.7}
+            onPatch={patchPaper}
+          />
         </section>
 
         <div className="flex justify-end pt-4">

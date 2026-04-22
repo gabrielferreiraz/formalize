@@ -71,6 +71,7 @@ export function AdminHeader({ artistName, logoUrl }: Props) {
                 alt={artistName}
                 width={120}
                 height={48}
+                priority
                 style={{ width: "auto", height: 44 }}
                 className="object-contain shrink-0"
               />
@@ -92,6 +93,7 @@ export function AdminHeader({ artistName, logoUrl }: Props) {
                 <Link
                   key={href}
                   href={href}
+                  prefetch
                   className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 ${
                     active
                       ? "bg-gold-500 text-stage-900"
@@ -109,6 +111,7 @@ export function AdminHeader({ artistName, logoUrl }: Props) {
             {/* Config — só no desktop (já está no bottom nav mobile) */}
             <Link
               href="/admin/configuracoes"
+              prefetch
               className="hidden md:flex p-2 text-gray-400 hover:text-gold-400 transition-colors rounded-lg hover:bg-stage-700"
               title="Configurações"
             >
@@ -140,6 +143,7 @@ export function AdminHeader({ artistName, logoUrl }: Props) {
             <Link
               key={href}
               href={href}
+              prefetch
               className={`flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors ${
                 active ? "text-gold-400" : "text-gray-500 hover:text-gray-300"
               }`}

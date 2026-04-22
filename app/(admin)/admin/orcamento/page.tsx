@@ -10,25 +10,18 @@ import { defaultContratoValues } from "@/components/forms/FormContrato";
 
 export default function OrcamentoPage() {
   const router = useRouter();
-  const { 
-    orcamento, setOrcamento, 
-    numeroOrc, setNumeroOrc, 
+  const {
+    artistDisplayName,
+    orcamento, setOrcamento,
+    numeroOrc, setNumeroOrc,
     setContrato,
     orcamentoFontScale, setOrcamentoFontScale,
     orcamentoLogoScale, setOrcamentoLogoScale
   } = useFormContext();
-  const [artistName, setArtistName] = useState("Artista");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/artist/me")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.name) setArtistName(d.name);
-      })
-      .catch(() => {});
-
     if (!numeroOrc) setNumeroOrc(gerarNumeroDoc("ORC"));
   }, [numeroOrc, setNumeroOrc]);
 
@@ -100,7 +93,7 @@ export default function OrcamentoPage() {
         onChange={setOrcamento}
         onSubmit={handleSubmit}
         onFazerContrato={handleFazerContrato}
-        artistName={artistName}
+        artistName={artistDisplayName}
         loading={loading}
         fontScale={orcamentoFontScale}
         onFontScaleChange={setOrcamentoFontScale}

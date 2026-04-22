@@ -58,6 +58,8 @@ export async function POST(req: NextRequest) {
       baseContractPdfUrl: true,
       paperWidth: true,
       paperHeight: true,
+      contractPaperWidth: true,
+      contractPaperHeight: true,
       orcamentoFontScale: true,
       contratoFontScale: true,
       orcamentoLogoScale: true,
@@ -72,8 +74,12 @@ export async function POST(req: NextRequest) {
   try {
     const isContrato = type === "contrato";
     const basePdfUrl = isContrato ? artist.baseContractPdfUrl : artist.basePdfUrl;
-    const effectivePaperWidth = isContrato ? "21.0" : (artist.paperWidth ?? "21.0");
-    const effectivePaperHeight = isContrato ? "29.7" : (artist.paperHeight ?? "29.7");
+    const effectivePaperWidth = isContrato
+      ? (artist.contractPaperWidth ?? "21.0")
+      : (artist.paperWidth ?? "21.0");
+    const effectivePaperHeight = isContrato
+      ? (artist.contractPaperHeight ?? "29.7")
+      : (artist.paperHeight ?? "29.7");
     const pageSize = { width: effectivePaperWidth, height: effectivePaperHeight };
 
     // Busca todos os assets em paralelo (basePdf + logo + background)

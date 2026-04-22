@@ -7,24 +7,17 @@ import { gerarNumeroDoc } from "@/utils/form";
 import { useFormContext } from "@/context/FormContext";
 
 export default function ContratoPage() {
-  const { 
-    contrato, setContrato, 
+  const {
+    artistDisplayName,
+    contrato, setContrato,
     numeroCtr, setNumeroCtr,
     contratoFontScale, setContratoFontScale,
     contratoLogoScale, setContratoLogoScale
   } = useFormContext();
-  const [artistName, setArtistName] = useState("Artista");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/artist/me")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.name) setArtistName(d.name);
-      })
-      .catch(() => {});
-
     if (!numeroCtr) setNumeroCtr(gerarNumeroDoc("CTR"));
   }, [numeroCtr, setNumeroCtr]);
 
@@ -74,7 +67,7 @@ export default function ContratoPage() {
         values={contrato}
         onChange={setContrato}
         onSubmit={handleSubmit}
-        artistName={artistName}
+        artistName={artistDisplayName}
         loading={loading}
         fontScale={contratoFontScale}
         onFontScaleChange={setContratoFontScale}

@@ -12,12 +12,24 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type"); // BUDGET | CONTRACT | all
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
-  const limit = 20;
+  const limitRaw = parseInt(searchParams.get("limit") ?? "20", 10);
+  const limit = Math.min(100, Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 20));
+  const includeData = searchParams.get("includeData") === "1" || searchParams.get("includeData") === "true";
 
   const where = {
     artistId: session.user.artistId,
     ...(type && type !== "all" ? { type: type as "BUDGET" | "CONTRACT" } : {}),
   };
+
+  const select = {
+    id: true,
+    type: true,
+    title: true,
+    pdfUrl: true,
+    sentAt: true,
+    createdAt: true,
+    ...(includeData ? { data: true } : {}),
+  } as const;
 
   const [documents, total] = await Promise.all([
     prisma.document.findMany({
@@ -25,14 +37,7 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
       take: limit,
-      select: {
-        id: true,
-        type: true,
-        title: true,
-        pdfUrl: true,
-        sentAt: true,
-        createdAt: true,
-      },
+      select,
     }),
     prisma.document.count({ where }),
   ]);

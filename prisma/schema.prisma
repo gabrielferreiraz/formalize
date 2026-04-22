@@ -52,8 +52,10 @@ model Artist {
   backgroundUrl String?
   basePdfUrl          String?
   baseContractPdfUrl  String?
-  paperWidth          String?   // cm, ex: "34.44"
-  paperHeight         String?   // cm, ex: "48.71"
+  paperWidth          String?   // cm, ex: "34.44" — orçamento
+  paperHeight         String?   // cm — orçamento
+  contractPaperWidth  String?   // cm — contrato (null = A4 largura)
+  contractPaperHeight String?   // cm — contrato (null = A4 altura)
   instruments         String?   // ex: "Bateria, Percussão, Guitarra, Baixo, Sanfona"
 
   primaryColor   String  @default("#000000")

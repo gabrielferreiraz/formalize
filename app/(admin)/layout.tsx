@@ -19,8 +19,26 @@ export default async function AdminLayout({
   const artist = session.user.artistId
     ? await prisma.artist.findUnique({
         where: { id: session.user.artistId },
-        select: { name: true, logoUrl: true, primaryColor: true },
+        select: {
+          name: true,
+          logoUrl: true,
+          primaryColor: true,
+          orcamentoFontScale: true,
+          contratoFontScale: true,
+          orcamentoLogoScale: true,
+          contratoLogoScale: true,
+        },
       })
+    : null;
+
+  const initialArtist = artist
+    ? {
+        name: artist.name,
+        orcamentoFontScale: artist.orcamentoFontScale,
+        contratoFontScale: artist.contratoFontScale,
+        orcamentoLogoScale: artist.orcamentoLogoScale,
+        contratoLogoScale: artist.contratoLogoScale,
+      }
     : null;
 
   return (
@@ -29,7 +47,7 @@ export default async function AdminLayout({
         artistName={artist?.name ?? session.user.name ?? "Artista"}
         logoUrl={artist?.logoUrl ?? null}
       />
-      <FormProvider>
+      <FormProvider initialArtist={initialArtist}>
         <main className="max-w-4xl mx-auto px-4 py-8 pb-24 md:pb-8">{children}</main>
       </FormProvider>
       <footer className="hidden md:block text-center text-xs text-gray-600 py-6">

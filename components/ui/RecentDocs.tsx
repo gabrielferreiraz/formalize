@@ -36,18 +36,22 @@ export function RecentDocs({ type, onLoad, onToContrato }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/documents?type=${type}&page=1`)
+    let cancelled = false;
+    fetch(`/api/documents?type=${type}&page=1&limit=3&includeData=1`)
       .then((r) => r.json())
       .then((json) => {
-        // API returns documents without data field — need full data
-        const ids: string[] = (json.documents ?? []).slice(0, 3).map((d: { id: string }) => d.id);
-        if (ids.length === 0) { setLoading(false); return; }
-        // Fetch individual documents with data
-        Promise.all(ids.map((id) => fetch(`/api/documents/${id}`).then((r) => r.json())))
-          .then(setDocs)
-          .finally(() => setLoading(false));
+        if (cancelled) return;
+        setDocs(json.documents ?? []);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        if (!cancelled) setDocs([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [type]);
 
   if (loading) return (
