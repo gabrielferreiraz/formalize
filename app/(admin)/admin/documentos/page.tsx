@@ -130,6 +130,7 @@ export default function DocumentosPage() {
   const [selectedDoc, setSelectedDoc] = useState<Doc | null>(null);
   const [dayModal, setDayModal] = useState<{ day: string; docs: Doc[] } | null>(null);
   const [regenerating, setRegenerating] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // reset page when filter changes
   useMemo(() => {
@@ -414,10 +415,43 @@ export default function DocumentosPage() {
           Nenhum documento encontrado.
         </div>
       ) : view === "calendar" ? (
-        <div>
-          <div className="grid grid-cols-7 gap-2 sm:gap-3">
+        <div className={isFullscreen ? "fixed inset-0 z-[100] bg-stage-900 p-4 pb-6 flex flex-col animate-scale-in overflow-y-auto h-[100dvh]" : "w-full"}>
+          {isFullscreen && (
+            <div className="flex items-center justify-between mb-4 mt-2">
+              <h2 className="text-xl font-bold text-gold-400">Calendário</h2>
+              
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setMonthCursor((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
+                  className="px-3 py-1.5 text-xs rounded-xl border border-stage-600 text-gray-300 hover:border-gold-600 hover:text-gold-400 transition-colors bg-stage-800"
+                >
+                  ← Anterior
+                </button>
+                <div className="text-sm font-semibold text-gray-100 capitalize hidden sm:block">{monthLabel}</div>
+                <button
+                  onClick={() => setMonthCursor((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
+                  className="px-3 py-1.5 text-xs rounded-xl border border-stage-600 text-gray-300 hover:border-gold-600 hover:text-gold-400 transition-colors bg-stage-800"
+                >
+                  Próximo →
+                </button>
+              </div>
+
+              <button onClick={() => setIsFullscreen(false)} className="p-2 bg-stage-800 rounded-full text-gray-400 hover:text-white border border-stage-700">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path></svg>
+              </button>
+            </div>
+          )}
+          {!isFullscreen && (
+            <div className="flex justify-end mb-3">
+              <button onClick={() => setIsFullscreen(true)} className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-xl border border-stage-600 bg-stage-800 text-gray-300 hover:border-gold-600 hover:text-gold-400 transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                Expandir
+              </button>
+            </div>
+          )}
+          <div className="grid grid-cols-7 gap-1 sm:gap-3 flex-1">
             {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((w) => (
-              <div key={w} className="text-[10px] sm:text-xs text-gray-500 font-semibold uppercase px-1 sm:px-2 text-center sm:text-left tracking-wider">
+              <div key={w} className="text-[9px] sm:text-xs text-gray-500 font-semibold uppercase text-center sm:text-left tracking-wider">
                 {w}
               </div>
             ))}
@@ -429,65 +463,41 @@ export default function DocumentosPage() {
               return (
                 <div
                   key={key}
-                  className={`rounded-xl sm:rounded-2xl border p-1.5 sm:p-3 shadow-sm transition-all duration-300 hover:border-stage-500 hover:-translate-y-0.5 animate-fade-in ${inMonth ? "border-stage-700 bg-stage-800" : "border-stage-800 bg-stage-900/50 opacity-60"}`}
+                  className={`rounded-lg sm:rounded-2xl border p-0.5 sm:p-2 shadow-sm transition-all duration-300 hover:border-stage-500 hover:-translate-y-0.5 animate-fade-in flex flex-col ${isFullscreen ? "min-h-[100px] sm:min-h-[140px]" : "min-h-[70px] sm:min-h-[120px]"} ${inMonth ? "border-stage-700 bg-stage-800" : "border-stage-800 bg-stage-900/50 opacity-60"}`}
                   style={{ animationDelay: `${(day.getDate() % 7) * 30}ms` }}
+                  onClick={() => {
+                    if (dayDocs.length === 0) setDayModal({ day: key, docs: [] });
+                    else if (dayDocs.length === 1) setSelectedDoc(dayDocs[0]);
+                    else setDayModal({ day: key, docs: dayDocs });
+                  }}
                 >
-                  <div className="w-full text-left">
-                    <div className="text-[11px] text-gray-400 font-semibold text-center sm:text-left">{day.getDate()}</div>
-
-                    {/* Mobile-first: compacto, sem cards esticados */}
-                    <div className="sm:hidden mt-1.5 space-y-1.5">
-                      {dayDocs.length === 0 ? (
-                        <button
-                          type="button"
-                          onClick={() => setDayModal({ day: key, docs: [] })}
-                          className="h-6 w-full rounded-md hover:bg-stage-700/40"
-                          aria-label="Abrir dia sem registros"
-                        />
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (dayDocs.length === 1) setSelectedDoc(dayDocs[0]);
-                            else setDayModal({ day: key, docs: dayDocs });
-                          }}
-                          className="w-full text-left space-y-1 flex flex-col items-center"
-                        >
-                          <div className="flex flex-col gap-1 items-center">
-                            {dayDocs.filter(d => d.type === "BUDGET").map((_, i) => (
-                              <span key={`b-${i}`} className="inline-block h-1.5 w-4 rounded-full bg-gold-400" />
-                            ))}
-                            {dayDocs.filter(d => d.type === "CONTRACT").map((_, i) => (
-                              <span key={`c-${i}`} className="inline-block h-1.5 w-4 rounded-full bg-blue-400" />
-                            ))}
-                          </div>
-                        </button>
-                      )}
+                  <div className="w-full mb-0.5">
+                    <div className={`text-[9px] sm:text-[11px] font-bold text-center sm:text-right ${dayDocs.length > 0 ? "text-gold-400" : "text-gray-500"}`}>
+                      {day.getDate()}
                     </div>
                   </div>
 
-                  {/* Desktop: cartões completos */}
-                  <div className="hidden sm:block mt-2 space-y-1.5">
+                  <div className="flex flex-col gap-0.5 sm:gap-1 flex-1 overflow-hidden">
                     {dayDocs.slice(0, 3).map((doc) => (
                       <button
                         key={`${doc.id}-${key}`}
                         type="button"
-                        onClick={() => setSelectedDoc(doc)}
-                        className={`block w-full text-left rounded-lg border px-2 py-1.5 text-[10px] leading-snug hover:opacity-80 transition-opacity ${
+                        onClick={(e) => { e.stopPropagation(); setSelectedDoc(doc); }}
+                        className={`block w-full text-left rounded-[4px] sm:rounded-md border px-0.5 py-0.5 sm:px-1 sm:py-1 hover:opacity-80 transition-opacity ${
                           doc.type === "BUDGET" ? "border-gold-500/20 bg-gold-500/10 text-gold-200" : "border-blue-500/20 bg-blue-500/10 text-blue-200"
                         }`}
                       >
-                        <div className="font-semibold truncate">{parseDataName(doc)}</div>
-                        <div className="truncate opacity-80">{parseEventLocal(doc)}</div>
+                        <div className="font-semibold truncate text-[7.5px] sm:text-[10px] leading-[1.1]">{parseDataName(doc)}</div>
+                        <div className="truncate opacity-80 hidden sm:block text-[10px]">{parseEventLocal(doc)}</div>
                       </button>
                     ))}
                     {dayDocs.length > 3 && (
                       <button
                         type="button"
-                        onClick={() => setDayModal({ day: key, docs: dayDocs })}
-                        className="text-[10px] text-gray-500 px-1 hover:text-gold-400 w-full text-center mt-1"
+                        onClick={(e) => { e.stopPropagation(); setDayModal({ day: key, docs: dayDocs }); }}
+                        className="text-[8px] sm:text-[10px] font-semibold text-gray-500 hover:text-gold-400 w-full text-center mt-auto pt-0.5"
                       >
-                        +{dayDocs.length - 3} mais
+                        +{dayDocs.length - 3}
                       </button>
                     )}
                   </div>
