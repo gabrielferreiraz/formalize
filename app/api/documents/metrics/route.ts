@@ -37,9 +37,9 @@ export async function GET(req: NextRequest) {
   });
 
   const totalGenerated = docs.length;
-  const totalBudgets = docs.filter((d) => d.type === "BUDGET").length;
-  const totalContracts = docs.filter((d) => d.type === "CONTRACT").length;
-  const totalSigned = docs.filter((d) => d.type === "CONTRACT" && d.sentAt).length;
+  const totalBudgets = docs.filter((d: any) => d.type === "BUDGET").length;
+  const totalContracts = docs.filter((d: any) => d.type === "CONTRACT").length;
+  const totalSigned = docs.filter((d: any) => d.type === "CONTRACT" && d.sentAt).length;
   const signRate = totalContracts > 0 ? Math.round((totalSigned / totalContracts) * 10000) / 100 : 0;
 
   return NextResponse.json({
