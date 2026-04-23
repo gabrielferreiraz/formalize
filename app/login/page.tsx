@@ -34,7 +34,6 @@ function LoginForm() {
         redirect: false,
         email,
         password,
-        host: window.location.host,
       });
 
       if (!result?.ok) {

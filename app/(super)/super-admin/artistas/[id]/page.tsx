@@ -7,7 +7,7 @@ import { formatarTelefone } from "@/utils/form";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type Artist = {
-  id: string; name: string; subdomain: string; customDomain: string | null;
+  id: string; name: string;
   logoUrl: string | null; backgroundUrl: string | null;
   primaryColor: string; secondaryColor: string;
   whatsapp: string | null; email: string | null; instagram: string | null;
@@ -32,7 +32,7 @@ const STATUS_LABEL = { ACTIVE: "Ativo", SUSPENDED: "Suspenso", CANCELLED: "Cance
 
 function TabDados({ artist, onSaved }: { artist: Artist; onSaved: () => void }) {
   const [form, setForm] = useState({
-    name: artist.name ?? "", subdomain: artist.subdomain ?? "", customDomain: artist.customDomain ?? "",
+    name: artist.name ?? "", customDomain: "",
     logoUrl: artist.logoUrl ?? "", backgroundUrl: artist.backgroundUrl ?? "",
     primaryColor: artist.primaryColor ?? "#f5c200", secondaryColor: artist.secondaryColor ?? "#ffffff",
     whatsapp: artist.whatsapp ?? "", email: artist.email ?? "",
@@ -78,8 +78,6 @@ function TabDados({ artist, onSaved }: { artist: Artist; onSaved: () => void }) 
         <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Identidade</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <F label="Nome" k="name" />
-          <F label="Subdomínio" k="subdomain" placeholder="givago" />
-          <F label="Domínio customizado" k="customDomain" placeholder="meudoc.com.br" />
           <div>
             <label className="label">Status</label>
             <select className="input-field" value={form.status} onChange={(e) => set("status", e.target.value)}>
@@ -390,8 +388,6 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
     );
   }
 
-  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "formalize.com.br";
-
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
@@ -405,17 +401,9 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
           </button>
           <div>
             <h1 className="text-xl font-bold text-gray-100">{artist.name}</h1>
-            <p className="text-xs text-gray-500">{artist.subdomain}.{ROOT_DOMAIN}</p>
+            <p className="text-xs text-gray-500">ID: {artist.id.slice(0, 8)}...</p>
           </div>
         </div>
-        <a
-          href={`http://${artist.subdomain}.${ROOT_DOMAIN}/admin`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-4 py-2 text-xs font-medium rounded-xl border border-stage-500 text-gray-400 hover:border-gold-600 hover:text-gold-400 transition-colors shrink-0"
-        >
-          Abrir painel do artista ↗
-        </a>
       </div>
 
       {/* Tabs */}
