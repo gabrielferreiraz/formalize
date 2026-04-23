@@ -1,10 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Cinzel:wght@500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #090e1c;
+  --background: #0e1118;
   --foreground: #f1f5f9;
+
+  /* ── Design system tokens ── */
+  --stage-900: #0e1118;
+  --stage-800: #141824;
+  --stage-700: #1a1f2e;
+  --stage-500: #252d3d;
+  --text-primary: #f1f5f9;
+  --gold-500: #e6b800;
+  --gold-400: #f5c842;
+  --muted: #6b7280;
+  --dim: #94a3b8;
+  --green: #4ade80;
+  --blue: #60a5fa;
   --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out: cubic-bezier(0.0, 0, 0.2, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
@@ -16,19 +31,25 @@
 
 html {
   scroll-behavior: smooth;
-  /* Suaviza scroll em dispositivos com alta taxa de atualização */
   scroll-padding-top: 1rem;
+  overflow-x: hidden;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Evita jank de scroll em iOS */
   overscroll-behavior-y: none;
+  /* clip não cria scroll container — não quebra touch no iOS */
+  overflow-x: clip;
 }
+
+/* ── Design system scrollbar ── */
+*::-webkit-scrollbar { width: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--stage-500); border-radius: 2px; }
 
 @layer components {
   .input-field {

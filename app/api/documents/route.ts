@@ -11,14 +11,28 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type"); // BUDGET | CONTRACT | all
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
   const limitRaw = parseInt(searchParams.get("limit") ?? "20", 10);
   const limit = Math.min(100, Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 20));
   const includeData = searchParams.get("includeData") === "1" || searchParams.get("includeData") === "true";
+  const calendarMode = searchParams.get("calendar") === "1" || searchParams.get("calendar") === "true";
+
+  const fromDate = from ? new Date(`${from}T00:00:00.000Z`) : null;
+  const toDate = to ? new Date(`${to}T23:59:59.999Z`) : null;
 
   const where = {
     artistId: session.user.artistId,
     ...(type && type !== "all" ? { type: type as "BUDGET" | "CONTRACT" } : {}),
+    ...(fromDate && toDate
+      ? {
+          OR: [
+            { createdAt: { gte: fromDate, lte: toDate } },
+            { sentAt: { gte: fromDate, lte: toDate } },
+          ],
+        }
+      : {}),
   };
 
   const select = {
@@ -31,18 +45,26 @@ export async function GET(req: NextRequest) {
     ...(includeData ? { data: true } : {}),
   } as const;
 
+  const query = {
+    where,
+    orderBy: { createdAt: "desc" as const },
+    select,
+    ...(calendarMode
+      ? { take: 2000 }
+      : { skip: (page - 1) * limit, take: limit }),
+  };
+
   const [documents, total] = await Promise.all([
-    prisma.document.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
-      select,
-    }),
+    prisma.document.findMany(query),
     prisma.document.count({ where }),
   ]);
 
-  return NextResponse.json({ documents, total, page, pages: Math.ceil(total / limit) });
+  return NextResponse.json({
+    documents,
+    total,
+    page: calendarMode ? 1 : page,
+    pages: calendarMode ? 1 : Math.ceil(total / limit),
+  });
 }
 
 export async function DELETE(req: NextRequest) {

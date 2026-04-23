@@ -45,6 +45,10 @@ const config: Config = {
           from: { opacity: "0", transform: "scale(0.94)" },
           to: { opacity: "1", transform: "scale(1)" },
         },
+        "backdrop-fade": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
         "pulse-gold": {
           "0%, 100%": { boxShadow: "0 0 0 0 rgba(245,194,0,0.35)" },
           "50%": { boxShadow: "0 0 0 6px rgba(245,194,0,0)" },
@@ -53,8 +57,9 @@ const config: Config = {
       animation: {
         "fade-in": "fade-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both",
         "fade-out": "fade-out 0.18s cubic-bezier(0.4, 0, 1, 1) both",
-        "slide-down": "slide-down 0.22s cubic-bezier(0.22, 1, 0.36, 1)",
-        "scale-in": "scale-in 0.18s cubic-bezier(0.22, 1, 0.36, 1)",
+        "slide-down": "slide-down 0.22s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "scale-in": "scale-in 0.2s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "backdrop-fade": "backdrop-fade 0.2s ease-out both",
         "pulse-gold": "pulse-gold 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
       },
     },

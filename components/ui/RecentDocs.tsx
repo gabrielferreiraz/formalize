@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import useSWR from "swr";
 
 type Doc = {
   id: string;
@@ -31,28 +31,11 @@ function extractSubtitle(doc: Doc): string {
   return parts.join(" · ") || doc.title;
 }
 
-export function RecentDocs({ type, onLoad, onToContrato }: Props) {
-  const [docs, setDocs] = useState<Doc[]>([]);
-  const [loading, setLoading] = useState(true);
+const fetcher = (url: string) => fetch(url).then(r => r.json());
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`/api/documents?type=${type}&page=1&limit=3&includeData=1`)
-      .then((r) => r.json())
-      .then((json) => {
-        if (cancelled) return;
-        setDocs(json.documents ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setDocs([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [type]);
+export function RecentDocs({ type, onLoad, onToContrato }: Props) {
+  const { data, isLoading: loading } = useSWR(`/api/documents?type=${type}&page=1&limit=3&includeData=1`, fetcher);
+  const docs = (data?.documents ?? []) as Doc[];
 
   if (loading) return (
     <div className="space-y-2">
@@ -70,8 +53,12 @@ export function RecentDocs({ type, onLoad, onToContrato }: Props) {
     <div className="space-y-3">
       <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{label}</p>
       <div className="space-y-2">
-        {docs.map((doc) => (
-          <div key={doc.id} className="card flex items-center gap-3 py-3">
+        {docs.map((doc, i) => (
+          <div 
+            key={doc.id} 
+            className="card flex items-center gap-3 py-3 animate-fade-in transition-all duration-200 hover:-translate-y-0.5 hover:border-stage-500"
+            style={{ animationDelay: `${i * 50}ms` }}
+          >
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-gray-300 truncate">
                 {(doc.data.contratanteNome as string) || (doc.data.contratante as string) || "—"}

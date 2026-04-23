@@ -1,7 +1,67 @@
 "use client";
 
+import React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { IconUpload, IconCheck } from "@/components/ui/icons";
+
+// ── File upload row component (design system style) ──
+function FileUploadRow({
+  label, preview, pdfName, uploaded, uploading, accept, onChange,
+}: {
+  label: string;
+  preview?: React.ReactNode;
+  pdfName?: string;
+  uploaded: boolean;
+  uploading: boolean;
+  accept: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div style={{ padding: 14, background: "#1a1f2e", border: "1px solid #252d3d", borderRadius: 12, marginBottom: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#94a3b8" }}>
+          {label}
+        </div>
+        {uploaded && (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "'Inter', sans-serif", fontSize: 10.5, fontWeight: 600, color: "#4ade80", letterSpacing: "0.02em" }}>
+            <span style={{ width: 14, height: 14, borderRadius: 999, background: "rgba(74,222,128,0.15)", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+              <IconCheck size={10} />
+            </span>
+            Enviado
+          </div>
+        )}
+      </div>
+
+      {preview && <div style={{ marginBottom: 12, borderRadius: 8, overflow: "hidden", border: "1px solid #252d3d" }}>{preview}</div>}
+
+      {pdfName && (
+        <div style={{ height: 52, borderRadius: 10, background: "#141824", border: "1px dashed #252d3d", display: "flex", alignItems: "center", gap: 10, padding: "0 12px", marginBottom: 12 }}>
+          <div style={{ width: 34, height: 40, borderRadius: 4, background: "#0e1118", border: "1px solid #252d3d", position: "relative" as const, flexShrink: 0 }}>
+            <div style={{ position: "absolute", bottom: 4, left: 4, right: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 7, fontWeight: 700, color: "#f5c842", textAlign: "center" as const }}>PDF</div>
+          </div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 500, color: "#f1f5f9" }}>{pdfName}</div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <label style={{
+          flex: 1, height: 40, borderRadius: 10,
+          background: "#141824", border: "1px solid #252d3d",
+          color: uploading ? "#6b7280" : "#f1f5f9",
+          fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 600,
+          display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+          cursor: uploading ? "not-allowed" : "pointer",
+        }}>
+          <IconUpload size={14} />
+          {uploading ? "Enviando..." : "Escolher arquivo"}
+          <input type="file" accept={accept} onChange={onChange} disabled={uploading} style={{ display: "none" }} />
+        </label>
+      </div>
+    </div>
+  );
+}
+
 
 interface ArtistConfig {
   id: string;
@@ -322,244 +382,252 @@ export default function ConfiguracoesPage() {
   if (!data) return <div className="p-6 text-red-500">Erro ao carregar dados.</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-6 pb-24">
-      <h1 className="text-2xl font-bold text-gray-100 mb-6">Configurações do Artista</h1>
+    <div style={{ paddingBottom: 120 }}>
+      {/* ── Header ── */}
+      <div style={{ padding: "22px 0 18px" }}>
+        <h1 style={{
+          margin: 0,
+          fontFamily: "'Inter', sans-serif",
+          fontWeight: 600,
+          fontSize: 26,
+          letterSpacing: "-0.02em",
+          color: "#f1f5f9",
+          lineHeight: 1.15,
+        }}>Configurações do Artista</h1>
+        <div style={{ marginTop: 4, fontFamily: "'Inter', sans-serif", fontSize: 13, color: "#6b7280" }}>
+          Identidade visual e templates
+        </div>
+      </div>
 
       {message && (
-        <div className={`p-4 mb-6 rounded-lg font-medium ${message.type === "success" ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"}`}>
+        <div style={{
+          padding: "12px 16px",
+          marginBottom: 14,
+          borderRadius: 12,
+          fontFamily: "'Inter', sans-serif",
+          fontSize: 13,
+          fontWeight: 500,
+          background: message.type === "success" ? "rgba(74,222,128,0.08)" : "rgba(239,68,68,0.08)",
+          color: message.type === "success" ? "#4ade80" : "#f87171",
+          border: message.type === "success" ? "1px solid rgba(74,222,128,0.25)" : "1px solid rgba(239,68,68,0.25)",
+        }}>
           {message.text}
         </div>
       )}
 
-      {/* UPLOADS (Fora do form principal para não misturar submits) */}
-      <div className="space-y-8 mb-8">
-        <section className="bg-stage-800 p-6 rounded-xl border border-stage-700">
-          <h2 className="text-lg font-bold text-gray-200 mb-4">Arquivos e Imagens</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Logo */}
-            <div className="bg-stage-900 p-4 rounded-lg border border-stage-600">
-              <label className="label">Logo do Artista</label>
-              {data.logoUrl && (
-                <div className="mb-2 w-32 h-16 relative flex items-center justify-center bg-stage-800 rounded">
-                  <img src={data.logoUrl} alt="Logo" loading="lazy" decoding="async" className="max-w-full max-h-full object-contain" />
-                </div>
-              )}
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={(e) => handleUpload("logo", e)}
-                disabled={uploading["logo"]}
-                className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-stage-700 file:text-gold-400 hover:file:bg-stage-600"
-              />
-              {uploading["logo"] && <p className="text-xs text-gray-400 mt-2">Enviando...</p>}
-            </div>
-
-            {/* Background */}
-            <div className="bg-stage-900 p-4 rounded-lg border border-stage-600">
-              <label className="label">Imagem de Fundo</label>
-              {data.backgroundUrl && (
-                <div className="mb-2 w-32 h-16 relative flex items-center justify-center bg-stage-800 rounded overflow-hidden">
-                  <img src={data.backgroundUrl} alt="Background" loading="lazy" decoding="async" className="max-w-full max-h-full object-cover" />
-                </div>
-              )}
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={(e) => handleUpload("background", e)}
-                disabled={uploading["background"]}
-                className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-stage-700 file:text-gold-400 hover:file:bg-stage-600"
-              />
-              {uploading["background"] && <p className="text-xs text-gray-400 mt-2">Enviando...</p>}
-            </div>
-
-            {/* PDF Base Orçamento */}
-            <div className="bg-stage-900 p-4 rounded-lg border border-stage-600">
-              <label className="label">PDF Base (Orçamento)</label>
-              {data.basePdfUrl && (
-                <div className="mb-2 text-sm text-green-400 truncate break-all">
-                  PDF atual enviado!
-                </div>
-              )}
-              <input 
-                type="file" 
-                accept="application/pdf" 
-                onChange={(e) => handleUpload("base-pdf", e)}
-                disabled={uploading["base-pdf"]}
-                className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-stage-700 file:text-gold-400 hover:file:bg-stage-600"
-              />
-              {uploading["base-pdf"] && <p className="text-xs text-gray-400 mt-2">Enviando...</p>}
-            </div>
-
-            {/* PDF Base Contrato */}
-            <div className="bg-stage-900 p-4 rounded-lg border border-stage-600">
-              <label className="label">PDF Base (Contrato)</label>
-              {data.baseContractPdfUrl && (
-                <div className="mb-2 text-sm text-green-400 truncate break-all">
-                  PDF atual enviado!
-                </div>
-              )}
-              <input 
-                type="file" 
-                accept="application/pdf" 
-                onChange={(e) => handleUpload("base-contrato-pdf", e)}
-                disabled={uploading["base-contrato-pdf"]}
-                className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-stage-700 file:text-gold-400 hover:file:bg-stage-600"
-              />
-              {uploading["base-contrato-pdf"] && <p className="text-xs text-gray-400 mt-2">Enviando...</p>}
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* IDENTIDADE */}
-        <section className="bg-stage-800 p-6 rounded-xl border border-stage-700">
-          <h2 className="text-lg font-bold text-gray-200 mb-4">Identidade</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Nome Artístico</label>
-              <input type="text" className="input-field" value={data.name || ""} onChange={(e) => handleChange("name", e.target.value)} required />
-            </div>
-            <div>
-              <label className="label">Cor Primária</label>
-              <div className="flex gap-2">
-                <input type="color" className="h-10 w-10 rounded border border-stage-600 bg-stage-900 cursor-pointer" value={data.primaryColor || "#e6b800"} onChange={(e) => handleChange("primaryColor", e.target.value)} />
-                <input type="text" className="input-field flex-1" value={data.primaryColor || ""} onChange={(e) => handleChange("primaryColor", e.target.value)} placeholder="#e6b800" />
-              </div>
-            </div>
-            <div>
-              <label className="label">Website</label>
-              <input type="url" className="input-field" value={data.website || ""} onChange={(e) => handleChange("website", e.target.value)} placeholder="https://" />
-            </div>
-            <div>
-              <label className="label">Instagram</label>
-              <input type="text" className="input-field" value={data.instagram || ""} onChange={(e) => handleChange("instagram", e.target.value)} placeholder="@" />
-            </div>
-          </div>
-        </section>
-
-        {/* JURÍDICO */}
-        <section className="bg-stage-800 p-6 rounded-xl border border-stage-700">
-          <h2 className="text-lg font-bold text-gray-200 mb-4">Dados Jurídicos</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="label">Razão Social</label>
-              <input type="text" className="input-field" value={data.legalName || ""} onChange={(e) => handleChange("legalName", e.target.value)} />
-            </div>
-            <div>
-              <label className="label">CNPJ</label>
-              <input type="text" className="input-field" value={data.cnpj || ""} onChange={(e) => handleChange("cnpj", e.target.value)} />
-            </div>
-            <div>
-              <label className="label">Instrumentos da Banda</label>
-              <input type="text" className="input-field" value={data.instruments || ""} onChange={(e) => handleChange("instruments", e.target.value)} placeholder="Baixo, Bateria, Teclado..." />
-            </div>
-          </div>
-        </section>
-
-        {/* ENDEREÇO */}
-        <section className="bg-stage-800 p-6 rounded-xl border border-stage-700">
-          <h2 className="text-lg font-bold text-gray-200 mb-4">Endereço</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="md:col-span-3">
-              <label className="label">Rua</label>
-              <input type="text" className="input-field" value={data.address?.rua || ""} onChange={(e) => handleAddressChange("rua", e.target.value)} />
-            </div>
-            <div>
-              <label className="label">Número</label>
-              <input type="text" className="input-field" value={data.address?.numero || ""} onChange={(e) => handleAddressChange("numero", e.target.value)} />
-            </div>
-            <div className="md:col-span-2">
-              <label className="label">Bairro</label>
-              <input type="text" className="input-field" value={data.address?.bairro || ""} onChange={(e) => handleAddressChange("bairro", e.target.value)} />
-            </div>
-            <div>
-              <label className="label">Cidade</label>
-              <input type="text" className="input-field" value={data.address?.cidade || ""} onChange={(e) => handleAddressChange("cidade", e.target.value)} />
-            </div>
-            <div>
-              <label className="label">Estado (UF)</label>
-              <input type="text" className="input-field" value={data.address?.estado || ""} onChange={(e) => handleAddressChange("estado", e.target.value)} maxLength={2} />
-            </div>
-          </div>
-        </section>
-
-        {/* DADOS BANCÁRIOS */}
-        <section className="bg-stage-800 p-6 rounded-xl border border-stage-700">
-          <h2 className="text-lg font-bold text-gray-200 mb-4">Dados Bancários</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="label">Titular</label>
-              <input type="text" className="input-field" value={data.bankInfo?.titular || ""} onChange={(e) => handleBankChange("titular", e.target.value)} />
-            </div>
-            <div>
-              <label className="label">Chave PIX</label>
-              <input type="text" className="input-field" value={data.bankInfo?.pix || ""} onChange={(e) => handleBankChange("pix", e.target.value)} />
-            </div>
-            <div>
-              <label className="label">Banco</label>
-              <input type="text" className="input-field" value={data.bankInfo?.banco || ""} onChange={(e) => handleBankChange("banco", e.target.value)} />
-            </div>
-            <div>
-              <label className="label">Conta c/ Dígito</label>
-              <input type="text" className="input-field" value={data.bankInfo?.conta || ""} onChange={(e) => handleBankChange("conta", e.target.value)} />
-            </div>
-            <div>
-              <label className="label">Agência</label>
-              <input type="text" className="input-field" value={data.bankInfo?.agencia || ""} onChange={(e) => handleBankChange("agencia", e.target.value)} />
-            </div>
-          </div>
-        </section>
-
-        {/* CONTATO */}
-        <section className="bg-stage-800 p-6 rounded-xl border border-stage-700">
-          <h2 className="text-lg font-bold text-gray-200 mb-4">Contato</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="label">WhatsApp</label>
-              <input type="text" className="input-field" value={data.whatsapp || ""} onChange={(e) => handleChange("whatsapp", e.target.value)} />
-            </div>
-            <div>
-              <label className="label">E-mail</label>
-              <input type="email" className="input-field" value={data.email || ""} onChange={(e) => handleChange("email", e.target.value)} />
-            </div>
-          </div>
-        </section>
-
-        {/* PDF — tamanhos de papel */}
-        <section className="bg-stage-800 p-6 rounded-xl border border-stage-700 space-y-6">
-          <h2 className="text-lg font-bold text-gray-200">Configurações de PDF</h2>
-
-          <PdfPaperControls
-            data={data}
-            title="Orçamento"
-            hint="Tamanho do papel usado na geração do PDF de orçamento."
-            wKey="paperWidth"
-            hKey="paperHeight"
-            wEmpty={21}
-            hEmpty={29.7}
-            onPatch={patchPaper}
-          />
-
-          <PdfPaperControls
-            data={data}
-            title="Contrato"
-            hint="Tamanho do papel usado na geração do PDF de contrato. Se nunca salvou, usa A4 (21 × 29,7 cm) até você alterar aqui."
-            wKey="contractPaperWidth"
-            hKey="contractPaperHeight"
-            wEmpty={21}
-            hEmpty={29.7}
-            onPatch={patchPaper}
-          />
-        </section>
-
-        <div className="flex justify-end pt-4">
-          <button type="submit" disabled={saving} className="btn-primary">
-            {saving ? "Salvando..." : "Salvar Alterações"}
-          </button>
+      {/* ── Arquivos & Imagens ── */}
+      <section style={{ background: "#141824", border: "1px solid #252d3d", borderRadius: 16, padding: 18, marginBottom: 14 }}>
+        <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#f1f5f9", marginBottom: 16 }}>
+          Arquivos & Imagens
         </div>
+
+        {/* Logo */}
+        <FileUploadRow
+          label="Logo do Artista"
+          preview={data.logoUrl ? <img src={data.logoUrl} alt="Logo" style={{ maxHeight: 56, maxWidth: "100%", objectFit: "contain" }} /> : undefined}
+          uploaded={!!data.logoUrl}
+          uploading={uploading["logo"]}
+          accept="image/*"
+          onChange={(e) => handleUpload("logo", e)}
+        />
+
+        {/* Background */}
+        <FileUploadRow
+          label="Imagem de Fundo"
+          preview={data.backgroundUrl ? (
+            <div style={{ height: 56, borderRadius: 8, overflow: "hidden", background: "#0e1118" }}>
+              <img src={data.backgroundUrl} alt="Background" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
+          ) : undefined}
+          uploaded={!!data.backgroundUrl}
+          uploading={uploading["background"]}
+          accept="image/*"
+          onChange={(e) => handleUpload("background", e)}
+        />
+
+        {/* PDFs */}
+        <FileUploadRow
+          label="PDF Base — Orçamento"
+          pdfName={data.basePdfUrl ? "orcamento-base.pdf" : undefined}
+          uploaded={!!data.basePdfUrl}
+          uploading={uploading["base-pdf"]}
+          accept="application/pdf"
+          onChange={(e) => handleUpload("base-pdf", e)}
+        />
+        <FileUploadRow
+          label="PDF Base — Contrato"
+          pdfName={data.baseContractPdfUrl ? "contrato-base.pdf" : undefined}
+          uploaded={!!data.baseContractPdfUrl}
+          uploading={uploading["base-contrato-pdf"]}
+          accept="application/pdf"
+          onChange={(e) => handleUpload("base-contrato-pdf", e)}
+        />
+      </section>
+
+
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+        {/* ── Identidade ── */}
+        <FSection title="Identidade">
+          <FRow>
+            <FFormField label="Nome Artístico">
+              <input className="input-field" type="text" value={data.name || ""} onChange={(e) => handleChange("name", e.target.value)} required />
+            </FFormField>
+            <FFormField label="Cor Primária">
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <input type="color" value={data.primaryColor || "#e6b800"} onChange={(e) => handleChange("primaryColor", e.target.value)}
+                  style={{ width: 40, height: 40, borderRadius: 8, border: "1px solid #252d3d", background: "#1a1f2e", cursor: "pointer", padding: 2 }} />
+                <input className="input-field" type="text" value={data.primaryColor || ""} onChange={(e) => handleChange("primaryColor", e.target.value)} placeholder="#e6b800" style={{ flex: 1 }} />
+              </div>
+            </FFormField>
+          </FRow>
+          <FRow>
+            <FFormField label="Website">
+              <input className="input-field" type="url" value={data.website || ""} onChange={(e) => handleChange("website", e.target.value)} placeholder="https://" />
+            </FFormField>
+            <FFormField label="Instagram">
+              <input className="input-field" type="text" value={data.instagram || ""} onChange={(e) => handleChange("instagram", e.target.value)} placeholder="@" />
+            </FFormField>
+          </FRow>
+        </FSection>
+
+        {/* ── Dados Jurídicos ── */}
+        <FSection title="Dados Jurídicos">
+          <FFormField label="Razão Social">
+            <input className="input-field" type="text" value={data.legalName || ""} onChange={(e) => handleChange("legalName", e.target.value)} />
+          </FFormField>
+          <FRow>
+            <FFormField label="CNPJ">
+              <input className="input-field" type="text" value={data.cnpj || ""} onChange={(e) => handleChange("cnpj", e.target.value)} />
+            </FFormField>
+            <FFormField label="Instrumentos da Banda">
+              <input className="input-field" type="text" value={data.instruments || ""} onChange={(e) => handleChange("instruments", e.target.value)} placeholder="Baixo, Bateria, Teclado..." />
+            </FFormField>
+          </FRow>
+        </FSection>
+
+        {/* ── Endereço ── */}
+        <FSection title="Endereço">
+          <FFormField label="Rua">
+            <input className="input-field" type="text" value={data.address?.rua || ""} onChange={(e) => handleAddressChange("rua", e.target.value)} />
+          </FFormField>
+          <FRow>
+            <FFormField label="Número">
+              <input className="input-field" type="text" value={data.address?.numero || ""} onChange={(e) => handleAddressChange("numero", e.target.value)} />
+            </FFormField>
+            <FFormField label="Bairro">
+              <input className="input-field" type="text" value={data.address?.bairro || ""} onChange={(e) => handleAddressChange("bairro", e.target.value)} />
+            </FFormField>
+          </FRow>
+          <FRow>
+            <FFormField label="Cidade">
+              <input className="input-field" type="text" value={data.address?.cidade || ""} onChange={(e) => handleAddressChange("cidade", e.target.value)} />
+            </FFormField>
+            <FFormField label="Estado (UF)">
+              <input className="input-field" type="text" value={data.address?.estado || ""} onChange={(e) => handleAddressChange("estado", e.target.value)} maxLength={2} />
+            </FFormField>
+          </FRow>
+        </FSection>
+
+        {/* ── Dados Bancários ── */}
+        <FSection title="Dados Bancários">
+          <FFormField label="Titular">
+            <input className="input-field" type="text" value={data.bankInfo?.titular || ""} onChange={(e) => handleBankChange("titular", e.target.value)} />
+          </FFormField>
+          <FRow>
+            <FFormField label="Chave PIX">
+              <input className="input-field" type="text" value={data.bankInfo?.pix || ""} onChange={(e) => handleBankChange("pix", e.target.value)} />
+            </FFormField>
+            <FFormField label="Banco">
+              <input className="input-field" type="text" value={data.bankInfo?.banco || ""} onChange={(e) => handleBankChange("banco", e.target.value)} />
+            </FFormField>
+          </FRow>
+          <FRow>
+            <FFormField label="Conta c/ Dígito">
+              <input className="input-field" type="text" value={data.bankInfo?.conta || ""} onChange={(e) => handleBankChange("conta", e.target.value)} />
+            </FFormField>
+            <FFormField label="Agência">
+              <input className="input-field" type="text" value={data.bankInfo?.agencia || ""} onChange={(e) => handleBankChange("agencia", e.target.value)} />
+            </FFormField>
+          </FRow>
+        </FSection>
+
+        {/* ── Contato ── */}
+        <FSection title="Contato">
+          <FRow>
+            <FFormField label="WhatsApp">
+              <input className="input-field" type="text" value={data.whatsapp || ""} onChange={(e) => handleChange("whatsapp", e.target.value)} />
+            </FFormField>
+            <FFormField label="E-mail">
+              <input className="input-field" type="email" value={data.email || ""} onChange={(e) => handleChange("email", e.target.value)} />
+            </FFormField>
+          </FRow>
+        </FSection>
+
+        {/* ── PDF — tamanhos de papel ── */}
+        <FSection title="Configurações de PDF">
+          <PdfPaperControls
+            data={data} title="Orçamento" hint="Tamanho do papel usado na geração do PDF de orçamento."
+            wKey="paperWidth" hKey="paperHeight" wEmpty={21} hEmpty={29.7} onPatch={patchPaper}
+          />
+          <PdfPaperControls
+            data={data} title="Contrato" hint="Tamanho do papel usado na geração do PDF de contrato."
+            wKey="contractPaperWidth" hKey="contractPaperHeight" wEmpty={21} hEmpty={29.7} onPatch={patchPaper}
+          />
+        </FSection>
+
+        {/* ── Salvar ── */}
+        <button type="submit" disabled={saving} style={{
+          display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+          height: 52, borderRadius: 12, border: "none",
+          background: saving ? "#252d3d" : "linear-gradient(180deg, #f5c842 0%, #e6b800 100%)",
+          color: saving ? "#6b7280" : "#1a1200",
+          fontFamily: "'Inter', sans-serif", fontSize: 15, fontWeight: 700, letterSpacing: "0.02em",
+          cursor: saving ? "not-allowed" : "pointer",
+          boxShadow: saving ? "none" : "0 4px 14px rgba(230,184,0,0.25)",
+          transition: "opacity 0.15s",
+          width: "100%",
+        }}>
+          {saving ? "Salvando..." : "Salvar Alterações"}
+        </button>
       </form>
+    </div>
+  );
+}
+
+// ── Layout helpers ──
+function FSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section style={{ background: "#141824", border: "1px solid #252d3d", borderRadius: 16, padding: 18 }}>
+      <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#f1f5f9", marginBottom: 16 }}>
+        {title}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column" as const, gap: 12 }}>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function FRow({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))",
+      gap: 12,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function FFormField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#6b7280", marginBottom: 8 }}>
+        {label}
+      </div>
+      {children}
     </div>
   );
 }

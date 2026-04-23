@@ -74,16 +74,59 @@ export default function OrcamentoPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-100">Novo Orçamento</h1>
-        <span className="text-xs font-mono text-gray-500 bg-stage-800 border border-stage-600 px-3 py-1 rounded-full">
+    <div>
+      {/* Header com visual do design */}
+      <div style={{
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 8,
+        padding: "22px 0 18px",
+      }}>
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{
+            margin: 0,
+            fontFamily: "'Inter', sans-serif",
+            fontWeight: 600,
+            fontSize: 26,
+            letterSpacing: "-0.02em",
+            color: "#f1f5f9",
+            lineHeight: 1.15,
+          }}>Novo Orçamento</h1>
+          <div style={{ marginTop: 4, fontFamily: "'Inter', sans-serif", fontSize: 13, color: "#6b7280" }}>
+            Preencha os dados do evento
+          </div>
+        </div>
+        <div style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "7px 12px",
+          borderRadius: 999,
+          background: "rgba(230,184,0,0.08)",
+          border: "1px solid rgba(230,184,0,0.25)",
+          color: "#f5c842",
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 11,
+          fontWeight: 500,
+          letterSpacing: "0.04em",
+          flexShrink: 0,
+        }}>
           {numeroOrc || "—"}
-        </span>
+        </div>
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400 animate-fade-in">
+        <div style={{
+          background: "rgba(239,68,68,0.08)",
+          border: "1px solid rgba(239,68,68,0.25)",
+          borderRadius: 12,
+          padding: "12px 16px",
+          fontSize: 13,
+          color: "#f87171",
+          marginBottom: 14,
+        }}>
           {error}
         </div>
       )}
@@ -95,10 +138,6 @@ export default function OrcamentoPage() {
         onFazerContrato={handleFazerContrato}
         artistName={artistDisplayName}
         loading={loading}
-        fontScale={orcamentoFontScale}
-        onFontScaleChange={setOrcamentoFontScale}
-        logoScale={orcamentoLogoScale}
-        onLogoScaleChange={setOrcamentoLogoScale}
       />
 
       <RecentDocs

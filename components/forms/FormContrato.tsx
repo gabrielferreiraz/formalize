@@ -380,65 +380,12 @@ export default function FormContrato({
 
   const ehCnpj = isCNPJ(values.contratanteCpfCnpj);
 
-  const currentFontScale = fontScale ?? 100;
-  const currentLogoScale = logoScale ?? 100;
-
   return (
     <>
       {loading && <LoadingDocument documentType="contrato" />}
       <form onSubmit={handleSubmit} className="space-y-6">
       {/* ── Contratante ────────────────────────────────────────── */}
-      <Section title={
-        <div className="flex items-center justify-between w-full">
-          <span>Contratante</span>
-          
-          <div className="flex items-center gap-3">
-            {/* Controle de Escala de Fonte */}
-            {onFontScaleChange && (
-              <div className="flex items-center gap-2 bg-stage-800 border border-stage-700 rounded-lg px-2 py-1 normal-case tracking-normal">
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Fonte</span>
-                <button
-                  type="button"
-                  onClick={() => onFontScaleChange(Math.max(50, currentFontScale - 5))}
-                  className="w-6 h-6 flex items-center justify-center bg-stage-700 hover:bg-stage-600 rounded text-gold-400 font-bold transition-colors"
-                >
-                  -
-                </button>
-                <span className="text-xs font-mono text-white w-8 text-center">{currentFontScale}%</span>
-                <button
-                  type="button"
-                  onClick={() => onFontScaleChange(Math.min(200, currentFontScale + 5))}
-                  className="w-6 h-6 flex items-center justify-center bg-stage-700 hover:bg-stage-600 rounded text-gold-400 font-bold transition-colors"
-                >
-                  +
-                </button>
-              </div>
-            )}
-
-            {/* Controle de Escala de Logo */}
-            {onLogoScaleChange && (
-              <div className="flex items-center gap-2 bg-stage-800 border border-stage-700 rounded-lg px-2 py-1 normal-case tracking-normal">
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Logo</span>
-                <button
-                  type="button"
-                  onClick={() => onLogoScaleChange(Math.max(50, currentLogoScale - 5))}
-                  className="w-6 h-6 flex items-center justify-center bg-stage-700 hover:bg-stage-600 rounded text-gold-400 font-bold transition-colors"
-                >
-                  -
-                </button>
-                <span className="text-xs font-mono text-white w-8 text-center">{currentLogoScale}%</span>
-                <button
-                  type="button"
-                  onClick={() => onLogoScaleChange(Math.min(200, currentLogoScale + 5))}
-                  className="w-6 h-6 flex items-center justify-center bg-stage-700 hover:bg-stage-600 rounded text-gold-400 font-bold transition-colors"
-                >
-                  +
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      }>
+      <Section title="Contratante">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="CPF / CNPJ" error={errors.contratanteCpfCnpj} className="sm:col-span-2">
             <div className="relative">
