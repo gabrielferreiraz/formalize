@@ -1,0 +1,17 @@
+{
+  "name": "Formalize",
+  "short_name": "Formalize",
+  "description": "Plataforma premium de gestão para músicos",
+  "start_url": "/admin/documentos",
+  "display": "standalone",
+  "background_color": "#0e1118",
+  "theme_color": "#e6b800",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
