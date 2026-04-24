@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { useState, useEffect } from "react";
 import { IconDoc, IconPen, IconFolder, IconCog, IconLogout } from "@/components/ui/icons";
 
 interface Props {
@@ -20,6 +21,27 @@ const nav = [
 
 export function AdminHeader({ artistName, logoUrl }: Props) {
   const pathname = usePathname();
+  const [showNav, setShowNav] = useState(true);
+
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        // Scrolling down
+        setShowNav(false);
+      } else {
+        // Scrolling up
+        setShowNav(true);
+      }
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   function isActive(href: string) {
     return pathname.startsWith(href);
@@ -104,6 +126,8 @@ export function AdminHeader({ artistName, logoUrl }: Props) {
         gridTemplateColumns: "repeat(4, 1fr)",
         padding: "10px 4px 24px",
         zIndex: 50,
+        transform: showNav ? "translateY(0)" : "translateY(100%)",
+        transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       }}>
         {nav.map(it => {
           const on = isActive(it.href);
