@@ -638,7 +638,7 @@ export default function FormOrcamento({
       </div>
 
       {/* ── Bottom Sticky Bar ──────────────────────────────────────────────── */}
-      <div className="sticky bottom-[72px] md:bottom-0 left-0 right-0 z-50 pt-8 pb-4 -mx-4 px-4 pointer-events-none" style={{ background: "linear-gradient(180deg, transparent, rgba(14,17,24,0.95) 30%, #0e1118 100%)" }}>
+      <div className="bottom-sticky-bar sticky bottom-[72px] md:bottom-0 left-0 right-0 z-50 pt-8 pb-4 -mx-4 px-4 pointer-events-none transition-transform duration-300 ease-in-out" style={{ background: "linear-gradient(180deg, transparent, rgba(14,17,24,0.95) 30%, #0e1118 100%)" }}>
         <div className="pointer-events-auto">
            <div className="flex justify-between items-center mb-2 px-1">
              <div className="text-[11px] text-gray-500">

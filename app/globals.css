@@ -166,3 +166,8 @@ select.input-field {
     scroll-behavior: auto;
   }
 }
+
+/* ── Animação da barra flutuante quando o nav some ── */
+body.nav-hidden .bottom-sticky-bar {
+  transform: translateY(72px) !important;
+}

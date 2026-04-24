@@ -32,15 +32,20 @@ export function AdminHeader({ artistName, logoUrl }: Props) {
       if (currentScrollY > lastScrollY && currentScrollY > 50) {
         // Scrolling down
         setShowNav(false);
+        document.body.classList.add("nav-hidden");
       } else {
         // Scrolling up
         setShowNav(true);
+        document.body.classList.remove("nav-hidden");
       }
       lastScrollY = currentScrollY;
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      document.body.classList.remove("nav-hidden");
+    };
   }, []);
 
   function isActive(href: string) {
