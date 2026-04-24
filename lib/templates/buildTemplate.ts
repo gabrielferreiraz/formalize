@@ -578,6 +578,185 @@ async function buildContrato(
 
 type AssetResult = { base64: string; mime: string } | null;
 
+
+
+// ── Templates Light ──────────────────────────────────────────────────────────
+
+const templateOrcamentoLight = `${orcTemplate.replace(/`/g, '\`')}`;
+
+const templateContratoLight = `${ctrTemplate.replace(/`/g, '\`')}`;
+
+function renderLightTemplate(template: string, ctx: Record<string, any>): string {
+  let result = template.replace(/\{\{\s*#if\s+([a-zA-Z0-9_]+)\s*\}\}([\s\S]*?)(?:\{\{\s*else\s*\}\}([\s\S]*?))?\{\{\s*\/if\s*\}\}/g, (match, key, truthyBlock, falsyBlock) => {
+    return ctx[key] ? truthyBlock : (falsyBlock || "");
+  });
+  result = result.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (match, key) => {
+    return ctx[key] !== undefined && ctx[key] !== null ? String(ctx[key]) : "";
+  });
+  return result;
+}
+
+async function buildOrcamentoLight(
+  artist: ArtistData,
+  data: Record<string, any>,
+  logo?: { base64: string; mime: string } | null,
+): Promise<string> {
+  const primaryColor = artist.primaryColor || "#E8A045";
+  
+  const valorCache = (parseFloat(data.cache) || 0) / 100;
+  const valorCacheFormatado = valorCache.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
+  const valorCacheExtenso = valorPorExtenso(valorCache);
+
+  const backlineRaw = data.backline;
+  const backlineNumerico = (backlineRaw === "valor") ? (parseFloat(data.backlineValor) || 0) / 100 : 0;
+  const backlineFormatado = (backlineRaw === "valor" && backlineNumerico > 0)
+    ? backlineNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })
+    : (backlineRaw === 'incluso' ? 'Incluso' : null);
+
+  const transporteRaw = data.transporte;
+  const transporteNumerico = (transporteRaw === "valor") ? (parseFloat(data.transporteValor) || 0) / 100 : 0;
+  const transporteFormatado = (transporteRaw === "valor" && transporteNumerico > 0)
+    ? transporteNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })
+    : (transporteRaw === 'incluso' ? 'Incluso' : null);
+
+  const alimentacaoRaw = data.alimentacao;
+  const alimentacaoNumerico = (alimentacaoRaw === "valor") ? (parseFloat(data.alimentacaoValor) || 0) / 100 : 0;
+  const alimentacaoFormatado = (alimentacaoRaw === "valor" && alimentacaoNumerico > 0)
+    ? alimentacaoNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })
+    : (alimentacaoRaw === 'incluso' ? 'Incluso' : null);
+
+  const hospedagemRaw = data.hospedagem;
+  const hospedagemNumerico = (hospedagemRaw === "valor") ? (parseFloat(data.hospedagemValor) || 0) / 100 : 0;
+  const hospedagemFormatado = (hospedagemRaw === "valor" && hospedagemNumerico > 0)
+    ? hospedagemNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })
+    : (hospedagemRaw === 'incluso' ? 'Incluso' : null);
+
+  const total = valorCache + backlineNumerico + transporteNumerico + alimentacaoNumerico + hospedagemNumerico;
+  const totalFormatado = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
+  const totalExtenso = valorPorExtenso(total);
+
+  const ctx = {
+    primaryColor,
+    primaryColorLight: primaryColor + "20",
+    artistName: escapeHtml(artist.name),
+    logoMime: logo?.mime,
+    logoBase64: logo?.base64,
+    numero: escapeHtml(data.numero || "ORC-" + Date.now().toString().slice(-6)),
+    dataFormatada: formatData(data.data),
+    contratante: escapeHtml(data.contratante),
+    evento: escapeHtml(data.evento),
+    local: escapeHtml(data.local),
+    cidade: escapeHtml(data.cidade),
+    dataEvento: formatData(data.data),
+    horario: escapeHtml(data.horario),
+    horas: data.horas || 2,
+    valorCacheFormatado,
+    valorCacheExtenso,
+    backlineFormatado,
+    backlineIncluso: backlineRaw === 'incluso',
+    transporteFormatado,
+    transporteIncluso: transporteRaw === 'incluso',
+    alimentacaoFormatado,
+    alimentacaoIncluso: alimentacaoRaw === 'incluso',
+    hospedagemFormatado,
+    hospedagemIncluso: hospedagemRaw === 'incluso',
+    totalFormatado,
+    totalExtenso,
+    formaPagamento: escapeHtml(data.formaPagamento),
+    whatsapp: escapeHtml(artist.whatsapp),
+    instagram: escapeHtml(artist.instagram),
+    website: escapeHtml(artist.website)
+  };
+
+  return renderLightTemplate(templateOrcamentoLight, ctx);
+}
+
+async function buildContratoLight(
+  artist: ArtistData,
+  data: Record<string, any>,
+  logo?: { base64: string; mime: string } | null,
+): Promise<string> {
+  const addr = (artist.address as any) || {};
+  const bank = (artist.bankInfo as any) || {};
+  const primaryColor = artist.primaryColor || "#E8A045";
+
+  const valorCache = (parseFloat(data.cache) || 0) / 100;
+  const backlineRaw = data.backline;
+  const backlineNumerico = backlineRaw === "valor" ? (parseFloat(data.backlineValor) || 0) / 100 : 0;
+  const transporteRaw = data.transporte;
+  const transporteNumerico = transporteRaw === "valor" ? (parseFloat(data.transporteValor) || 0) / 100 : 0;
+  const transporteFormatado = transporteNumerico > 0 ? transporteNumerico.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 }) : null;
+  const valorTotal = valorCache + backlineNumerico + transporteNumerico;
+  const valorTotalFormatado = valorTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
+  const valorTotalExtenso = valorPorExtenso(valorTotal);
+
+  const transporteTexto = (transporteRaw === "incluso" || !transporteRaw)
+    ? "O deslocamento do artista e equipe já está incluso no valor do cachê, conforme combinado."
+    : `O deslocamento do artista e equipe será cobrado à parte no valor de <strong>${transporteFormatado}</strong>, conforme combinado.`;
+
+  const foro = addr.cidade ? `${addr.cidade}-${addr.estado}` : "Campo Grande-MS";
+  const nomeSlug = (data.contratanteNome || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+  const dataEventoBr = formatData(data.data);
+  const hashContrato = crypto.createHash("sha256")
+    .update(nomeSlug + dataEventoBr + valorTotalFormatado + Date.now().toString())
+    .digest("hex").substring(0, 16).toUpperCase();
+
+  const enderecoArtista = addr.rua
+    ? `${addr.rua} Nº ${addr.numero || ""}, Bairro ${addr.bairro || ""}, ${addr.cidade || ""}/${addr.estado || ""}`
+    : "—";
+
+  const ctx = {
+    primaryColor,
+    primaryColorLight: primaryColor + "20",
+    logoMime: logo?.mime,
+    logoBase64: logo?.base64,
+    artistName: escapeHtml(artist.name),
+    numero: escapeHtml(data.numero || "CTR-" + Date.now().toString().slice(-6)),
+    dataAssinatura: formatData(data.dataAssinatura || data.data),
+    dataAssinaturaCompleta: new Date().toLocaleString('pt-BR', {timeZone: 'America/Campo_Grande'}),
+    contratanteNome: escapeHtml(data.contratanteNome),
+    contratanteCpfCnpj: escapeHtml(data.contratanteCpfCnpj),
+    contratanteRg: escapeHtml(data.contratanteRg),
+    contratanteOrgao: escapeHtml(data.contratanteOrgao),
+    contratanteTelefone: escapeHtml(data.contratanteTelefone),
+    logradouro: escapeHtml(data.logradouro),
+    numeroEndereco: escapeHtml(data.numero),
+    bairro: escapeHtml(data.bairro),
+    cidade: escapeHtml(data.cidade),
+    uf: escapeHtml(data.uf),
+    cep: escapeHtml(data.cep),
+    artistCnpj: escapeHtml(artist.cnpj),
+    artistAddress: escapeHtml(enderecoArtista),
+    artistLegalName: escapeHtml(artist.legalName || artist.name),
+    bankTitular: escapeHtml(bank.titular || artist.legalName || artist.name),
+    bankPix: escapeHtml(bank.pix || artist.pixKey),
+    bankBanco: escapeHtml(bank.banco),
+    bankConta: escapeHtml(bank.conta),
+    bankAgencia: escapeHtml(bank.agencia),
+    valorTotalFormatado,
+    valorTotalExtenso,
+    transporteTexto,
+    pessoasBanda: data.pessoasBanda || 7,
+    instruments: escapeHtml(artist.instruments || 'Bateria, Percussão, Guitarra, Baixo, Sanfona'),
+    cidadeEvento: escapeHtml(data.cidadeEvento || foro),
+    foro: escapeHtml(foro),
+    clausulasEspeciais: escapeHtml(data.clausulasEspeciais),
+    riderTecnico: escapeHtml(data.riderTecnico),
+    observacoes: escapeHtml(data.observacoes),
+    assinarDigitalmente: data.assinarDigitalmente !== false,
+    hashContrato,
+    fraseRodape: escapeHtml(data.fraseRodape),
+    formaPagamento: escapeHtml(data.formaPagamento),
+    evento: escapeHtml(data.evento),
+    dataEvento: formatData(data.data),
+    local: escapeHtml(data.local),
+    horas: data.horas || 2,
+    horario: escapeHtml(data.horario),
+  };
+
+  return renderLightTemplate(templateContratoLight, ctx);
+}
+
 // ── Wrapper Principal ────────────────────────────────────────────────────────
 
 export async function buildTemplate(
@@ -590,7 +769,6 @@ export async function buildTemplate(
   let logo: AssetResult = preloaded?.logo ?? null;
   let background: AssetResult = preloaded?.background ?? null;
 
-  // Só busca os assets que não foram pré-carregados
   if (!preloaded) {
     const [logoResult, backgroundResult] = await Promise.all([
       artist.logoUrl ? fetchWithCache(artist.logoUrl) : Promise.resolve(null),
@@ -600,9 +778,19 @@ export async function buildTemplate(
     background = backgroundResult ? { base64: backgroundResult.buffer.toString("base64"), mime: backgroundResult.mime } : null;
   }
 
-  if (type === "orcamento") {
-    return buildOrcamento(artist, data, pageSize, logo, background);
+  const templateStyle = artist.basePdfUrl ? 'classic' : 'light';
+
+  if (templateStyle === 'light') {
+    if (type === "orcamento") {
+      return buildOrcamentoLight(artist, data, logo);
+    } else {
+      return buildContratoLight(artist, data, logo);
+    }
   } else {
-    return buildContrato(artist, data, pageSize, logo);
+    if (type === "orcamento") {
+      return buildOrcamento(artist, data, pageSize, logo, background);
+    } else {
+      return buildContrato(artist, data, pageSize, logo);
+    }
   }
 }
