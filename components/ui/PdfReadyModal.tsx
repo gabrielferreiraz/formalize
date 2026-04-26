@@ -13,28 +13,61 @@ export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalPr
   const label = documentType === 'contrato' ? 'Contrato' : 'Orçamento';
 
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
+    try {
+      const response = await fetch(pdfUrl);
+      const blob = await response.blob();
+      const fileName = `${label}_${new Date().getTime()}.pdf`;
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `${label} gerado pelo Formalize`,
+        });
+      } else if (navigator.share) {
         await navigator.share({
           title: `${label} gerado pelo Formalize`,
           url: pdfUrl
         });
-      } catch (err) {
-        console.error("Erro ao compartilhar", err);
-      }
-    } else {
-      try {
+      } else {
         await navigator.clipboard.writeText(pdfUrl);
         alert("Link copiado para a área de transferência!");
-      } catch (err) {
-        console.error("Erro ao copiar link", err);
+      }
+    } catch (err) {
+      console.error("Erro ao compartilhar", err);
+      // Fallback para link se der erro no download
+      if (navigator.share) {
+        navigator.share({ url: pdfUrl });
+      } else {
+        navigator.clipboard.writeText(pdfUrl);
+        alert("Link copiado!");
       }
     }
   };
 
-  const handleWhatsApp = () => {
-    const text = encodeURIComponent(`${label} gerado pelo Formalize:\n${pdfUrl}`);
-    window.open(`https://wa.me/?text=${text}`, '_blank');
+  const handleWhatsApp = async () => {
+    try {
+      const response = await fetch(pdfUrl);
+      const blob = await response.blob();
+      const fileName = `${label}_${new Date().getTime()}.pdf`;
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `${label} gerado pelo Formalize`,
+        });
+      } else {
+        // Fallback: Se não puder compartilhar o arquivo diretamente, abre o link
+        const text = encodeURIComponent(`${label} gerado pelo Formalize:\n${pdfUrl}`);
+        window.open(`https://wa.me/?text=${text}`, '_blank');
+      }
+    } catch (err) {
+      console.error("Erro ao compartilhar arquivo no WhatsApp", err);
+      // Fallback básico em caso de erro no fetch
+      const text = encodeURIComponent(`${label} gerado pelo Formalize:\n${pdfUrl}`);
+      window.open(`https://wa.me/?text=${text}`, '_blank');
+    }
   };
 
   const handleOpen = () => {
