@@ -345,9 +345,7 @@ export default function FormOrcamento({
   }).length;
 
   return (
-    <>
-      {loading && <LoadingDocument documentType="orcamento" />}
-      <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* ── Dados do evento ─────────────────────────────────────── */}
       <section className="card space-y-4">
         <div className="flex items-center justify-between">
@@ -662,7 +660,6 @@ export default function FormOrcamento({
         </div>
       </div>
     </form>
-    </>
   );
 }
 

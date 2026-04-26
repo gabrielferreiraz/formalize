@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import FormContrato from "@/components/forms/FormContrato";
 import { RecentDocs } from "@/components/ui/RecentDocs";
+import { PdfReadyModal } from "@/components/ui/PdfReadyModal";
+import { LoadingDocument } from "@/components/ui/LoadingDocument";
 import { gerarNumeroDoc } from "@/utils/form";
 import { useFormContext } from "@/context/FormContext";
 
@@ -16,6 +18,8 @@ export default function ContratoPage() {
   } = useFormContext();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!numeroCtr) setNumeroCtr(gerarNumeroDoc("CTR"));
@@ -24,10 +28,15 @@ export default function ContratoPage() {
   async function handleSubmit() {
     setLoading(true);
     setError("");
+    setPdfUrl(null);
+
+    abortRef.current = new AbortController();
+
     try {
       const res = await fetch("/api/documents/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: abortRef.current.signal,
         body: JSON.stringify({ 
           type: "contrato", 
           data: { 
@@ -40,12 +49,18 @@ export default function ContratoPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erro ao gerar PDF");
-      window.open(json.pdfUrl, "_blank");
+      setPdfUrl(json.pdfUrl);
     } catch (err) {
+      if ((err as Error).name === 'AbortError') return;
       setError(err instanceof Error ? err.message : "Erro ao gerar PDF");
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleCancel() {
+    abortRef.current?.abort();
+    setLoading(false);
   }
 
   return (
@@ -113,6 +128,21 @@ export default function ContratoPage() {
         artistName={artistDisplayName}
         loading={loading}
       />
+
+      {loading && (
+        <LoadingDocument 
+          documentType="contrato" 
+          onCancel={handleCancel}
+        />
+      )}
+
+      {pdfUrl && (
+        <PdfReadyModal
+          pdfUrl={pdfUrl}
+          documentType="contrato"
+          onClose={() => setPdfUrl(null)}
+        />
+      )}
 
       <RecentDocs
         type="CONTRACT"

@@ -82,6 +82,8 @@ model Artist {
   contratoLogoScale  Int @default(100)
   orcamentoTemplate  String @default("orc-001")
   contratoTemplate   String @default("ctr-001")
+  usarBasePdfOrcamento Boolean @default(true)
+  usarBasePdfContrato  Boolean @default(true)
 
   status ArtistStatus @default(ACTIVE)
 

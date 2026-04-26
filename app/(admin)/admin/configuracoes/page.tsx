@@ -98,6 +98,8 @@ interface ArtistConfig {
   baseContractPdfUrl: string | null;
   orcamentoTemplate: string | null;
   contratoTemplate: string | null;
+  usarBasePdfOrcamento: boolean;
+  usarBasePdfContrato: boolean;
 }
 
 interface TemplateInfo {
@@ -295,6 +297,8 @@ export default function ConfiguracoesPage() {
           ...artist,
           address: typeof artist.address === "string" ? JSON.parse(artist.address) : artist.address || { rua: "", numero: "", bairro: "", cidade: "", estado: "" },
           bankInfo: typeof artist.bankInfo === "string" ? JSON.parse(artist.bankInfo) : artist.bankInfo || { titular: "", pix: "", banco: "", conta: "", agencia: "" },
+          usarBasePdfOrcamento: artist.usarBasePdfOrcamento ?? true,
+          usarBasePdfContrato: artist.usarBasePdfContrato ?? true,
         });
         setLoading(false);
       })
@@ -622,6 +626,19 @@ export default function ConfiguracoesPage() {
               primaryColor={data.primaryColor || "#e6b800"}
               onSelect={(id) => handleChange("contratoTemplate", id)}
             />
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 }}>
+              <FToggleRow 
+                label="Usar PDF base no orçamento" 
+                checked={data.usarBasePdfOrcamento} 
+                onChange={(v) => setData({ ...data, usarBasePdfOrcamento: v })} 
+              />
+              <FToggleRow 
+                label="Usar PDF base no contrato" 
+                checked={data.usarBasePdfContrato} 
+                onChange={(v) => setData({ ...data, usarBasePdfContrato: v })} 
+              />
+            </div>
           </div>
         </FSection>
 
@@ -640,6 +657,34 @@ export default function ConfiguracoesPage() {
           {saving ? "Salvando..." : "Salvar Alterações"}
         </button>
       </form>
+    </div>
+  );
+}
+
+function FToggleRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div 
+      onClick={() => onChange(!checked)}
+      style={{ 
+        display: "flex", alignItems: "center", justifyContent: "space-between", 
+        padding: "12px 14px", background: "#1a1f2e", border: "1px solid #252d3d", 
+        borderRadius: 12, cursor: "pointer", transition: "border-color 0.15s"
+      }}
+    >
+      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 500, color: "#f1f5f9" }}>{label}</span>
+      <div 
+        style={{
+          width: 44, height: 24, borderRadius: 99, background: checked ? "#e6b800" : "#0e1118",
+          border: "1px solid", borderColor: checked ? "#e6b800" : "#252d3d",
+          position: "relative", transition: "all 0.2s"
+        }}
+      >
+        <div style={{
+          position: "absolute", top: 2, left: checked ? 22 : 2,
+          width: 18, height: 18, borderRadius: "50%", background: checked ? "#1a1200" : "#6b7280",
+          transition: "all 0.2s"
+        }} />
+      </div>
     </div>
   );
 }

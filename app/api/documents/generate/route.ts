@@ -66,6 +66,8 @@ export async function POST(req: NextRequest) {
       contratoLogoScale: true,
       orcamentoTemplate: true,
       contratoTemplate: true,
+      usarBasePdfOrcamento: true,
+      usarBasePdfContrato: true,
     },
   });
 
@@ -112,9 +114,11 @@ export async function POST(req: NextRequest) {
       paperHeight: effectivePaperHeight,
     });
 
-    // Mescla com PDF base se existir
+    // Mescla com PDF base se houver permissão e arquivo
     let pdfBuffer: Buffer;
-    if (basePdfResult) {
+    const usarBase = type === 'orcamento' ? artist.usarBasePdfOrcamento : artist.usarBasePdfContrato;
+
+    if (usarBase && basePdfResult) {
       const A4 = { width: 595.28, height: 841.89 };
       pdfBuffer = isContrato
         ? await mergePdfs([dynamicPdf, basePdfResult.buffer], A4)

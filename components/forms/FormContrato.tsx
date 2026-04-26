@@ -404,9 +404,7 @@ export default function FormContrato({
   }).length;
 
   return (
-    <>
-      {loading && <LoadingDocument documentType="contrato" />}
-      <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="pb-8">
       {/* ── Contratante ────────────────────────────────────────── */}
       <Section title="Contratante">
@@ -772,7 +770,6 @@ export default function FormContrato({
         </div>
       </div>
     </form>
-    </>
   );
 }
 

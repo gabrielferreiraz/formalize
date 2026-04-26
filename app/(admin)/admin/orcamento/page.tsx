@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import FormOrcamento from "@/components/forms/FormOrcamento";
 import { RecentDocs } from "@/components/ui/RecentDocs";
+import { PdfReadyModal } from "@/components/ui/PdfReadyModal";
+import { LoadingDocument } from "@/components/ui/LoadingDocument";
 import { gerarNumeroDoc, hoje } from "@/utils/form";
 import { useFormContext } from "@/context/FormContext";
 import { defaultContratoValues } from "@/components/forms/FormContrato";
@@ -20,6 +22,8 @@ export default function OrcamentoPage() {
   } = useFormContext();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!numeroOrc) setNumeroOrc(gerarNumeroDoc("ORC"));
@@ -28,10 +32,15 @@ export default function OrcamentoPage() {
   async function handleSubmit() {
     setLoading(true);
     setError("");
+    setPdfUrl(null);
+    
+    abortRef.current = new AbortController();
+
     try {
       const res = await fetch("/api/documents/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: abortRef.current.signal,
         body: JSON.stringify({ 
           type: "orcamento", 
           data: { 
@@ -44,12 +53,18 @@ export default function OrcamentoPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erro ao gerar PDF");
-      window.open(json.pdfUrl, "_blank");
+      setPdfUrl(json.pdfUrl);
     } catch (err) {
+      if ((err as Error).name === 'AbortError') return;
       setError(err instanceof Error ? err.message : "Erro ao gerar PDF");
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleCancel() {
+    abortRef.current?.abort();
+    setLoading(false);
   }
 
   function orcamentoToContrato(d: Record<string, unknown>) {
@@ -139,6 +154,21 @@ export default function OrcamentoPage() {
         artistName={artistDisplayName}
         loading={loading}
       />
+
+      {loading && (
+        <LoadingDocument 
+          documentType="orcamento" 
+          onCancel={handleCancel}
+        />
+      )}
+
+      {pdfUrl && (
+        <PdfReadyModal
+          pdfUrl={pdfUrl}
+          documentType="orcamento"
+          onClose={() => setPdfUrl(null)}
+        />
+      )}
 
       <RecentDocs
         type="BUDGET"

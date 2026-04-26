@@ -12,9 +12,10 @@ const MENSAGENS = [
 
 interface LoadingDocumentProps {
   documentType: 'orcamento' | 'contrato';
+  onCancel?: () => void;
 }
 
-export function LoadingDocument({ documentType }: LoadingDocumentProps) {
+export function LoadingDocument({ documentType, onCancel }: LoadingDocumentProps) {
   const [msgIndex, setMsgIndex] = useState(0);
 
   useEffect(() => {
@@ -27,8 +28,8 @@ export function LoadingDocument({ documentType }: LoadingDocumentProps) {
   const label = documentType === 'contrato' ? 'contrato' : 'orçamento';
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stage-950/80 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="w-full max-w-sm text-center px-4 py-12">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md overlay-fade-in">
+      <div className="w-full max-w-sm text-center px-4 py-12 modal-scale-in">
         {/* Animação */}
         <div className="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-8">
           <div className="absolute inset-0 rounded-full border-2 border-gold-500/20 animate-ping" />
@@ -58,7 +59,30 @@ export function LoadingDocument({ documentType }: LoadingDocumentProps) {
           />
         </div>
 
+        {onCancel && (
+          <button
+            onClick={onCancel}
+            className="mt-10 px-6 py-2.5 rounded-full border border-white/10 bg-white/5 text-white/60 text-sm font-medium hover:bg-white/10 hover:text-white transition-all"
+          >
+            Cancelar
+          </button>
+        )}
+
         <style jsx>{`
+          .overlay-fade-in {
+            animation: fadeIn 0.3s ease-out both;
+          }
+          .modal-scale-in {
+            animation: scaleIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+          }
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+          }
           @keyframes loading-bar {
             0% { transform: translateX(-200%); }
             100% { transform: translateX(450%); }
