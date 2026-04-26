@@ -19,6 +19,15 @@ export interface AutocompleteInputProps {
   enterKeyHint?: "enter" | "done" | "go" | "next" | "previous" | "search" | "send";
   autoComplete?: string;
   rodapeInfo?: string;
+  buscarOnline?: (query: string) => Promise<string[]>;
+}
+
+function normalizeText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -37,20 +46,25 @@ export default function AutocompleteInput({
   enterKeyHint,
   autoComplete,
   rodapeInfo,
+  buscarOnline,
 }: AutocompleteInputProps) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
+  const [onlineOptions, setOnlineOptions] = useState<string[]>([]);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const query = value.toLowerCase().trim();
-  const filteredFixas = opcoes.filter((o) => o.toLowerCase().includes(query));
-  const filteredExtras = opcoesExtras.filter((o) => o.toLowerCase().includes(query));
-  const allFiltered = [...filteredFixas, ...filteredExtras];
+  const query = normalizeText(value);
+  const filteredFixas = opcoes.filter((o) => normalizeText(o).includes(query));
+  const filteredExtras = opcoesExtras.filter((o) => normalizeText(o).includes(query));
+  const displayOnline = onlineOptions.filter(
+    (item) => !filteredFixas.includes(item) && !filteredExtras.includes(item)
+  );
+  const allFiltered = [...filteredFixas, ...filteredExtras, ...displayOnline];
 
   const valorExiste =
-    opcoes.some((o) => o.toLowerCase() === query) ||
-    opcoesExtras.some((o) => o.toLowerCase() === query);
+    opcoes.some((o) => normalizeText(o) === query) ||
+    opcoesExtras.some((o) => normalizeText(o) === query);
 
   const canSave = onSalvar && value.trim() && !valorExiste;
 
@@ -63,6 +77,27 @@ export default function AutocompleteInput({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  useEffect(() => {
+    if (!buscarOnline) return;
+
+    const q = value.trim();
+    if (q.length < 2) {
+      setOnlineOptions([]);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      try {
+        const items = await buscarOnline(q);
+        setOnlineOptions(Array.from(new Set(items)));
+      } catch {
+        setOnlineOptions([]);
+      }
+    }, 280);
+
+    return () => clearTimeout(timeout);
+  }, [value, buscarOnline]);
 
   function handleSelect(val: string) {
     onChange(val);
@@ -178,6 +213,25 @@ export default function AutocompleteInput({
               </div>
             );
           })}
+
+          {/* Opções online (Google Places) */}
+          {displayOnline.map((item, i) => {
+              const idx = filteredFixas.length + filteredExtras.length + i;
+              return (
+                <button
+                  key={`online-${item}`}
+                  type="button"
+                  onClick={() => handleSelect(item)}
+                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors border-t border-stage-700 ${
+                    highlighted === idx
+                      ? "bg-stage-700 text-gold-400"
+                      : "text-gray-300 hover:bg-stage-700/50"
+                  }`}
+                >
+                  {item}
+                </button>
+              );
+            })}
 
           {/* Botão Salvar */}
           {canSave && (

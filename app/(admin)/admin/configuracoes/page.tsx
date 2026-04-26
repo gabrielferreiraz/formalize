@@ -96,6 +96,18 @@ interface ArtistConfig {
   backgroundUrl: string | null;
   basePdfUrl: string | null;
   baseContractPdfUrl: string | null;
+  orcamentoTemplate: string | null;
+  contratoTemplate: string | null;
+}
+
+interface TemplateInfo {
+  id: string;
+  type: "orcamento" | "contrato";
+  name: string;
+  description: string;
+  style: "dark" | "light" | "colorful";
+  previewBg: string;
+  previewAccent: string;
 }
 
 const PDF_PRESETS = [
@@ -270,6 +282,10 @@ export default function ConfiguracoesPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [templates, setTemplates] = useState<{ orcamento: TemplateInfo[]; contrato: TemplateInfo[] }>({
+    orcamento: [],
+    contrato: [],
+  });
 
   useEffect(() => {
     fetch("/api/artist/me")
@@ -285,6 +301,20 @@ export default function ConfiguracoesPage() {
       .catch((err) => {
         console.error(err);
         setLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/templates")
+      .then((res) => res.json())
+      .then((payload) => {
+        setTemplates({
+          orcamento: payload?.orcamento || [],
+          contrato: payload?.contrato || [],
+        });
+      })
+      .catch(() => {
+        setTemplates({ orcamento: [], contrato: [] });
       });
   }, []);
 
@@ -576,6 +606,25 @@ export default function ConfiguracoesPage() {
           />
         </FSection>
 
+        <FSection title="Templates">
+          <div className="space-y-5">
+            <TemplatePicker
+              title="Orçamento"
+              items={templates.orcamento}
+              selectedId={data.orcamentoTemplate || "orc-001"}
+              primaryColor={data.primaryColor || "#e6b800"}
+              onSelect={(id) => handleChange("orcamentoTemplate", id)}
+            />
+            <TemplatePicker
+              title="Contrato"
+              items={templates.contrato}
+              selectedId={data.contratoTemplate || "ctr-001"}
+              primaryColor={data.primaryColor || "#e6b800"}
+              onSelect={(id) => handleChange("contratoTemplate", id)}
+            />
+          </div>
+        </FSection>
+
         {/* ── Salvar ── */}
         <button type="submit" disabled={saving} style={{
           display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
@@ -628,6 +677,86 @@ function FFormField({ label, children }: { label: string; children: React.ReactN
         {label}
       </div>
       {children}
+    </div>
+  );
+}
+
+function TemplatePicker({
+  title,
+  items,
+  selectedId,
+  primaryColor,
+  onSelect,
+}: {
+  title: string;
+  items: TemplateInfo[];
+  selectedId: string;
+  primaryColor: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div>
+      <div className="text-xs uppercase tracking-[0.14em] text-gray-400 font-semibold mb-3">{title}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {items.map((tpl) => {
+          const isActive = tpl.id === selectedId;
+          return (
+            <button
+              key={tpl.id}
+              type="button"
+              onClick={() => onSelect(tpl.id)}
+              className="text-left rounded-xl border p-3 transition-colors"
+              style={{
+                borderColor: isActive ? primaryColor : "#252d3d",
+                background: "#141824",
+                boxShadow: isActive ? `0 0 0 1px ${primaryColor}40` : "none",
+              }}
+            >
+              <div
+                style={{
+                  width: 120,
+                  height: 160,
+                  borderRadius: 10,
+                  background: tpl.previewBg,
+                  border: `1px solid ${tpl.previewAccent}33`,
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 20, background: tpl.previewAccent }} />
+                <div style={{ position: "absolute", top: 34, left: 12, right: 12, height: 6, background: `${tpl.previewAccent}66`, borderRadius: 999 }} />
+                <div style={{ position: "absolute", top: 48, left: 12, right: 22, height: 6, background: `${tpl.previewAccent}44`, borderRadius: 999 }} />
+                <div style={{ position: "absolute", bottom: 12, left: 12, right: 12, height: 8, background: `${tpl.previewAccent}66`, borderRadius: 999 }} />
+                {isActive && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      width: 18,
+                      height: 18,
+                      borderRadius: 999,
+                      background: primaryColor,
+                      color: "#111",
+                      fontWeight: 700,
+                      fontSize: 12,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    ✓
+                  </div>
+                )}
+              </div>
+              <div className="mt-3">
+                <div className="text-sm font-semibold text-gray-100">{tpl.name}</div>
+                <div className="text-xs text-gray-500 mt-1">{tpl.description}</div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

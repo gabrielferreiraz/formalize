@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendToGotenberg, mergePdfs } from "@/lib/gotenberg";
 import { uploadToR2, getPublicUrl } from "@/lib/r2";
-import { buildTemplate } from "@/lib/templates/buildTemplate";
+import { buildTemplate } from "@/lib/templates";
 import { fetchWithCache } from "@/lib/cache";
 
 export async function POST(req: NextRequest) {
@@ -64,6 +64,8 @@ export async function POST(req: NextRequest) {
       contratoFontScale: true,
       orcamentoLogoScale: true,
       contratoLogoScale: true,
+      orcamentoTemplate: true,
+      contratoTemplate: true,
     },
   });
 

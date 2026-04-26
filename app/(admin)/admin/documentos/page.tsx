@@ -531,7 +531,7 @@ export default function DocumentosPage() {
                     style={{ animationDelay: `${i * 40}ms` }}
                   >
                     {/* Date Block */}
-                    <div className="shrink-0 w-[52px] h-[60px] rounded-xl border border-stage-600 bg-stage-900/50 flex flex-col items-center justify-center shadow-inner">
+                    <div className="shrink-0 w-[52px] h-[80px] rounded-[18px] border border-stage-600 bg-stage-900/50 flex flex-col items-center justify-center shadow-inner font-['Segoe_UI_Emoji']">
                       <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{dateInfo.month}</span>
                       <span className="text-[18px] font-black text-white leading-tight">{dateInfo.day}</span>
                     </div>

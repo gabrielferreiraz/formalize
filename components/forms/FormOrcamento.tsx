@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { LoadingDocument } from "@/components/ui/LoadingDocument";
 import AutocompleteInput from "./AutocompleteInput";
 import { ClearButton } from "./icons";
@@ -265,6 +265,14 @@ export default function FormOrcamento({
     onChange({ ...values, ...update });
   }
 
+  const buscarLocaisMaps = useCallback(async (query: string) => {
+    const response = await fetch(`/api/maps/places-autocomplete?q=${encodeURIComponent(query)}`);
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    return Array.isArray(data?.predictions) ? data.predictions : [];
+  }, []);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -395,6 +403,7 @@ export default function FormOrcamento({
                 removerLocal(v);
                 setLocaisSalvos(carregarLocais());
               }}
+              buscarOnline={buscarLocaisMaps}
               rodapeInfo="Selecione um local fixo para preencher a cidade automaticamente"
             />
           </Field>

@@ -1,3 +1,5 @@
+import crypto from "crypto";
+
 /**
  * Converte um valor numérico para sua representação por extenso em Reais.
  * @param valor Valor numérico (ex: 3500.00 para R$ 3.500,00)
@@ -37,4 +39,31 @@ export function valorPorExtenso(valor: number): string {
   resultado += inteiro === 1 ? " real" : " reais";
   if (centavos > 0) resultado += " e " + centena(centavos) + (centavos === 1 ? " centavo" : " centavos");
   return resultado.charAt(0).toUpperCase() + resultado.slice(1);
+}
+
+export function formatData(iso: string): string {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+export function escapeHtml(str: string): string {
+  return (str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export function formatMoeda(centavos: string | number): string {
+  const n = typeof centavos === "string" ? parseInt(centavos, 10) : centavos;
+  if (isNaN(n) || n === 0) return "—";
+  return (n / 100).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+export function generateHash(input: string): string {
+  return crypto.createHash("sha256").update(input).digest("hex").slice(0, 10);
 }

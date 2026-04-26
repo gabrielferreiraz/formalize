@@ -52,7 +52,7 @@ export function RecentDocs({ type, onLoad, onToContrato }: Props) {
   return (
     <div className="space-y-3">
       <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{label}</p>
-      <div className="space-y-2">
+      <div className="!mt-5 space-y-2">
         {docs.map((doc, i) => (
           <div 
             key={doc.id} 

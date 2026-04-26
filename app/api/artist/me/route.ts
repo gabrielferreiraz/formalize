@@ -41,6 +41,8 @@ export async function GET() {
       contratoFontScale: true,
       orcamentoLogoScale: true,
       contratoLogoScale: true,
+      orcamentoTemplate: true,
+      contratoTemplate: true,
     },
   });
 
@@ -58,6 +60,7 @@ const ALLOWED_FIELDS = [
   "primaryColor", "secondaryColor",
   "orcamentoFontScale", "contratoFontScale",
   "orcamentoLogoScale", "contratoLogoScale",
+  "orcamentoTemplate", "contratoTemplate",
 ] as const;
 
 export async function PUT(req: NextRequest) {

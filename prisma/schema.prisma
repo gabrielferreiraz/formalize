@@ -80,6 +80,8 @@ model Artist {
   contratoFontScale  Int @default(100)
   orcamentoLogoScale Int @default(100)
   contratoLogoScale  Int @default(100)
+  orcamentoTemplate  String @default("orc-001")
+  contratoTemplate   String @default("ctr-001")
 
   status ArtistStatus @default(ACTIVE)
 

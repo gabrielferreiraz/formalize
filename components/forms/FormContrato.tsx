@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { LoadingDocument } from "@/components/ui/LoadingDocument";
 import AutocompleteInput from "./AutocompleteInput";
 import { ClearButton } from "./icons";
+import { Check, ChevronRight } from "lucide-react";
 import {
   formatarMoeda,
   formatarTelefone,
@@ -350,6 +351,14 @@ export default function FormContrato({
     onChange({ ...values, ...update });
   }
 
+  const buscarLocaisMaps = useCallback(async (query: string) => {
+    const response = await fetch(`/api/maps/places-autocomplete?q=${encodeURIComponent(query)}`);
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    return Array.isArray(data?.predictions) ? data.predictions : [];
+  }, []);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const required: (keyof ContratoValues)[] = [
@@ -379,11 +388,26 @@ export default function FormContrato({
   const cacheAtivo = (centavos: string) => values.cache === centavos;
 
   const ehCnpj = isCNPJ(values.contratanteCpfCnpj);
+  const filledCount = [
+    values.contratanteNome,
+    values.contratanteCpfCnpj,
+    values.evento,
+    values.local,
+    values.cidadeEvento,
+    values.data,
+    values.cache,
+    values.formaPagamento,
+  ].filter((f) => {
+    if (typeof f === "string") return f.trim() !== "";
+    if (typeof f === "number") return f > 0;
+    return !!f;
+  }).length;
 
   return (
     <>
       {loading && <LoadingDocument documentType="contrato" />}
       <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="pb-8">
       {/* ── Contratante ────────────────────────────────────────── */}
       <Section title="Contratante">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -514,6 +538,7 @@ export default function FormContrato({
               opcoes={LOCAIS_FIXOS} opcoesExtras={locaisSalvos}
               onSalvar={(v) => { salvarLocal(v); setLocaisSalvos(carregarLocais()); }}
               onDeletar={(v) => { removerLocal(v); setLocaisSalvos(carregarLocais()); }}
+              buscarOnline={buscarLocaisMaps}
             />
           </Field>
 
@@ -729,11 +754,23 @@ export default function FormContrato({
           )}
         </div>
       </Section>
+      </div>
 
-      {/* ── Ações ──────────────────────────────────────────────── */}
-      <button type="submit" className="btn-primary" disabled={loading}>
-        {loading ? "Gerando PDF..." : "Gerar Contrato"}
-      </button>
+      {/* ── Bottom Sticky Bar ──────────────────────────────────────────────── */}
+      <div className="bottom-sticky-bar sticky bottom-[92px] md:bottom-0 left-0 right-0 z-50 pt-8 pb-4 -mx-4 px-4 pointer-events-none transition-transform duration-300 ease-in-out" style={{ background: "linear-gradient(180deg, transparent, rgba(14,17,24,0.95) 30%, #0e1118 100%)" }}>
+        <div className="pointer-events-auto">
+          <div className="flex justify-between items-center mb-2 px-1">
+            <div className="text-[11px] text-gray-500">
+              <span className="text-gold-400 font-bold">{filledCount}</span> de <span className="text-gold-400 font-bold">8</span> campos preenchidos
+            </div>
+            <div className="text-[11px] text-gray-400 flex items-center gap-1 font-medium"><Check size={12} /> Salvo</div>
+          </div>
+          <button type="submit" disabled={loading} className="w-full h-[54px] rounded-2xl flex items-center justify-center gap-2 transition-transform active:scale-[0.98]" style={{ background: "linear-gradient(180deg, #f5c842, #e6b800)", color: "#1a1200", boxShadow: "0 6px 20px rgba(230,184,0,0.3), 0 2px 4px rgba(0,0,0,0.2)" }}>
+            <span className="text-[15px] font-bold">{loading ? "Gerando..." : "Revisar e gerar PDF"}</span>
+            {!loading && <ChevronRight size={18} strokeWidth={3} />}
+          </button>
+        </div>
+      </div>
     </form>
     </>
   );
