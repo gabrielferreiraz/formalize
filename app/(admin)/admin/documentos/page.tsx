@@ -587,8 +587,8 @@ export default function DocumentosPage() {
       {/* Modal de detalhe */}
       {selectedDoc && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
-          style={{ height: '100dvh', top: 0, left: 0 }}
+          className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100dvh' }}
           onClick={() => setSelectedDoc(null)}
         >
           <div
@@ -669,8 +669,8 @@ export default function DocumentosPage() {
       {/* Modal dia inteiro */}
       {dayModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
-          style={{ height: '100dvh', top: 0, left: 0 }}
+          className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100dvh' }}
           onClick={() => setDayModal(null)}
         >
           <div
@@ -753,8 +753,8 @@ export default function DocumentosPage() {
       {/* Modal de confirmação de exclusão */}
       {pendingDelete && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
-          style={{ height: '100dvh', top: 0, left: 0 }}
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100dvh' }}
           onClick={() => setPendingDelete(null)}
         >
           <div

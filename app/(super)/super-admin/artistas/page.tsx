@@ -50,7 +50,7 @@ function NewArtistModal({ onClose, onCreated }: { onClose: () => void; onCreated
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4" style={{ height: '100dvh' }}>
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 px-4" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100dvh' }}>
       <div className="bg-stage-800 border border-stage-600 rounded-2xl p-6 w-full max-w-md space-y-4 animate-scale-in">
         <h2 className="text-base font-bold text-gray-100">Novo Artista</h2>
         <form onSubmit={handleSubmit} className="space-y-3">

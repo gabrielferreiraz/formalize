@@ -84,7 +84,7 @@ export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalPr
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overlay-fade-in" style={{ overscrollBehavior: 'contain', height: '100dvh' }}>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overlay-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100dvh', overscrollBehavior: 'contain' }}>
       <div className="relative w-full max-w-md bg-stage-900 border border-stage-700 rounded-3xl overflow-hidden shadow-2xl modal-scale-in">
         
         {/* Botão Fechar */}

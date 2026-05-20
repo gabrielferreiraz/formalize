@@ -36,7 +36,7 @@ export function LoadingDocument({ documentType, onCancel }: LoadingDocumentProps
   const label = documentType === 'contrato' ? 'contrato' : 'orçamento';
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md overlay-fade-in" style={{ overscrollBehavior: 'contain', height: '100dvh' }}>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/85 backdrop-blur-md overlay-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100dvh', overscrollBehavior: 'contain' }}>
       <div className="w-full max-w-sm text-center px-4 py-12 modal-scale-in">
         {/* Animação */}
         <div className="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-8">
