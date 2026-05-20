@@ -53,6 +53,13 @@ function parseDataName(doc: Doc): string {
   return (fromData || doc.title || "Sem contratante").trim();
 }
 
+function parseEventName(doc: Doc): string {
+  const d = doc.data ?? {};
+  const evento = (d.evento as string)?.trim();
+  const contratante = ((d.contratanteNome as string) || (d.contratante as string))?.trim();
+  return evento || contratante || doc.title || "—";
+}
+
 function parseEventLocal(doc: Doc): string {
   const d = doc.data ?? {};
   return String((d.local as string) || (d.cidade as string) || "Local não informado").trim();
@@ -425,7 +432,7 @@ export default function DocumentosPage() {
           
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => setMonthCursor(prev => {
                   const d = new Date(prev);
                   d.setMonth(d.getMonth() - 1);
@@ -435,10 +442,17 @@ export default function DocumentosPage() {
               >
                 ←
               </button>
-              <h2 className="text-sm font-bold text-gray-200 min-w-[120px] text-center">
-                {monthLabel}
-              </h2>
-              <button 
+              <div className="flex flex-col items-center min-w-[120px]">
+                <h2 className="text-sm font-bold text-gray-200 text-center leading-tight">
+                  {monthLabel}
+                </h2>
+                {latestCalendarDocs.length > 0 && (
+                  <span className="mt-0.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gold-500/15 border border-gold-500/30 text-gold-400 text-[10px] font-bold">
+                    {latestCalendarDocs.length} {latestCalendarDocs.length === 1 ? "evento" : "eventos"}
+                  </span>
+                )}
+              </div>
+              <button
                 onClick={() => setMonthCursor(prev => {
                   const d = new Date(prev);
                   d.setMonth(d.getMonth() + 1);
@@ -473,41 +487,51 @@ export default function DocumentosPage() {
               const isToday = key === dayKey(new Date());
               const isCurrentMonth = date.getMonth() === monthCursor.getMonth();
               const dayDocs = docsByDay.get(key) || [];
-              
+              const firstDoc = dayDocs[0];
+              const hasBudget = dayDocs.some(d => d.type === "BUDGET");
+              const hasContract = dayDocs.some(d => d.type === "CONTRACT");
+
               return (
-                <div 
-                  key={idx} 
-                  className={`min-h-[70px] sm:min-h-[100px] rounded-xl border p-1.5 flex flex-col transition-all ${isCurrentMonth ? 'bg-stage-800/40 border-stage-700/50' : 'bg-transparent border-transparent opacity-20'}`}
+                <div
+                  key={idx}
+                  onClick={() => isCurrentMonth && setDayModal({ day: key, docs: dayDocs })}
+                  className={[
+                    "min-h-[80px] sm:min-h-[96px] rounded-xl border flex flex-col overflow-hidden transition-all select-none",
+                    isCurrentMonth
+                      ? "cursor-pointer active:scale-[0.96] " + (dayDocs.length > 0 ? "bg-stage-800/60 border-stage-600/60 hover:border-stage-500" : "bg-stage-800/30 border-stage-700/40 hover:border-stage-600")
+                      : "bg-transparent border-transparent opacity-10 pointer-events-none",
+                  ].join(" ")}
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className={`text-[11px] font-bold ${isToday ? 'bg-gold-500 text-stage-900 w-5 h-5 rounded-full flex items-center justify-center' : 'text-gray-500'}`}>
-                      {date.getDate()}
-                    </span>
-                    <button 
-                      onClick={() => setDayModal({ day: key, docs: dayDocs })}
-                      className="p-1 rounded-md hover:bg-stage-700 text-gray-600 hover:text-gold-400 transition-colors"
-                    >
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    </button>
-                  </div>
-                  
-                  <div className="flex-1 space-y-1 overflow-hidden">
-                    {dayDocs.slice(0, 3).map(doc => (
-                      <button
-                        key={doc.id}
-                        onClick={() => setSelectedDoc(doc)}
-                        className={`w-full text-[8px] sm:text-[9px] font-bold py-1 px-1.5 rounded-lg border truncate text-left transition-transform active:scale-95 ${CALENDAR_CARD[doc.type] || 'border-stage-600 bg-stage-700 text-gray-300'}`}
+                  {/* Accent bar — shows event type */}
+                  {isCurrentMonth && dayDocs.length > 0 && (
+                    <div className={[
+                      "h-[3px] w-full flex-shrink-0",
+                      hasBudget && hasContract ? "bg-gradient-to-r from-orange-400 to-blue-400" :
+                      hasBudget ? "bg-orange-400/80" : "bg-blue-400/80",
+                    ].join(" ")} />
+                  )}
+
+                  <div className="flex flex-col flex-1 p-1.5 gap-1">
+                    {/* Day number + count */}
+                    <div className="flex items-center justify-between">
+                      <span className={`text-[12px] font-bold leading-none ${isToday ? "bg-gold-500 text-stage-900 w-[22px] h-[22px] rounded-full flex items-center justify-center" : "text-gray-400"}`}>
+                        {date.getDate()}
+                      </span>
+                      {dayDocs.length > 1 && (
+                        <span className="text-[9px] font-bold text-gray-500 bg-stage-700/80 rounded px-1 leading-[16px]">
+                          {dayDocs.length}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* First event name — readable, respects min 11px */}
+                    {firstDoc && (
+                      <span
+                        className={`text-[11px] font-semibold leading-tight ${firstDoc.type === "BUDGET" ? "text-orange-200/90" : "text-blue-200/90"}`}
+                        style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
                       >
-                        {parseDataName(doc)}
-                      </button>
-                    ))}
-                    {dayDocs.length > 3 && (
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setDayModal({ day: key, docs: dayDocs }); }}
-                        className="text-[8px] sm:text-[10px] font-semibold text-gray-500 hover:text-gold-400 w-full text-center mt-auto pt-0.5"
-                      >
-                        +{dayDocs.length - 3}
-                      </button>
+                        {parseEventName(firstDoc)}
+                      </span>
                     )}
                   </div>
                 </div>

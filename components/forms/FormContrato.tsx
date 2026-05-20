@@ -407,7 +407,7 @@ export default function FormContrato({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="pb-4">
+      <div className="space-y-4 pb-4">
       {/* ── Contratante ────────────────────────────────────────── */}
       <Section title="Contratante">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
