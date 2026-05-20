@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { IconCheck, IconWhatsApp, IconShare, IconX, IconDoc } from "./icons";
 
 interface PdfReadyModalProps {
@@ -11,6 +11,15 @@ interface PdfReadyModalProps {
 
 export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalProps) {
   const label = documentType === 'contrato' ? 'Contrato' : 'Orçamento';
+  
+  useEffect(() => {
+    // Bloquear scroll do body
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []);
 
   const handleShare = async () => {
     try {
@@ -75,7 +84,7 @@ export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalPr
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overlay-fade-in">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overlay-fade-in" style={{ overscrollBehavior: 'contain', height: '100dvh' }}>
       <div className="relative w-full max-w-md bg-stage-900 border border-stage-700 rounded-3xl overflow-hidden shadow-2xl modal-scale-in">
         
         {/* Botão Fechar */}

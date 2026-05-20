@@ -20,9 +20,11 @@ export default withAuth(
     // ── /admin → apenas ARTIST_ADMIN com artistId válido ─────────────────────
     if (url.pathname.startsWith("/admin")) {
       if (!token) {
-        return NextResponse.redirect(new URL("/login", req.url));
+        const loginUrl = new URL("/login", req.url);
+        loginUrl.searchParams.set("callbackUrl", url.pathname);
+        return NextResponse.redirect(loginUrl);
       }
-      if (token.role !== "ARTIST_ADMIN" || !token.artistId) {
+      if (token.role !== "ARTIST_ADMIN" || !token.artistId || token.artistId === "") {
         return NextResponse.redirect(new URL("/login", req.url));
       }
 
@@ -40,9 +42,10 @@ export default withAuth(
       // Deixa a função acima tratar a autorização completa
       authorized: () => true,
     },
+    secret: process.env.NEXTAUTH_SECRET,
   }
 );
 
 export const config = {
-  matcher: ["/admin/:path*", "/super-admin/:path*"],
+  matcher: ["/admin", "/admin/:path*", "/super-admin", "/super-admin/:path*"],
 };

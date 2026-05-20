@@ -19,16 +19,24 @@ export function LoadingDocument({ documentType, onCancel }: LoadingDocumentProps
   const [msgIndex, setMsgIndex] = useState(0);
 
   useEffect(() => {
+    // Bloquear scroll do body
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = 'hidden';
+    
     const interval = setInterval(() => {
       setMsgIndex((i) => (i + 1) % MENSAGENS.length);
     }, 2200);
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+      document.body.style.overflow = originalStyle;
+    };
   }, []);
 
   const label = documentType === 'contrato' ? 'contrato' : 'orçamento';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md overlay-fade-in">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md overlay-fade-in" style={{ overscrollBehavior: 'contain', height: '100dvh' }}>
       <div className="w-full max-w-sm text-center px-4 py-12 modal-scale-in">
         {/* Animação */}
         <div className="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-8">

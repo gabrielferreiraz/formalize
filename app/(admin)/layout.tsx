@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { AdminHeader } from "./admin/components/AdminHeader";
 import { FormProvider } from "@/context/FormContext";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({
   children,
 }: {
@@ -16,20 +18,25 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  const artist = session.user.artistId
-    ? await prisma.artist.findUnique({
-        where: { id: session.user.artistId },
-        select: {
-          name: true,
-          logoUrl: true,
-          primaryColor: true,
-          orcamentoFontScale: true,
-          contratoFontScale: true,
-          orcamentoLogoScale: true,
-          contratoLogoScale: true,
-        },
-      })
-    : null;
+  let artist = null;
+  try {
+    artist = session.user.artistId
+      ? await prisma.artist.findUnique({
+          where: { id: session.user.artistId },
+          select: {
+            name: true,
+            logoUrl: true,
+            primaryColor: true,
+            orcamentoFontScale: true,
+            contratoFontScale: true,
+            orcamentoLogoScale: true,
+            contratoLogoScale: true,
+          },
+        })
+      : null;
+  } catch (err) {
+    console.error("Erro ao buscar artista no layout:", err);
+  }
 
   const initialArtist = artist
     ? {

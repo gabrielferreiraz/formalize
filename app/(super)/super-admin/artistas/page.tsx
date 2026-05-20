@@ -50,7 +50,7 @@ function NewArtistModal({ onClose, onCreated }: { onClose: () => void; onCreated
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4" style={{ height: '100dvh' }}>
       <div className="bg-stage-800 border border-stage-600 rounded-2xl p-6 w-full max-w-md space-y-4 animate-scale-in">
         <h2 className="text-base font-bold text-gray-100">Novo Artista</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -102,6 +102,17 @@ export default function ArtistasPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
+
+  useEffect(() => {
+    if (showNew) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showNew]);
 
   function load() {
     setLoading(true);

@@ -21,15 +21,17 @@ export async function GET(req: NextRequest) {
   const month = searchParams.get("month"); // YYYY-MM
   const type = searchParams.get("type");
 
-  const baseDate = month ? new Date(`${month}-01T00:00:00.000Z`) : new Date();
-  const from = startOfMonth(baseDate);
-  const to = endOfMonth(baseDate);
-
-  const where = {
+  let where: any = {
     artistId: session.user.artistId,
-    createdAt: { gte: from, lte: to },
     ...(type && type !== "all" ? { type: type as "BUDGET" | "CONTRACT" } : {}),
   };
+
+  if (month) {
+    const baseDate = new Date(`${month}-01T00:00:00.000Z`);
+    const from = startOfMonth(baseDate);
+    const to = endOfMonth(baseDate);
+    where.createdAt = { gte: from, lte: to };
+  }
 
   const docs = await prisma.document.findMany({
     where,
@@ -43,7 +45,7 @@ export async function GET(req: NextRequest) {
   const signRate = totalContracts > 0 ? Math.round((totalSigned / totalContracts) * 10000) / 100 : 0;
 
   return NextResponse.json({
-    month: from.toISOString().slice(0, 7),
+    month: month || null,
     totalGenerated,
     totalBudgets,
     totalContracts,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useMemo } from "react";
+import { useCallback, useState, useMemo, useEffect } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
 
@@ -132,6 +132,19 @@ export default function DocumentosPage() {
   const [regenerating, setRegenerating] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Bloquear scroll quando houver modal aberto
+  useEffect(() => {
+    const hasModal = !!selectedDoc || !!dayModal || !!pendingDelete;
+    if (hasModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [selectedDoc, dayModal, pendingDelete]);
+
   // reset page when filter changes
   useMemo(() => {
     setPage(1);
@@ -140,6 +153,9 @@ export default function DocumentosPage() {
   const currentMonthTarget = view === "calendar" ? monthCursor : new Date();
   const metricsUrl = `/api/documents/metrics?month=${currentMonthTarget.toISOString().slice(0, 7)}&type=${filter}`;
   const { data: metricsCache, mutate: mutateMetrics } = useSWR(metricsUrl, fetcher);
+
+  const globalMetricsUrl = `/api/documents/metrics?type=${filter}`;
+  const { data: globalMetrics } = useSWR(globalMetricsUrl, fetcher);
 
   const docsUrl = useMemo(() => {
     if (view === "list") {
@@ -295,19 +311,19 @@ export default function DocumentosPage() {
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="card p-3 rounded-2xl flex flex-col justify-between border border-stage-700/50 bg-stage-800/40">
           <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">TOTAL</span>
-          <div className="text-2xl font-bold text-white mt-1">{metricsCache?.totalGenerated || 0}</div>
-          <div className="text-[10px] text-gray-500 mt-0.5">neste mês</div>
+          <div className="text-2xl font-bold text-white mt-1">{globalMetrics?.totalGenerated || 0}</div>
+          <div className="text-[10px] text-gray-500 mt-0.5">acumulado</div>
         </div>
         <div className="card p-3 rounded-2xl flex flex-col justify-between border border-stage-700/50 bg-stage-800/40">
           <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">ORÇAMENTOS</span>
-          <div className="text-2xl font-bold text-gold-400 mt-1">{metricsCache?.totalBudgets || 0}</div>
-          <div className="text-[10px] text-gray-500 mt-0.5">neste mês</div>
+          <div className="text-2xl font-bold text-gold-400 mt-1">{globalMetrics?.totalBudgets || 0}</div>
+          <div className="text-[10px] text-gray-500 mt-0.5">acumulado</div>
         </div>
         <div className="card p-3 rounded-2xl flex flex-col justify-between border border-stage-700/50 bg-stage-800/40">
           <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">CONTRATOS</span>
-          <div className="text-2xl font-bold text-blue-400 mt-1">{metricsCache?.totalContracts || 0}</div>
+          <div className="text-2xl font-bold text-blue-400 mt-1">{globalMetrics?.totalContracts || 0}</div>
           <div className="text-[10px] text-gray-500 mt-0.5">
-            {metricsCache?.totalSigned || 0} assinados
+            {globalMetrics?.totalSigned || 0} assinados
           </div>
         </div>
       </div>
@@ -342,9 +358,9 @@ export default function DocumentosPage() {
         {(["all", "BUDGET", "CONTRACT"] as const).map(t => {
           const on = filter === t;
           let count = 0;
-          if (t === "all") count = metricsCache?.totalGenerated || 0;
-          else if (t === "BUDGET") count = metricsCache?.totalBudgets || 0;
-          else if (t === "CONTRACT") count = metricsCache?.totalContracts || 0;
+          if (t === "all") count = globalMetrics?.totalGenerated || 0;
+          else if (t === "BUDGET") count = globalMetrics?.totalBudgets || 0;
+          else if (t === "CONTRACT") count = globalMetrics?.totalContracts || 0;
           
           return (
             <button key={t} onClick={() => setFilter(t)} style={{
@@ -384,35 +400,11 @@ export default function DocumentosPage() {
         </button>
       </div>
 
-      {view === "calendar" && (
-        <div style={{ marginBottom: 16 }}>
-          <div className="card p-3 flex items-center justify-between rounded-2xl bg-stage-800 border-stage-700">
-            <button
-              onClick={() => setMonthCursor((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
-              className="px-3 py-1.5 text-xs rounded-xl border border-stage-600 text-gray-300 hover:border-gold-600 hover:text-gold-400 transition-colors"
-            >
-              ← Anterior
-            </button>
-            <div className="text-sm font-semibold text-gray-100 capitalize">{monthLabel}</div>
-            <button
-              onClick={() => setMonthCursor((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
-              className="px-3 py-1.5 text-xs rounded-xl border border-stage-600 text-gray-300 hover:border-gold-600 hover:text-gold-400 transition-colors"
-            >
-              Próximo →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="card h-32 animate-pulse bg-stage-800/50 border-stage-700/50 rounded-2xl" />
-          ))}
-        </div>
-      ) : docs.length === 0 ? (
-        <div className="card text-center py-16 text-gray-500 text-sm border-dashed border-stage-600 rounded-2xl">
-          Nenhum documento encontrado.
+      {/* ── Content ── */}
+      {loading && docs.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div className="w-8 h-8 border-2 border-gold-500/20 border-t-gold-500 rounded-full animate-spin" />
+          <p className="text-sm text-gray-500 font-medium">Carregando documentos...</p>
         </div>
       ) : view === "calendar" ? (
         <div className={isFullscreen ? "fixed inset-0 z-[100] bg-stage-900 p-4 pb-6 flex flex-col animate-scale-in overflow-y-auto h-[100dvh]" : "w-full"}>
@@ -422,78 +414,95 @@ export default function DocumentosPage() {
               
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setMonthCursor((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
-                  className="px-3 py-1.5 text-xs rounded-xl border border-stage-600 text-gray-300 hover:border-gold-600 hover:text-gold-400 transition-colors bg-stage-800"
+                  onClick={() => setIsFullscreen(false)}
+                  className="p-2 rounded-xl bg-stage-800 border border-stage-700 text-gray-400"
                 >
-                  ← Anterior
-                </button>
-                <div className="text-sm font-semibold text-gray-100 capitalize hidden sm:block">{monthLabel}</div>
-                <button
-                  onClick={() => setMonthCursor((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
-                  className="px-3 py-1.5 text-xs rounded-xl border border-stage-600 text-gray-300 hover:border-gold-600 hover:text-gold-400 transition-colors bg-stage-800"
-                >
-                  Próximo →
+                  ✕
                 </button>
               </div>
+            </div>
+          )}
+          
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setMonthCursor(prev => {
+                  const d = new Date(prev);
+                  d.setMonth(d.getMonth() - 1);
+                  return d;
+                })}
+                className="p-2 rounded-xl bg-stage-800 border border-stage-700 text-gray-400 hover:text-white transition-colors"
+              >
+                ←
+              </button>
+              <h2 className="text-sm font-bold text-gray-200 min-w-[120px] text-center">
+                {monthLabel}
+              </h2>
+              <button 
+                onClick={() => setMonthCursor(prev => {
+                  const d = new Date(prev);
+                  d.setMonth(d.getMonth() + 1);
+                  return d;
+                })}
+                className="p-2 rounded-xl bg-stage-800 border border-stage-700 text-gray-400 hover:text-white transition-colors"
+              >
+                →
+              </button>
+            </div>
 
-              <button onClick={() => setIsFullscreen(false)} className="p-2 bg-stage-800 rounded-full text-gray-400 hover:text-white border border-stage-700">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path></svg>
+            {!isFullscreen && (
+              <button
+                onClick={() => setIsFullscreen(true)}
+                className="p-2 rounded-xl bg-stage-800 border border-stage-700 text-gray-400 hover:text-white transition-colors"
+                title="Tela cheia"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
               </button>
-            </div>
-          )}
-          {!isFullscreen && (
-            <div className="flex justify-end mb-3">
-              <button onClick={() => setIsFullscreen(true)} className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-xl border border-stage-600 bg-stage-800 text-gray-300 hover:border-gold-600 hover:text-gold-400 transition-colors">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
-                Expandir
-              </button>
-            </div>
-          )}
-          <div className="grid grid-cols-7 gap-1 sm:gap-3 flex-1">
-            {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((w) => (
-              <div key={w} className="text-[9px] sm:text-xs text-gray-500 font-semibold uppercase text-center sm:text-left tracking-wider">
-                {w}
+            )}
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-4">
+            {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map(d => (
+              <div key={d} className="text-center text-[10px] font-bold text-gray-500 uppercase tracking-widest py-2">
+                {d}
               </div>
             ))}
-
-            {gridDays.map((day) => {
-              const key = dayKey(day);
-              const dayDocs = docsByDay.get(key) ?? [];
-              const inMonth = day.getMonth() === monthCursor.getMonth();
+            {gridDays.map((date, idx) => {
+              const key = dayKey(date);
+              const isToday = key === dayKey(new Date());
+              const isCurrentMonth = date.getMonth() === monthCursor.getMonth();
+              const dayDocs = docsByDay.get(key) || [];
+              
               return (
-                <div
-                  key={key}
-                  className={`rounded-lg sm:rounded-2xl border p-0.5 sm:p-2 shadow-sm transition-all duration-300 hover:border-stage-500 hover:-translate-y-0.5 animate-fade-in flex flex-col ${isFullscreen ? "min-h-[100px] sm:min-h-[140px]" : "min-h-[70px] sm:min-h-[120px]"} ${inMonth ? "border-stage-700 bg-stage-800" : "border-stage-800 bg-stage-900/50 opacity-60"}`}
-                  style={{ animationDelay: `${(day.getDate() % 7) * 30}ms` }}
-                  onClick={() => {
-                    if (dayDocs.length === 0) setDayModal({ day: key, docs: [] });
-                    else if (dayDocs.length === 1) setSelectedDoc(dayDocs[0]);
-                    else setDayModal({ day: key, docs: dayDocs });
-                  }}
+                <div 
+                  key={idx} 
+                  className={`min-h-[70px] sm:min-h-[100px] rounded-xl border p-1.5 flex flex-col transition-all ${isCurrentMonth ? 'bg-stage-800/40 border-stage-700/50' : 'bg-transparent border-transparent opacity-20'}`}
                 >
-                  <div className="w-full mb-0.5">
-                    <div className={`text-[9px] sm:text-[11px] font-bold text-center sm:text-right ${dayDocs.length > 0 ? "text-gold-400" : "text-gray-500"}`}>
-                      {day.getDate()}
-                    </div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-[11px] font-bold ${isToday ? 'bg-gold-500 text-stage-900 w-5 h-5 rounded-full flex items-center justify-center' : 'text-gray-500'}`}>
+                      {date.getDate()}
+                    </span>
+                    <button 
+                      onClick={() => setDayModal({ day: key, docs: dayDocs })}
+                      className="p-1 rounded-md hover:bg-stage-700 text-gray-600 hover:text-gold-400 transition-colors"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </button>
                   </div>
-
-                  <div className="flex flex-col gap-0.5 sm:gap-1 flex-1 overflow-hidden">
-                    {dayDocs.slice(0, 3).map((doc) => (
+                  
+                  <div className="flex-1 space-y-1 overflow-hidden">
+                    {dayDocs.slice(0, 3).map(doc => (
                       <button
-                        key={`${doc.id}-${key}`}
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setSelectedDoc(doc); }}
-                        className={`block w-full text-left rounded-[4px] sm:rounded-md border px-0.5 py-0.5 sm:px-1 sm:py-1 hover:opacity-80 transition-opacity ${
-                          doc.type === "BUDGET" ? "border-gold-500/20 bg-gold-500/10 text-gold-200" : "border-blue-500/20 bg-blue-500/10 text-blue-200"
-                        }`}
+                        key={doc.id}
+                        onClick={() => setSelectedDoc(doc)}
+                        className={`w-full text-[8px] sm:text-[9px] font-bold py-1 px-1.5 rounded-lg border truncate text-left transition-transform active:scale-95 ${CALENDAR_CARD[doc.type] || 'border-stage-600 bg-stage-700 text-gray-300'}`}
                       >
-                        <div className="font-semibold truncate text-[7.5px] sm:text-[10px] leading-[1.1]">{parseDataName(doc)}</div>
-                        <div className="truncate opacity-80 hidden sm:block text-[10px]">{parseEventLocal(doc)}</div>
+                        {parseDataName(doc)}
                       </button>
                     ))}
                     {dayDocs.length > 3 && (
-                      <button
-                        type="button"
+                      <button 
                         onClick={(e) => { e.stopPropagation(); setDayModal({ day: key, docs: dayDocs }); }}
                         className="text-[8px] sm:text-[10px] font-semibold text-gray-500 hover:text-gold-400 w-full text-center mt-auto pt-0.5"
                       >
@@ -505,6 +514,10 @@ export default function DocumentosPage() {
               );
             })}
           </div>
+        </div>
+      ) : docs.length === 0 ? (
+        <div className="card text-center py-16 text-gray-500 text-sm border-dashed border-stage-600 rounded-2xl">
+          Nenhum documento encontrado.
         </div>
       ) : (
         <div className="space-y-8">
@@ -575,6 +588,7 @@ export default function DocumentosPage() {
       {selectedDoc && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
+          style={{ height: '100dvh', top: 0, left: 0 }}
           onClick={() => setSelectedDoc(null)}
         >
           <div
@@ -656,6 +670,7 @@ export default function DocumentosPage() {
       {dayModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
+          style={{ height: '100dvh', top: 0, left: 0 }}
           onClick={() => setDayModal(null)}
         >
           <div
@@ -739,6 +754,7 @@ export default function DocumentosPage() {
       {pendingDelete && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
+          style={{ height: '100dvh', top: 0, left: 0 }}
           onClick={() => setPendingDelete(null)}
         >
           <div

@@ -46,7 +46,7 @@ function LoginForm() {
       }
 
       const session = await getSession();
-      router.replace(session?.user.role === "SUPER_ADMIN" ? "/super-admin" : "/admin");
+      router.replace(session?.user.role === "SUPER_ADMIN" ? "/super-admin" : "/admin/orcamento");
     } catch {
       setError("Erro inesperado. Tente novamente.");
     } finally {
