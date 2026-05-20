@@ -68,6 +68,7 @@ export interface FormContratoProps {
   onFontScaleChange?: (scale: number) => void;
   logoScale?: number;
   onLogoScaleChange?: (scale: number) => void;
+  recentDocs?: React.ReactNode;
 }
 
 // ── Constantes ───────────────────────────────────────────────────────────────
@@ -218,7 +219,7 @@ function Section({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <section className="card space-y-4">
+    <section className="card space-y-3">
       <div
         role={collapsible ? "button" : undefined}
         tabIndex={collapsible ? 0 : undefined}
@@ -253,6 +254,7 @@ export default function FormContrato({
   onFontScaleChange,
   logoScale,
   onLogoScaleChange,
+  recentDocs,
 }: FormContratoProps) {
   const [locaisSalvos, setLocaisSalvos] = useState<string[]>([]);
   const [eventosSalvos, setEventosSalvos] = useState<string[]>([]);
@@ -404,8 +406,8 @@ export default function FormContrato({
   }).length;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="pb-8">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="pb-4">
       {/* ── Contratante ────────────────────────────────────────── */}
       <Section title="Contratante">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -752,10 +754,12 @@ export default function FormContrato({
           )}
         </div>
       </Section>
+
+      {recentDocs}
       </div>
 
       {/* ── Bottom Sticky Bar ──────────────────────────────────────────────── */}
-      <div className="bottom-sticky-bar sticky bottom-[92px] md:bottom-0 left-0 right-0 z-50 pt-12 pb-4 -mx-4 px-4 pointer-events-none transition-transform duration-300 ease-in-out" style={{ background: "linear-gradient(180deg, transparent, rgba(14,17,24,0.95) 40%, #0e1118 100%)" }}>
+      <div className="bottom-sticky-bar sticky bottom-[92px] md:bottom-0 left-0 right-0 z-50 pt-2 pb-4 -mx-4 px-4 pointer-events-none transition-transform duration-300 ease-in-out">
         <div className="pointer-events-auto">
           <div className="flex justify-between items-center mb-2 px-1">
             <div className="text-[11px] text-gray-500">

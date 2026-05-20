@@ -57,6 +57,7 @@ export interface FormOrcamentoProps {
   onFontScaleChange?: (scale: number) => void;
   logoScale?: number;
   onLogoScaleChange?: (scale: number) => void;
+  recentDocs?: React.ReactNode;
 }
 
 // ── Constantes ───────────────────────────────────────────────────────────────
@@ -234,6 +235,7 @@ export default function FormOrcamento({
   onFontScaleChange,
   logoScale,
   onLogoScaleChange,
+  recentDocs,
 }: FormOrcamentoProps) {
   const [locaisSalvos, setLocaisSalvos] = useState<string[]>([]);
   const [eventosSalvos, setEventosSalvos] = useState<string[]>([]);
@@ -345,9 +347,9 @@ export default function FormOrcamento({
   }).length;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
       {/* ── Dados do evento ─────────────────────────────────────── */}
-      <section className="card space-y-4">
+      <section className="card space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Dados do evento</h2>
         </div>
@@ -469,7 +471,7 @@ export default function FormOrcamento({
       </section>
 
       {/* ── Cachê ──────────────────────────────────────────────── */}
-      <section className="card space-y-4">
+      <section className="card space-y-3">
         <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Cachê</h2>
 
         <Field label="Valor" error={errors.cache}>
@@ -551,9 +553,9 @@ export default function FormOrcamento({
         </div>
       </div>
 
-      <div className="pb-8">
+      <div className="pb-4">
         {/* ── Opcionais ──────────────────────────────────────────── */}
-        <section className="space-y-4 mb-8">
+        <section className="space-y-4 mb-4">
           <div>
             <h2 className="text-[20px] font-semibold text-gray-100">O que mais precisa pro show?</h2>
             <p className="text-[13px] text-gray-400 mt-1">Escolha se cada item já está no cachê ou se vai cobrar à parte.</p>
@@ -642,10 +644,12 @@ export default function FormOrcamento({
             </div>
           )}
         </section>
+
+        {recentDocs}
       </div>
 
       {/* ── Bottom Sticky Bar ──────────────────────────────────────────────── */}
-      <div className="bottom-sticky-bar sticky bottom-[72px] md:bottom-0 left-0 right-0 z-50 pt-12 pb-4 -mx-4 px-4 pointer-events-none transition-transform duration-300 ease-in-out" style={{ background: "linear-gradient(180deg, transparent, rgba(14,17,24,0.95) 40%, #0e1118 100%)" }}>
+      <div className="bottom-sticky-bar sticky bottom-[72px] md:bottom-0 left-0 right-0 z-50 pt-2 pb-4 -mx-4 px-4 pointer-events-none transition-transform duration-300 ease-in-out">
         <div className="pointer-events-auto">
            <div className="flex justify-between items-center mb-2 px-1">
              <div className="text-[11px] text-gray-500">

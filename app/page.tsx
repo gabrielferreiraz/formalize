@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { IconDoc, IconPen, IconFolder, IconCog } from "@/components/ui/icons";
+import { IconDoc, IconPen, IconFolder } from "@/components/ui/icons";
+import { RequestForm } from "@/components/RequestForm";
 
 export default function Home() {
   return (
@@ -50,16 +51,16 @@ export default function Home() {
             Enviar preço no WhatsApp não converte. <strong className="text-white font-semibold">Formalize</strong> é o seu escritório musical: gere orçamentos em PDF impecáveis, feche contratos com segurança e organize sua agenda.
           </p>
 
-          <Link 
-            href="/login" 
+          <a
+            href="#solicitar"
             className="group relative flex justify-center items-center gap-3 w-full sm:w-auto py-5 px-12 bg-gradient-to-r from-gold-500 to-yellow-600 hover:from-gold-400 hover:to-yellow-500 text-black font-extrabold text-lg rounded-full shadow-[0_0_40px_-10px_rgba(230,184,0,0.4)] hover:shadow-[0_0_60px_-15px_rgba(230,184,0,0.6)] transition-all duration-300 hover:-translate-y-1"
           >
-            Começar a Usar Agora
+            Quero meu acesso
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform">
               <path d="M5 12h14" />
               <path d="m12 5 7 7-7 7" />
             </svg>
-          </Link>
+          </a>
           
           <p className="mt-6 text-sm text-gray-500">
             Aumente o valor percebido do seu trabalho imediatamente.
@@ -165,6 +166,26 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Formulário de solicitação ── */}
+      <section id="solicitar" className="py-24 px-6 relative border-t border-white/5">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs font-bold uppercase tracking-wider mb-6">
+              🎯 Acesso exclusivo
+            </div>
+            <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
+              Quero usar o Formalize
+            </h2>
+            <p className="text-gray-400 text-lg">
+              Preencha seus dados e entraremos em contato para configurar seu perfil.
+            </p>
+          </div>
+          <div className="bg-white/5 rounded-3xl border border-white/10 p-8 backdrop-blur-xl">
+            <RequestForm />
+          </div>
+        </div>
+      </section>
+
       {/* ── Final CTA ── */}
       <section className="py-24 px-6 relative overflow-hidden bg-gradient-to-b from-[#07090e] to-stage-900">
         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay" />
@@ -173,12 +194,12 @@ export default function Home() {
           <p className="text-xl text-gray-300 mb-10 max-w-2xl mx-auto">
             Junte-se a músicos profissionais que já abandonaram a desorganização e estão focando no que realmente importa: <span className="text-gold-400 font-bold">A Música</span>.
           </p>
-          <Link 
-            href="/login" 
+          <a
+            href="#solicitar"
             className="inline-flex items-center gap-3 py-5 px-12 bg-white text-black font-extrabold text-lg rounded-full hover:bg-gray-200 transition-all hover:scale-105 shadow-xl"
           >
-            Acessar a Plataforma
-          </Link>
+            Quero meu acesso
+          </a>
         </div>
       </section>
 

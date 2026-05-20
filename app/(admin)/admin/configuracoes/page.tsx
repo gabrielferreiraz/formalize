@@ -488,6 +488,11 @@ export default function ConfiguracoesPage() {
           accept="application/pdf"
           onChange={(e) => handleUpload("base-pdf", e)}
         />
+        <FToggleRow
+          label="Usar este PDF no orçamento"
+          checked={data.usarBasePdfOrcamento}
+          onChange={(v) => setData({ ...data, usarBasePdfOrcamento: v })}
+        />
         <FileUploadRow
           label="PDF Base — Contrato"
           pdfName={data.baseContractPdfUrl ? "contrato-base.pdf" : undefined}
@@ -495,6 +500,11 @@ export default function ConfiguracoesPage() {
           uploading={uploading["base-contrato-pdf"]}
           accept="application/pdf"
           onChange={(e) => handleUpload("base-contrato-pdf", e)}
+        />
+        <FToggleRow
+          label="Usar este PDF no contrato"
+          checked={data.usarBasePdfContrato}
+          onChange={(v) => setData({ ...data, usarBasePdfContrato: v })}
         />
       </section>
 
@@ -627,18 +637,6 @@ export default function ConfiguracoesPage() {
               onSelect={(id) => handleChange("contratoTemplate", id)}
             />
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 }}>
-              <FToggleRow 
-                label="Usar PDF base no orçamento" 
-                checked={data.usarBasePdfOrcamento} 
-                onChange={(v) => setData({ ...data, usarBasePdfOrcamento: v })} 
-              />
-              <FToggleRow 
-                label="Usar PDF base no contrato" 
-                checked={data.usarBasePdfContrato} 
-                onChange={(v) => setData({ ...data, usarBasePdfContrato: v })} 
-              />
-            </div>
           </div>
         </FSection>
 

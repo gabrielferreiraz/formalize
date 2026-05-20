@@ -72,7 +72,7 @@ export default function ContratoPage() {
         justifyContent: "space-between",
         flexWrap: "wrap",
         gap: 8,
-        padding: "22px 0 18px",
+        padding: "12px 0 8px",
       }}>
         <div style={{ minWidth: 0 }}>
           <h1 style={{
@@ -127,6 +127,12 @@ export default function ContratoPage() {
         onSubmit={handleSubmit}
         artistName={artistDisplayName}
         loading={loading}
+        recentDocs={
+          <RecentDocs
+            type="CONTRACT"
+            onLoad={(d) => setContrato((prev) => ({ ...prev, ...d }))}
+          />
+        }
       />
 
       {loading && (
@@ -143,12 +149,6 @@ export default function ContratoPage() {
           onClose={() => setPdfUrl(null)}
         />
       )}
-
-      <RecentDocs
-        type="CONTRACT"
-        onLoad={(d) => setContrato((prev) => ({ ...prev, ...d }))}
-      />
-      <div className="h-40" />
     </div>
   );
 }

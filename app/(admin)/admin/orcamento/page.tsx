@@ -97,7 +97,7 @@ export default function OrcamentoPage() {
         justifyContent: "space-between",
         flexWrap: "wrap",
         gap: 8,
-        padding: "22px 0 18px",
+        padding: "12px 0 8px",
       }}>
         <div style={{ minWidth: 0 }}>
           <h1 style={{
@@ -153,6 +153,13 @@ export default function OrcamentoPage() {
         onFazerContrato={handleFazerContrato}
         artistName={artistDisplayName}
         loading={loading}
+        recentDocs={
+          <RecentDocs
+            type="BUDGET"
+            onLoad={(d) => setOrcamento({ ...orcamento, ...(d as Partial<typeof orcamento>) })}
+            onToContrato={orcamentoToContrato}
+          />
+        }
       />
 
       {loading && (
@@ -169,13 +176,6 @@ export default function OrcamentoPage() {
           onClose={() => setPdfUrl(null)}
         />
       )}
-
-      <RecentDocs
-        type="BUDGET"
-        onLoad={(d) => setOrcamento({ ...orcamento, ...(d as Partial<typeof orcamento>) })}
-        onToContrato={orcamentoToContrato}
-      />
-      <div className="h-40" />
     </div>
   );
 }

@@ -28,8 +28,16 @@ export function AdminHeader({ artistName, logoUrl }: Props) {
 
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
       
-      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+      // Se chegou no final da página (com margem de 50px)
+      const isAtBottom = currentScrollY + windowHeight >= documentHeight - 50;
+
+      if (isAtBottom) {
+        setShowNav(true);
+        document.body.classList.remove("nav-hidden");
+      } else if (currentScrollY > lastScrollY && currentScrollY > 50) {
         // Scrolling down
         setShowNav(false);
         document.body.classList.add("nav-hidden");
