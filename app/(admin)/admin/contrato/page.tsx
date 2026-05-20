@@ -148,6 +148,7 @@ export default function ContratoPage() {
         type="CONTRACT"
         onLoad={(d) => setContrato((prev) => ({ ...prev, ...d }))}
       />
+      <div className="h-40" />
     </div>
   );
 }

@@ -175,6 +175,7 @@ export default function OrcamentoPage() {
         onLoad={(d) => setOrcamento({ ...orcamento, ...(d as Partial<typeof orcamento>) })}
         onToContrato={orcamentoToContrato}
       />
+      <div className="h-40" />
     </div>
   );
 }
