@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { IconCheck, IconWhatsApp, IconShare, IconX, IconDoc } from "./icons";
 
 interface PdfReadyModalProps {
@@ -83,8 +84,8 @@ export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalPr
     window.open(pdfUrl, '_blank');
   };
 
-  return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overlay-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100dvh', overscrollBehavior: 'contain' }}>
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overlay-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100dvh', overscrollBehavior: 'contain' }}>
       <div className="relative w-full max-w-md bg-stage-900 border border-stage-700 rounded-3xl overflow-hidden shadow-2xl modal-scale-in">
         
         {/* Botão Fechar */}
@@ -171,6 +172,7 @@ export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalPr
           to { opacity: 1; transform: scale(1); }
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   );
 }

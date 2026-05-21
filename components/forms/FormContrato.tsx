@@ -297,6 +297,7 @@ export default function FormContrato({
     setBuscandoCep(true);
     try {
       const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      if (!res.ok) return;
       const data = await res.json();
       if (!data.erro) {
         const v = valuesRef.current;
@@ -309,7 +310,9 @@ export default function FormContrato({
           uf: data.uf || v.uf,
         });
       }
-    } catch { /* silently fail */ } finally {
+    } catch (err) {
+      console.error("[buscarCep] falha ao buscar CEP:", err);
+    } finally {
       setBuscandoCep(false);
     }
   }, [onChange]);
@@ -320,6 +323,7 @@ export default function FormContrato({
     setBuscandoCnpj(true);
     try {
       const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
+      if (!res.ok) return;
       const data = await res.json();
       if (data.razao_social) {
         const v = valuesRef.current;
@@ -338,7 +342,9 @@ export default function FormContrato({
           uf: data.uf || v.uf,
         });
       }
-    } catch { /* silently fail */ } finally {
+    } catch (err) {
+      console.error("[buscarCnpj] falha ao buscar CNPJ:", err);
+    } finally {
       setBuscandoCnpj(false);
     }
   }, [onChange]);

@@ -1,11 +1,16 @@
 {
+  "id": "/",
   "name": "Formalize",
   "short_name": "Formalize",
   "description": "Plataforma premium de gestão para músicos",
-  "start_url": "/admin/documentos",
+  "lang": "pt-BR",
+  "start_url": "/admin/orcamento",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
   "background_color": "#0e1118",
-  "theme_color": "#e6b800",
+  "theme_color": "#0e1118",
   "icons": [
     {
       "src": "/icon.svg",

@@ -1,0 +1,1019 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
+
+const TOTAL_STEPS = 4;
+
+// Curated artist palettes — named, intentional
+const PALETTES = [
+  { label: "Dourado Palco",  color: "#e6b800" },
+  { label: "Azul Profundo",  color: "#3b82f6" },
+  { label: "Esmeralda",      color: "#059669" },
+  { label: "Carmim",         color: "#e11d48" },
+  { label: "Violeta",        color: "#7c3aed" },
+  { label: "Prata",          color: "#cbd5e1" },
+];
+
+interface OnboardingData {
+  name: string;
+  primaryColor: string;
+  legalName: string;
+  cnpj: string;
+  whatsapp: string;
+  pixKey: string;
+}
+
+function hexToRgb(hex: string) {
+  const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return r
+    ? `${parseInt(r[1], 16)},${parseInt(r[2], 16)},${parseInt(r[3], 16)}`
+    : "245,200,66";
+}
+
+// ── Underline input — premium form pattern ──────────────────────
+function UInput({
+  label,
+  note,
+  suffix,
+  style,
+  onFocus,
+  onBlur,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+  label?: string;
+  note?: string;
+  suffix?: React.ReactNode;
+}) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <div>
+      {label && (
+        <div className={`ob-label${focused ? " ob-label--focus" : ""}`}>
+          {label}
+        </div>
+      )}
+      <div style={{ position: "relative" }}>
+        <input
+          {...props}
+          className={`ob-input${focused ? " ob-input--focus" : ""}`}
+          style={{ paddingRight: suffix ? 32 : 0, ...style }}
+          onFocus={(e) => { setFocused(true); onFocus?.(e); }}
+          onBlur={(e) => { setFocused(false); onBlur?.(e); }}
+        />
+        {suffix && (
+          <div style={{
+            position: "absolute", right: 0, top: "50%",
+            transform: "translateY(-50%)", pointerEvents: "none",
+          }}>
+            {suffix}
+          </div>
+        )}
+      </div>
+      {note && <div className="ob-note">{note}</div>}
+    </div>
+  );
+}
+
+function Field({ delay = 0, children }: { delay?: number; children: React.ReactNode }) {
+  return (
+    <div style={{ animation: `fieldIn 0.3s ease ${delay}ms both` }}>
+      {children}
+    </div>
+  );
+}
+
+// ── Step 1 — Identidade ─────────────────────────────────────────
+function Step1({
+  data,
+  onChange,
+}: {
+  data: OnboardingData;
+  onChange: (d: OnboardingData) => void;
+}) {
+  const isPalette = PALETTES.some(
+    (p) => p.color.toLowerCase() === data.primaryColor.toLowerCase()
+  );
+  const [showCustom, setShowCustom] = useState(!isPalette);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
+      <Field>
+        <div className="ob-step-n">01</div>
+        <h1 className="ob-headline">Seu nome<br />no palco</h1>
+        <p className="ob-sub">Aparece em todos os documentos enviados.</p>
+      </Field>
+
+      <Field delay={60}>
+        <UInput
+          label="Nome artístico"
+          value={data.name}
+          onChange={(e) => onChange({ ...data, name: e.target.value })}
+          placeholder="Ex: Banda Fulana"
+          autoFocus
+        />
+        {data.name ? (
+          <div
+            style={{
+              marginTop: 14,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              animation: "fadeIn 0.2s ease both",
+            }}
+          >
+            <div
+              style={{
+                width: 3,
+                height: 20,
+                borderRadius: 2,
+                background: "var(--accent)",
+                flexShrink: 0,
+                transition: "background 0.4s",
+              }}
+            />
+            <span
+              style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: "#dde4f0",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {data.name}
+            </span>
+          </div>
+        ) : null}
+      </Field>
+
+      <Field delay={110}>
+        <div className="ob-label" style={{ marginBottom: 16 }}>
+          Tom visual
+        </div>
+
+        {/* Named palettes — vertical radio list */}
+        <div>
+          {PALETTES.map((p) => {
+            const active =
+              data.primaryColor.toLowerCase() === p.color.toLowerCase();
+            return (
+              <button
+                key={p.color}
+                className="ob-palette-row"
+                onClick={() => {
+                  onChange({ ...data, primaryColor: p.color });
+                  setShowCustom(false);
+                }}
+              >
+                <span
+                  className="ob-palette-dot"
+                  style={{
+                    background: p.color,
+                    boxShadow: active
+                      ? `0 0 0 2px #07090e, 0 0 0 3.5px ${p.color}`
+                      : "none",
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: 14,
+                    fontWeight: active ? 600 : 400,
+                    color: active ? "#dde4f0" : "#3d5068",
+                    flex: 1,
+                    textAlign: "left",
+                    transition: "color 0.15s, font-weight 0.15s",
+                  }}
+                >
+                  {p.label}
+                </span>
+                {active && (
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#dde4f0"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Custom color row */}
+          <button
+            className="ob-palette-row"
+            style={{ borderBottom: "none" }}
+            onClick={() => setShowCustom((v) => !v)}
+          >
+            <span
+              className="ob-palette-dot"
+              style={{
+                background: isPalette ? "transparent" : data.primaryColor,
+                border: isPalette ? "1.5px dashed #253040" : "none",
+                boxShadow:
+                  !isPalette
+                    ? `0 0 0 2px #07090e, 0 0 0 3.5px ${data.primaryColor}`
+                    : "none",
+              }}
+            />
+            <span
+              style={{
+                fontSize: 14,
+                fontWeight: !isPalette ? 600 : 400,
+                color: !isPalette ? "#dde4f0" : "#3d5068",
+                flex: 1,
+                textAlign: "left",
+              }}
+            >
+              Cor personalizada
+            </span>
+            {!isPalette && (
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#dde4f0"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            )}
+          </button>
+
+          {showCustom && (
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                paddingTop: 14,
+                animation: "fieldIn 0.2s ease both",
+              }}
+            >
+              <label style={{ flexShrink: 0, cursor: "pointer", position: "relative" }}>
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    background: data.primaryColor,
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    transition: "background 0.2s",
+                  }}
+                />
+                <input
+                  type="color"
+                  value={data.primaryColor}
+                  onChange={(e) =>
+                    onChange({ ...data, primaryColor: e.target.value })
+                  }
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    opacity: 0,
+                    cursor: "pointer",
+                    width: "100%",
+                    height: "100%",
+                  }}
+                />
+              </label>
+              <UInput
+                value={data.primaryColor}
+                onChange={(e) =>
+                  onChange({ ...data, primaryColor: e.target.value })
+                }
+                placeholder="#e6b800"
+                style={{ flex: 1 }}
+              />
+            </div>
+          )}
+        </div>
+      </Field>
+    </div>
+  );
+}
+
+// ── Step 2 — Jurídico ───────────────────────────────────────────
+function Step2({
+  data,
+  onChange,
+  onCnpj,
+  cnpjLoading,
+}: {
+  data: OnboardingData;
+  onChange: (d: OnboardingData) => void;
+  onCnpj: (raw: string) => void;
+  cnpjLoading: boolean;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
+      <Field>
+        <div className="ob-step-n">02</div>
+        <h1 className="ob-headline">Dados<br />jurídicos</h1>
+        <p className="ob-sub">Para assinar contratos com validade legal.</p>
+      </Field>
+
+      <Field delay={60}>
+        <UInput
+          label="CNPJ"
+          value={data.cnpj}
+          onChange={(e) => onCnpj(e.target.value)}
+          placeholder="00.000.000/0000-00"
+          maxLength={18}
+          note="Preenchemos a razão social automaticamente"
+          suffix={
+            cnpjLoading ? (
+              <div
+                style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: "50%",
+                  border: "1.5px solid rgba(255,255,255,0.08)",
+                  borderTopColor: "var(--accent)",
+                  animation: "spin 0.8s linear infinite",
+                }}
+              />
+            ) : null
+          }
+        />
+      </Field>
+
+      <Field delay={110}>
+        <UInput
+          label="Razão social"
+          value={data.legalName}
+          onChange={(e) => onChange({ ...data, legalName: e.target.value })}
+          placeholder="Nome jurídico da empresa ou artista"
+          style={cnpjLoading ? { opacity: 0.45 } : undefined}
+        />
+      </Field>
+    </div>
+  );
+}
+
+// ── Step 3 — Contato ────────────────────────────────────────────
+function Step3({
+  data,
+  onChange,
+}: {
+  data: OnboardingData;
+  onChange: (d: OnboardingData) => void;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
+      <Field>
+        <div className="ob-step-n">03</div>
+        <h1 className="ob-headline">Como<br />te encontram</h1>
+        <p className="ob-sub">Aparece nos documentos enviados aos contratantes.</p>
+      </Field>
+
+      <Field delay={60}>
+        <UInput
+          label="WhatsApp"
+          value={data.whatsapp}
+          onChange={(e) => onChange({ ...data, whatsapp: e.target.value })}
+          placeholder="(67) 99999-9999"
+          type="tel"
+        />
+      </Field>
+
+      <Field delay={110}>
+        <UInput
+          label="PIX"
+          value={data.pixKey}
+          onChange={(e) => onChange({ ...data, pixKey: e.target.value })}
+          placeholder="CPF, CNPJ, e-mail ou telefone"
+        />
+      </Field>
+    </div>
+  );
+}
+
+// ── Step 4 — Logo ───────────────────────────────────────────────
+function Step4({
+  data,
+  logoUrl,
+  uploading,
+  onUpload,
+}: {
+  data: OnboardingData;
+  logoUrl: string | null;
+  uploading: boolean;
+  onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
+      <Field>
+        <div className="ob-step-n">04</div>
+        <h1 className="ob-headline">Sua marca<br />visual</h1>
+        <p className="ob-sub">Opcional. Um logo transforma o documento.</p>
+      </Field>
+
+      <Field delay={60}>
+        {logoUrl ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div
+              style={{
+                width: "100%",
+                height: 112,
+                border: "1px solid #0d1422",
+                borderRadius: 12,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+              }}
+            >
+              <img
+                src={logoUrl}
+                alt="Logo"
+                style={{
+                  maxWidth: "60%",
+                  maxHeight: "70%",
+                  objectFit: "contain",
+                }}
+              />
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#4ade80"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span style={{ fontSize: 13, color: "#4ade80", fontWeight: 500 }}>
+                Logo enviada
+              </span>
+              <label
+                style={{
+                  marginLeft: "auto",
+                  fontSize: 13,
+                  color: "#253040",
+                  cursor: "pointer",
+                  fontWeight: 500,
+                }}
+              >
+                Trocar
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={onUpload}
+                  style={{ display: "none" }}
+                />
+              </label>
+            </div>
+          </div>
+        ) : (
+          <label
+            className="ob-upload"
+            style={{ cursor: uploading ? "not-allowed" : "pointer" }}
+          >
+            {uploading ? (
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: "50%",
+                  border: "1.5px solid rgba(255,255,255,0.06)",
+                  borderTopColor: data.primaryColor || "var(--accent)",
+                  animation: "spin 0.8s linear infinite",
+                }}
+              />
+            ) : (
+              <>
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#253040"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                <span style={{ fontSize: 14, color: "#3d5068", fontWeight: 500 }}>
+                  Enviar logo
+                </span>
+                <span style={{ fontSize: 11, color: "#1a2535" }}>
+                  PNG, JPG ou SVG
+                </span>
+              </>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={onUpload}
+              disabled={uploading}
+              style={{ display: "none" }}
+            />
+          </label>
+        )}
+      </Field>
+    </div>
+  );
+}
+
+// ── Main ────────────────────────────────────────────────────────
+export default function OnboardingPage() {
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState<"forward" | "backward">("forward");
+  const [animKey, setAnimKey] = useState(0);
+  const [mounted, setMounted] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [cnpjLoading, setCnpjLoading] = useState(false);
+
+  const [data, setData] = useState<OnboardingData>({
+    name: "",
+    primaryColor: "#e6b800",
+    legalName: "",
+    cnpj: "",
+    whatsapp: "",
+    pixKey: "",
+  });
+
+  useEffect(() => {
+    setMounted(true);
+    fetch("/api/artist/me")
+      .then((r) => r.json())
+      .then((artist) => {
+        setData((prev) => ({
+          name: artist.name || prev.name,
+          primaryColor: artist.primaryColor || prev.primaryColor,
+          legalName: artist.legalName || prev.legalName,
+          cnpj: artist.cnpj || prev.cnpj,
+          whatsapp: artist.whatsapp || prev.whatsapp,
+          pixKey: artist.pixKey || prev.pixKey,
+        }));
+        if (artist.logoUrl) setLogoUrl(artist.logoUrl);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function patch(fields: Record<string, unknown>) {
+    setSaving(true);
+    try {
+      await fetch("/api/artist/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fields),
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function finish() {
+    await patch({ onboardingDone: true });
+    router.replace("/admin/orcamento");
+  }
+
+  async function handleContinue() {
+    if (step === 1) await patch({ name: data.name, primaryColor: data.primaryColor });
+    else if (step === 2) await patch({ legalName: data.legalName, cnpj: data.cnpj });
+    else if (step === 3) await patch({ whatsapp: data.whatsapp, pixKey: data.pixKey });
+    if (step < TOTAL_STEPS) {
+      setDirection("forward");
+      setAnimKey((k) => k + 1);
+      setStep((s) => s + 1);
+    } else {
+      await finish();
+    }
+  }
+
+  function goBack() {
+    if (step > 1) {
+      setDirection("backward");
+      setAnimKey((k) => k + 1);
+      setStep((s) => s - 1);
+    }
+  }
+
+  async function skipStep() {
+    if (step < TOTAL_STEPS) {
+      setDirection("forward");
+      setAnimKey((k) => k + 1);
+      setStep((s) => s + 1);
+    } else {
+      await finish();
+    }
+  }
+
+  async function skipAll() {
+    await patch({ onboardingDone: true });
+    router.replace("/admin/orcamento");
+  }
+
+  async function handleCnpj(raw: string) {
+    const digits = raw.replace(/\D/g, "").slice(0, 14);
+    let fmt = digits;
+    if (digits.length > 2)  fmt = digits.slice(0, 2) + "." + digits.slice(2);
+    if (digits.length > 5)  fmt = digits.slice(0, 2) + "." + digits.slice(2, 5) + "." + digits.slice(5);
+    if (digits.length > 8)  fmt = digits.slice(0, 2) + "." + digits.slice(2, 5) + "." + digits.slice(5, 8) + "/" + digits.slice(8);
+    if (digits.length > 12) fmt = digits.slice(0, 2) + "." + digits.slice(2, 5) + "." + digits.slice(5, 8) + "/" + digits.slice(8, 12) + "-" + digits.slice(12);
+    setData((prev) => ({ ...prev, cnpj: fmt }));
+    if (digits.length === 14) {
+      setCnpjLoading(true);
+      try {
+        const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
+        if (res.ok) {
+          const d = await res.json();
+          if (d.razao_social)
+            setData((prev) => ({ ...prev, legalName: d.razao_social }));
+        }
+      } catch {
+        // silent
+      } finally {
+        setCnpjLoading(false);
+      }
+    }
+  }
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", "logo");
+    setLogoUploading(true);
+    try {
+      const res = await fetch("/api/artist/upload", { method: "POST", body: formData });
+      if (res.ok) {
+        const { url } = await res.json();
+        setLogoUrl(url);
+        await patch({ logoUrl: url });
+      }
+    } finally {
+      setLogoUploading(false);
+      if (e.target) e.target.value = "";
+    }
+  }
+
+  if (!mounted) return null;
+
+  const colorRgb = hexToRgb(data.primaryColor);
+  const ctaLabel = step === TOTAL_STEPS ? "Concluir" : "Continuar";
+
+  return createPortal(
+    <div
+      style={
+        {
+          "--accent": data.primaryColor,
+          "--accent-rgb": colorRgb,
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: "100%",
+          height: "100dvh",
+          zIndex: 9999,
+          background: "#07090e",
+          fontFamily: "'Inter', system-ui, sans-serif",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        } as React.CSSProperties
+      }
+    >
+      {/* Single ambient glow — reacts to brand color, no orbs */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "45%",
+          background: `radial-gradient(ellipse 80% 100% at 50% 0%, rgba(${colorRgb},0.045) 0%, transparent 100%)`,
+          pointerEvents: "none",
+          transition: "background 1.2s ease",
+        }}
+      />
+
+      {/* Progress line — top of screen */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 2,
+          background: "#0d1422",
+          zIndex: 10,
+        }}
+      >
+        <div className="ob-progress" style={{ width: `${(step / TOTAL_STEPS) * 100}%` }} />
+      </div>
+
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          padding: "calc(14px + env(safe-area-inset-top, 0px)) 24px 10px",
+          flexShrink: 0,
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        <button className="ob-skip-btn" onClick={skipAll} disabled={saving}>
+          Pular configuração
+        </button>
+      </div>
+
+      {/* Step content */}
+      <div
+        key={animKey}
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          padding: "16px 28px 8px",
+          position: "relative",
+          zIndex: 1,
+          animation: `${direction === "forward" ? "stepIn" : "stepInBack"} 0.28s ease both`,
+        }}
+      >
+        {step === 1 && <Step1 data={data} onChange={setData} />}
+        {step === 2 && (
+          <Step2
+            data={data}
+            onChange={setData}
+            onCnpj={handleCnpj}
+            cnpjLoading={cnpjLoading}
+          />
+        )}
+        {step === 3 && <Step3 data={data} onChange={setData} />}
+        {step === 4 && (
+          <Step4
+            data={data}
+            logoUrl={logoUrl}
+            uploading={logoUploading}
+            onUpload={handleLogoUpload}
+          />
+        )}
+      </div>
+
+      {/* Footer */}
+      <div
+        style={{
+          padding:
+            "12px 24px calc(max(18px, env(safe-area-inset-bottom, 0px)) + 8px)",
+          display: "flex",
+          gap: 10,
+          flexShrink: 0,
+          background:
+            "linear-gradient(to top, rgba(7,9,14,1) 55%, transparent)",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        <button
+          className="ob-back-btn"
+          onClick={step > 1 ? goBack : skipStep}
+          disabled={saving}
+        >
+          {step > 1 ? "Voltar" : "Pular"}
+        </button>
+        <button
+          className="ob-cta-btn"
+          onClick={handleContinue}
+          disabled={saving || logoUploading}
+          style={
+            saving || logoUploading
+              ? { opacity: 0.35, cursor: "not-allowed", boxShadow: "none" }
+              : {}
+          }
+        >
+          {saving ? (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span
+                style={{
+                  display: "inline-block",
+                  width: 13,
+                  height: 13,
+                  borderRadius: "50%",
+                  border: "1.5px solid rgba(0,0,0,0.15)",
+                  borderTopColor: "rgba(0,0,0,0.5)",
+                  animation: "spin 0.8s linear infinite",
+                }}
+              />
+              Salvando...
+            </span>
+          ) : (
+            ctaLabel
+          )}
+        </button>
+      </div>
+
+      <style>{`
+        /* ── Design tokens via CSS vars ── */
+        .ob-progress {
+          height: 100%;
+          background: var(--accent);
+          transition: width 0.45s cubic-bezier(0.4,0,0.2,1), background 0.8s ease;
+        }
+        .ob-step-n {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--accent);
+          letter-spacing: 0.1em;
+          margin-bottom: 12px;
+          opacity: 0.9;
+          transition: color 0.6s ease;
+        }
+        .ob-headline {
+          font-size: 34px;
+          font-weight: 800;
+          color: #e8edf5;
+          letter-spacing: -0.04em;
+          line-height: 1.08;
+          margin: 0 0 10px;
+        }
+        .ob-sub {
+          font-size: 13px;
+          color: #2d4056;
+          line-height: 1.5;
+          margin: 0;
+          font-weight: 400;
+        }
+
+        /* ── Underline inputs ── */
+        .ob-input {
+          display: block;
+          width: 100%;
+          height: 48px;
+          background: transparent;
+          border: none;
+          border-bottom: 1.5px solid #111a28;
+          border-radius: 0;
+          padding: 0;
+          font-size: 17px;
+          font-weight: 400;
+          color: #dde4f0;
+          font-family: inherit;
+          outline: none;
+          box-sizing: border-box;
+          transition: border-color 0.15s;
+          -webkit-appearance: none;
+        }
+        .ob-input--focus {
+          border-bottom-color: var(--accent);
+        }
+        .ob-input::placeholder { color: #1e2d3e; }
+        .ob-label {
+          font-size: 10px;
+          font-weight: 700;
+          color: #1a2a3a;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          margin-bottom: 6px;
+          transition: color 0.15s;
+        }
+        .ob-label--focus { color: var(--accent); }
+        .ob-note {
+          font-size: 11px;
+          color: #19273a;
+          margin-top: 7px;
+        }
+
+        /* ── Color palette list ── */
+        .ob-palette-row {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          padding: 12px 0;
+          border: none;
+          border-bottom: 1px solid #0c1320;
+          background: transparent;
+          cursor: pointer;
+          font-family: inherit;
+          text-align: left;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .ob-palette-row:active { opacity: 0.65; }
+        .ob-palette-dot {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          display: block;
+          transition: box-shadow 0.2s;
+        }
+
+        /* ── Upload area ── */
+        .ob-upload {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          width: 100%;
+          min-height: 148px;
+          border: 1.5px solid #0d1422;
+          border-radius: 14px;
+          background: transparent;
+          transition: border-color 0.2s, background 0.2s;
+        }
+        .ob-upload:hover {
+          border-color: #182030;
+          background: rgba(255,255,255,0.008);
+        }
+
+        /* ── Navigation buttons ── */
+        .ob-skip-btn {
+          background: none;
+          border: none;
+          color: #182030;
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          font-family: inherit;
+          padding: 6px 0;
+          letter-spacing: 0.01em;
+          transition: color 0.15s;
+        }
+        .ob-skip-btn:hover { color: #253040; }
+        .ob-back-btn {
+          flex: 1;
+          height: 54px;
+          border-radius: 12px;
+          border: none;
+          background: transparent;
+          color: #1e2d3e;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          font-family: inherit;
+          transition: color 0.15s;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .ob-back-btn:hover { color: #3d5068; }
+        .ob-cta-btn {
+          flex: 2;
+          height: 54px;
+          border-radius: 12px;
+          border: none;
+          background: var(--accent);
+          color: #07090e;
+          font-size: 15px;
+          font-weight: 700;
+          cursor: pointer;
+          font-family: inherit;
+          transition: background 0.5s ease, box-shadow 0.3s;
+          box-shadow: 0 2px 18px rgba(var(--accent-rgb), 0.3);
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ── Animations ── */
+        @keyframes stepIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes stepInBack {
+          from { opacity: 0; transform: translateY(-10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fieldIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+    </div>,
+    document.body
+  );
+}

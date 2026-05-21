@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { IconUpload, IconCheck } from "@/components/ui/icons";
 
@@ -284,6 +285,7 @@ export default function ConfiguracoesPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [templates, setTemplates] = useState<{ orcamento: TemplateInfo[]; contrato: TemplateInfo[] }>({
     orcamento: [],
     contrato: [],
@@ -385,9 +387,9 @@ export default function ConfiguracoesPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doSave = async () => {
     if (!data) return;
+    setShowConfirmModal(false);
     setSaving(true);
     setMessage(null);
 
@@ -405,7 +407,7 @@ export default function ConfiguracoesPage() {
         const err = await res.json();
         setMessage({ text: err.error || "Erro ao salvar", type: "error" });
       }
-    } catch (error) {
+    } catch {
       setMessage({ text: "Erro ao conectar", type: "error" });
     } finally {
       setSaving(false);
@@ -509,7 +511,7 @@ export default function ConfiguracoesPage() {
       </section>
 
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <form onSubmit={(e) => e.preventDefault()} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
         {/* ── Identidade ── */}
         <FSection title="Identidade">
@@ -641,20 +643,98 @@ export default function ConfiguracoesPage() {
         </FSection>
 
         {/* ── Salvar ── */}
-        <button type="submit" disabled={saving} style={{
-          display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
-          height: 52, borderRadius: 12, border: "none",
-          background: saving ? "#252d3d" : "linear-gradient(180deg, #f5c842 0%, #e6b800 100%)",
-          color: saving ? "#6b7280" : "#1a1200",
-          fontFamily: "'Inter', sans-serif", fontSize: 15, fontWeight: 700, letterSpacing: "0.02em",
-          cursor: saving ? "not-allowed" : "pointer",
-          boxShadow: saving ? "none" : "0 4px 14px rgba(230,184,0,0.25)",
-          transition: "opacity 0.15s",
-          width: "100%",
-        }}>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => setShowConfirmModal(true)}
+          style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+            height: 52, borderRadius: 12, border: "none",
+            background: saving ? "#252d3d" : "linear-gradient(180deg, #f5c842 0%, #e6b800 100%)",
+            color: saving ? "#6b7280" : "#1a1200",
+            fontFamily: "'Inter', sans-serif", fontSize: 15, fontWeight: 700, letterSpacing: "0.02em",
+            cursor: saving ? "not-allowed" : "pointer",
+            boxShadow: saving ? "none" : "0 4px 14px rgba(230,184,0,0.25)",
+            transition: "opacity 0.15s",
+            width: "100%",
+          }}
+        >
           {saving ? "Salvando..." : "Salvar Alterações"}
         </button>
       </form>
+
+      {/* ── Modal de confirmação — portal direto no body ── */}
+      {showConfirmModal && createPortal(
+        <div
+          onClick={() => setShowConfirmModal(false)}
+          style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            width: "100%", height: "100dvh", zIndex: 9999,
+            background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#141824", border: "1px solid #252d3d", borderRadius: 20,
+              padding: 28, width: "100%", maxWidth: 380,
+              boxShadow: "0 24px 64px rgba(0,0,0,0.5)",
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            {/* Ícone */}
+            <div style={{
+              width: 48, height: 48, borderRadius: 14, marginBottom: 18,
+              background: "rgba(245,200,66,0.10)", border: "1px solid rgba(245,200,66,0.22)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5c842" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
+              </svg>
+            </div>
+
+            <div style={{ fontSize: 17, fontWeight: 700, color: "#f1f5f9", marginBottom: 8 }}>
+              Salvar alterações?
+            </div>
+            <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5, marginBottom: 24 }}>
+              As configurações do artista serão atualizadas imediatamente. PDFs gerados anteriormente não serão afetados.
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                style={{
+                  flex: 1, height: 44, borderRadius: 11, border: "1px solid #252d3d",
+                  background: "transparent", color: "#94a3b8",
+                  fontSize: 14, fontWeight: 600, cursor: "pointer",
+                  fontFamily: "'Inter', sans-serif",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={doSave}
+                style={{
+                  flex: 1, height: 44, borderRadius: 11, border: "none",
+                  background: "linear-gradient(135deg, #f5c842 0%, #dba000 100%)",
+                  color: "#1a1000",
+                  fontSize: 14, fontWeight: 700, cursor: "pointer",
+                  fontFamily: "'Inter', sans-serif",
+                  boxShadow: "0 4px 14px rgba(245,200,66,0.22)",
+                }}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

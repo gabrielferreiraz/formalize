@@ -45,6 +45,7 @@ export async function GET() {
       contratoTemplate: true,
       usarBasePdfOrcamento: true,
       usarBasePdfContrato: true,
+      onboardingDone: true,
     },
   });
 
@@ -64,6 +65,7 @@ const ALLOWED_FIELDS = [
   "orcamentoLogoScale", "contratoLogoScale",
   "orcamentoTemplate", "contratoTemplate",
   "usarBasePdfOrcamento", "usarBasePdfContrato",
+  "onboardingDone",
 ] as const;
 
 export async function PUT(req: NextRequest) {

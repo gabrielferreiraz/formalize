@@ -31,6 +31,7 @@ export default withAuth(
       // Injeta o artistId nos headers para que Server Components possam lê-lo
       const requestHeaders = new Headers(req.headers);
       requestHeaders.set("x-artist-id", token.artistId as string);
+      requestHeaders.set("x-pathname", url.pathname);
 
       return NextResponse.next({ request: { headers: requestHeaders } });
     }

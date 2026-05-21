@@ -29,8 +29,10 @@ const templateContratoLight = `<!DOCTYPE html>
       left: 0;
       top: 0;
       width: 6px;
-      height: 100%;
+      height: 100vh;
       background: {{primaryColor}};
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
 
     /* ── Marca d'água ── */
@@ -43,6 +45,8 @@ const templateContratoLight = `<!DOCTYPE html>
       opacity: 0.03;
       z-index: 0;
       pointer-events: none;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
 
     /* ── Header ── */

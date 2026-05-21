@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AdminHeader } from "./admin/components/AdminHeader";
@@ -18,6 +19,9 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") ?? "";
+
   let artist = null;
   try {
     artist = session.user.artistId
@@ -31,11 +35,16 @@ export default async function AdminLayout({
             contratoFontScale: true,
             orcamentoLogoScale: true,
             contratoLogoScale: true,
+            onboardingDone: true,
           },
         })
       : null;
   } catch (err) {
     console.error("Erro ao buscar artista no layout:", err);
+  }
+
+  if (artist && !artist.onboardingDone && !pathname.startsWith("/admin/onboarding")) {
+    redirect("/admin/onboarding");
   }
 
   const initialArtist = artist

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
 
@@ -609,9 +610,9 @@ export default function DocumentosPage() {
       )}
 
       {/* Modal de detalhe */}
-      {selectedDoc && (
+      {selectedDoc && createPortal(
         <div
-          className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100dvh' }}
           onClick={() => setSelectedDoc(null)}
         >
@@ -687,13 +688,14 @@ export default function DocumentosPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal dia inteiro */}
-      {dayModal && (
+      {dayModal && createPortal(
         <div
-          className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100dvh' }}
           onClick={() => setDayModal(null)}
         >
@@ -771,13 +773,14 @@ export default function DocumentosPage() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal de confirmação de exclusão */}
-      {pendingDelete && (
+      {pendingDelete && createPortal(
         <div
-          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100dvh' }}
           onClick={() => setPendingDelete(null)}
         >
@@ -816,7 +819,8 @@ export default function DocumentosPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Paginação */}

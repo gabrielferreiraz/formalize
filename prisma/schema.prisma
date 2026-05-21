@@ -85,6 +85,8 @@ model Artist {
   usarBasePdfOrcamento Boolean @default(true)
   usarBasePdfContrato  Boolean @default(true)
 
+  onboardingDone Boolean @default(false)
+
   status ArtistStatus @default(ACTIVE)
 
   createdAt DateTime @default(now())
