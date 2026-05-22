@@ -88,6 +88,10 @@ model Artist {
 
   onboardingDone Boolean @default(false)
 
+  planStartDate      DateTime  @default(now())
+  billingCycleMonths Int       @default(1)
+  planLabel          String    @default("Basic")
+
   status ArtistStatus @default(ACTIVE)
 
   createdAt DateTime @default(now())

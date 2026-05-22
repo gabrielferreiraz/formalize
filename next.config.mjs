@@ -2,6 +2,9 @@ import withPWA from "@ducanh2912/next-pwa";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // recharts v3 and its deps ship ESM-only modules that webpack can't handle
+  // without explicit transpilation
+  transpilePackages: ["recharts", "victory-vendor"],
   webpack(config, { dev }) {
     if (dev) {
       config.cache = false;
