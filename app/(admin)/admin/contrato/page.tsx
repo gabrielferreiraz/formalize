@@ -8,6 +8,22 @@ import { PdfReadyModal } from "@/components/ui/PdfReadyModal";
 import { LoadingDocument } from "@/components/ui/LoadingDocument";
 import { gerarNumeroDoc } from "@/utils/form";
 import { useFormContext } from "@/context/FormContext";
+import { PageTutorial, type TutorialStep } from "@/components/ui/PageTutorial";
+
+const CTR_TUTORIAL: TutorialStep[] = [
+  {
+    icon: "✍️",
+    title: "Dados do contratante",
+    body: "Digite o CNPJ e a razão social preenche automaticamente. O CEP também preenche o endereço.",
+    targetId: "tut-ctr-form",
+  },
+  {
+    icon: "🕒",
+    title: "Contratos recentes",
+    body: "Recarregue dados de um contrato anterior. Se veio do orçamento, já está pré-preenchido.",
+    targetId: "tut-ctr-recent",
+  },
+];
 
 function ContratoContent() {
   const searchParams = useSearchParams();
@@ -129,19 +145,23 @@ function ContratoContent() {
         </div>
       )}
 
-      <FormContrato
-        values={contrato}
-        onChange={setContrato}
-        onSubmit={handleSubmit}
-        artistName={artistDisplayName}
-        loading={loading}
-        recentDocs={
-          <RecentDocs
-            type="CONTRACT"
-            onLoad={(d) => setContrato({ ...contrato, ...d })}
-          />
-        }
-      />
+      <div id="tut-ctr-form">
+        <FormContrato
+          values={contrato}
+          onChange={setContrato}
+          onSubmit={handleSubmit}
+          artistName={artistDisplayName}
+          loading={loading}
+          recentDocs={
+            <div id="tut-ctr-recent">
+              <RecentDocs
+                type="CONTRACT"
+                onLoad={(d) => setContrato({ ...contrato, ...d })}
+              />
+            </div>
+          }
+        />
+      </div>
 
       {loading && (
         <LoadingDocument 
@@ -157,6 +177,8 @@ function ContratoContent() {
           onClose={() => setPdfUrl(null)}
         />
       )}
+
+      <PageTutorial pageKey="contrato" steps={CTR_TUTORIAL} />
     </div>
   );
 }

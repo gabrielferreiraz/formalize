@@ -6,6 +6,22 @@ import FormOrcamento from "@/components/forms/FormOrcamento";
 import { RecentDocs } from "@/components/ui/RecentDocs";
 import { PdfReadyModal } from "@/components/ui/PdfReadyModal";
 import { LoadingDocument } from "@/components/ui/LoadingDocument";
+import { PageTutorial, type TutorialStep } from "@/components/ui/PageTutorial";
+
+const ORC_TUTORIAL: TutorialStep[] = [
+  {
+    icon: "📋",
+    title: "Formulário de orçamento",
+    body: "Preencha contratante, data, local e cachê. Tudo aparece no cabeçalho do PDF gerado.",
+    targetId: "tut-orc-form",
+  },
+  {
+    icon: "🕒",
+    title: "Orçamentos recentes",
+    body: "Toque para carregar dados de um orçamento anterior — edite e gere um novo em segundos.",
+    targetId: "tut-orc-recent",
+  },
+];
 import { gerarNumeroDoc, hoje } from "@/utils/form";
 import { useFormContext } from "@/context/FormContext";
 import { defaultContratoValues } from "@/components/forms/FormContrato";
@@ -153,21 +169,25 @@ function OrcamentoContent() {
         </div>
       )}
 
-      <FormOrcamento
-        values={orcamento}
-        onChange={setOrcamento}
-        onSubmit={handleSubmit}
-        onFazerContrato={handleFazerContrato}
-        artistName={artistDisplayName}
-        loading={loading}
-        recentDocs={
-          <RecentDocs
-            type="BUDGET"
-            onLoad={(d) => setOrcamento({ ...orcamento, ...(d as Partial<typeof orcamento>) })}
-            onToContrato={orcamentoToContrato}
-          />
-        }
-      />
+      <div id="tut-orc-form">
+        <FormOrcamento
+          values={orcamento}
+          onChange={setOrcamento}
+          onSubmit={handleSubmit}
+          onFazerContrato={handleFazerContrato}
+          artistName={artistDisplayName}
+          loading={loading}
+          recentDocs={
+            <div id="tut-orc-recent">
+              <RecentDocs
+                type="BUDGET"
+                onLoad={(d) => setOrcamento({ ...orcamento, ...(d as Partial<typeof orcamento>) })}
+                onToContrato={orcamentoToContrato}
+              />
+            </div>
+          }
+        />
+      </div>
 
       {loading && (
         <LoadingDocument 
@@ -183,6 +203,8 @@ function OrcamentoContent() {
           onClose={() => setPdfUrl(null)}
         />
       )}
+
+      <PageTutorial pageKey="orcamento" steps={ORC_TUTORIAL} />
     </div>
   );
 }

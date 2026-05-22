@@ -6,6 +6,28 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { IconUpload, IconCheck } from "@/components/ui/icons";
+import { PageTutorial, clearAllTutorials, type TutorialStep } from "@/components/ui/PageTutorial";
+
+const CFG_TUTORIAL: TutorialStep[] = [
+  {
+    icon: "🎨",
+    title: "Logo e cor da sua marca",
+    body: "Sua logo e cor principal aparecem em todos os PDFs. Toque para fazer upload ou trocar.",
+    targetId: "tut-cfg-logo",
+  },
+  {
+    icon: "📐",
+    title: "Templates de documento",
+    body: "Escolha o estilo visual dos PDFs. Toque em 'Gerenciar Templates' para ver as opções.",
+    targetId: "tut-cfg-templates",
+  },
+  {
+    icon: "💾",
+    title: "Salve as alterações",
+    body: "Tudo fica pendente até tocar em 'Salvar Alterações' no final da página.",
+    targetId: "tut-cfg-save",
+  },
+];
 
 // ── File upload row component (design system style) ──
 function FileUploadRow({
@@ -455,7 +477,7 @@ export default function ConfiguracoesPage() {
       )}
 
       {/* ── Arquivos & Imagens ── */}
-      <section style={{ background: "#141824", border: "1px solid #252d3d", borderRadius: 16, padding: 18, marginBottom: 14 }}>
+      <section id="tut-cfg-logo" style={{ background: "#141824", border: "1px solid #252d3d", borderRadius: 16, padding: 18, marginBottom: 14 }}>
         <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#f1f5f9", marginBottom: 16 }}>
           Arquivos & Imagens
         </div>
@@ -625,7 +647,7 @@ export default function ConfiguracoesPage() {
           />
         </FSection>
 
-        <section style={{ background: "#141824", border: "1px solid #252d3d", borderRadius: 16, padding: 18 }}>
+        <section id="tut-cfg-templates" style={{ background: "#141824", border: "1px solid #252d3d", borderRadius: 16, padding: 18 }}>
           <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#f1f5f9", marginBottom: 16 }}>
             Templates
           </div>
@@ -648,8 +670,39 @@ export default function ConfiguracoesPage() {
           </div>
         </section>
 
+        {/* ── Tutorial ── */}
+        <section style={{ background: "#141824", border: "1px solid #252d3d", borderRadius: 16, padding: 18 }}>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#f1f5f9", marginBottom: 6 }}>
+            Tutorial
+          </div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#4b5563", marginBottom: 14 }}>
+            Rever o formulário de configuração inicial.
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              clearAllTutorials();
+              await fetch("/api/artist/me", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ onboardingDone: false }),
+              });
+              window.location.href = "/admin/onboarding";
+            }}
+            style={{
+              width: "100%", height: 42, borderRadius: 10,
+              border: "1px solid #252d3d", background: "#0e1118",
+              color: "#94a3b8", fontFamily: "'Inter', sans-serif",
+              fontSize: 13, fontWeight: 600, cursor: "pointer",
+            }}
+          >
+            Reiniciar configuração inicial
+          </button>
+        </section>
+
         {/* ── Salvar ── */}
         <button
+          id="tut-cfg-save"
           type="button"
           disabled={saving}
           onClick={() => setShowConfirmModal(true)}
@@ -741,6 +794,8 @@ export default function ConfiguracoesPage() {
         </div>,
         document.body
       )}
+
+      <PageTutorial pageKey="configuracoes" steps={CFG_TUTORIAL} />
     </div>
   );
 }

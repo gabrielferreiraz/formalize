@@ -4,6 +4,22 @@ import { useCallback, useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
+import { PageTutorial, type TutorialStep } from "@/components/ui/PageTutorial";
+
+const DOCS_TUTORIAL: TutorialStep[] = [
+  {
+    icon: "➕",
+    title: "Adicione um evento",
+    body: "Toque aqui para adicionar shows, viagens ou reuniões ao calendário — mesmo sem gerar documento.",
+    targetId: "tut-docs-novo",
+  },
+  {
+    icon: "📅",
+    title: "Lista ou Calendário",
+    body: "Alterne entre visualizar seus documentos em lista ou como um calendário mensal de eventos.",
+    targetId: "tut-docs-toggle",
+  },
+];
 
 type Doc = {
   id: string;
@@ -342,7 +358,7 @@ export default function DocumentosPage() {
             {" "}gerados · {new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(monthCursor).replace(/^\w/, c => c.toUpperCase())}
           </div>
         </div>
-        <button onClick={() => setDayModal({ day: dayKey(new Date()), docs: [] })} style={{
+        <button id="tut-docs-novo" onClick={() => setDayModal({ day: dayKey(new Date()), docs: [] })} style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           background: "#f5c842", color: "#1a1200",
           border: "none", borderRadius: 999,
@@ -382,7 +398,7 @@ export default function DocumentosPage() {
       </div>
 
       {/* ── View toggle ── */}
-      <div style={{ display: "flex", gap: 4, padding: 4, background: "#141824", border: "1px solid #252d3d", borderRadius: 12, marginBottom: 20 }}>
+      <div id="tut-docs-toggle" style={{ display: "flex", gap: 4, padding: 4, background: "#141824", border: "1px solid #252d3d", borderRadius: 12, marginBottom: 20 }}>
         {(["list", "calendar"] as const).map(v => {
           const on = view === (v === "list" ? "list" : "calendar");
           return (
@@ -998,6 +1014,8 @@ export default function DocumentosPage() {
         </div>,
         document.body
       )}
+
+      <PageTutorial pageKey="documentos" steps={DOCS_TUTORIAL} />
 
       {/* Paginação */}
       {view === "list" && pages > 1 && (

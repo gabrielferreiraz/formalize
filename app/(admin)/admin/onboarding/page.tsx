@@ -47,6 +47,8 @@ function UInput({
   suffix?: React.ReactNode;
 }) {
   const [focused, setFocused] = useState(false);
+  const hasValue = !!props.value && String(props.value).length > 0;
+  const showCheck = hasValue && !suffix && !focused;
   return (
     <div>
       {label && (
@@ -58,16 +60,21 @@ function UInput({
         <input
           {...props}
           className={`ob-input${focused ? " ob-input--focus" : ""}`}
-          style={{ paddingRight: suffix ? 32 : 0, ...style }}
+          style={{ paddingRight: suffix || showCheck ? 32 : 0, ...style }}
           onFocus={(e) => { setFocused(true); onFocus?.(e); }}
           onBlur={(e) => { setFocused(false); onBlur?.(e); }}
         />
-        {suffix && (
+        {(suffix || showCheck) && (
           <div style={{
             position: "absolute", right: 0, top: "50%",
             transform: "translateY(-50%)", pointerEvents: "none",
+            animation: showCheck ? "checkIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both" : undefined,
           }}>
-            {suffix}
+            {suffix ?? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            )}
           </div>
         )}
       </div>
@@ -587,6 +594,7 @@ export default function OnboardingPage() {
 
   async function finish() {
     await patch({ onboardingDone: true });
+    sessionStorage.setItem("just_onboarded", "1");
     setShowWelcome(true);
     setTimeout(() => router.replace("/admin/orcamento"), 2800);
   }
@@ -733,15 +741,32 @@ export default function OnboardingPage() {
         style={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "flex-end",
+          justifyContent: "space-between",
           padding: "calc(14px + env(safe-area-inset-top, 0px)) 24px 10px",
           flexShrink: 0,
           position: "relative",
           zIndex: 1,
         }}
       >
+        {/* Step dots */}
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => {
+            const done = i + 1 < step;
+            const current = i + 1 === step;
+            return (
+              <div key={i} style={{
+                height: 5,
+                width: current ? 22 : 5,
+                borderRadius: 3,
+                background: done ? "var(--accent)" : current ? "var(--accent)" : "#1a2030",
+                opacity: done ? 0.5 : 1,
+                transition: "all 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+              }} />
+            );
+          })}
+        </div>
         <button className="ob-skip-btn" onClick={skipAll} disabled={saving}>
-          Pular configuração
+          Pular
         </button>
       </div>
 
@@ -1014,6 +1039,33 @@ export default function OnboardingPage() {
           to   { opacity: 1; }
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        @keyframes checkIn {
+          from { opacity: 0; transform: translateY(-50%) scale(0.5); }
+          to   { opacity: 1; transform: translateY(-50%) scale(1); }
+        }
+        @keyframes stepNumPop {
+          0%   { opacity: 0; transform: scale(0.7); }
+          65%  { transform: scale(1.15); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes headlineReveal {
+          from { opacity: 0; transform: translateY(14px) scale(0.97); filter: blur(4px); }
+          to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+        @keyframes ctaGlow {
+          0%, 100% { box-shadow: 0 2px 18px rgba(var(--accent-rgb), 0.3); }
+          50%       { box-shadow: 0 4px 32px rgba(var(--accent-rgb), 0.55), 0 0 48px rgba(var(--accent-rgb), 0.12); }
+        }
+        .ob-cta-btn:not(:disabled) {
+          animation: ctaGlow 2.8s ease-in-out infinite;
+        }
+        .ob-step-n {
+          animation: stepNumPop 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+        }
+        .ob-headline {
+          animation: headlineReveal 0.5s cubic-bezier(0.22,1,0.36,1) 0.06s both;
+        }
 
         @keyframes welcomeFadeIn {
           from { opacity: 0; }

@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AdminHeader } from "./admin/components/AdminHeader";
 import { FormProvider } from "@/context/FormContext";
+import { PwaInstallBanner } from "@/components/ui/PwaInstallBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -58,22 +59,25 @@ export default async function AdminLayout({
     : null;
 
   return (
-    <div className="min-h-screen bg-stage-900 text-gray-100 font-body" style={{ overflowX: "clip" }}>
-      <AdminHeader
-        artistName={artist?.name ?? session.user.name ?? "Artista"}
-        logoUrl={artist?.logoUrl ?? null}
-      />
-      <FormProvider initialArtist={initialArtist}>
-        <main
-          className="mx-auto px-4 py-6 pb-28 md:pb-10 md:max-w-4xl animate-fade-in"
-          style={{ width: "100%", boxSizing: "border-box", overflowX: "clip" }}
-        >
-          {children}
-        </main>
-      </FormProvider>
-      <footer className="hidden md:block text-center text-xs text-gray-600 py-6">
-        {artist?.name ?? "Formalize"} &copy; {new Date().getFullYear()}
-      </footer>
-    </div>
+    <>
+      <div className="min-h-screen bg-stage-900 text-gray-100 font-body" style={{ overflowX: "clip" }}>
+        <AdminHeader
+          artistName={artist?.name ?? session.user.name ?? "Artista"}
+          logoUrl={artist?.logoUrl ?? null}
+        />
+        <FormProvider initialArtist={initialArtist}>
+          <main
+            className="mx-auto px-4 py-6 pb-28 md:pb-10 md:max-w-4xl animate-fade-in"
+            style={{ width: "100%", boxSizing: "border-box", overflowX: "clip" }}
+          >
+            {children}
+          </main>
+        </FormProvider>
+        <footer className="hidden md:block text-center text-xs text-gray-600 py-6">
+          {artist?.name ?? "Formalize"} &copy; {new Date().getFullYear()}
+        </footer>
+      </div>
+      <PwaInstallBanner />
+    </>
   );
 }
