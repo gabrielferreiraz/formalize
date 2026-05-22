@@ -84,11 +84,11 @@ export async function buildCtr004(
     .header-band-left { display: flex; align-items: center; gap: 14px; }
     .header-logo { height: 52px; max-width: 150px; object-fit: contain; }
     .header-logo-placeholder { width: 1px; }
-    .header-artist { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(16*fs)}px; color: #111; letter-spacing: 0.5px; }
-    .header-cnpj { font-size: ${Math.round(10*fs)}px; color: #111; opacity: 0.65; margin-top: 2px; }
+    .header-artist { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(18*fs)}px; color: #111; letter-spacing: 0.5px; }
+    .header-cnpj { font-size: ${Math.round(13*fs)}px; color: #111; opacity: 0.65; margin-top: 2px; }
     .header-doc {
       font-family: 'Montserrat', sans-serif; font-weight: 900;
-      font-size: ${Math.round(11*fs)}px; letter-spacing: 3px; text-transform: uppercase;
+      font-size: ${Math.round(13*fs)}px; letter-spacing: 3px; text-transform: uppercase;
       color: #111;
     }
 
@@ -99,14 +99,14 @@ export async function buildCtr004(
     }
     .sub-header-title {
       font-family: 'Montserrat', sans-serif; font-weight: 300;
-      font-size: ${Math.round(10*fs)}px; letter-spacing: 6px;
+      font-size: ${Math.round(13*fs)}px; letter-spacing: 6px;
       text-transform: uppercase; color: #888;
     }
 
     /* ── Body ── */
     .corpo { padding: 24px 44px 36px; flex: 1; }
 
-    .intro { font-size: ${Math.round(12*fs)}px; color: #333; line-height: 1.9; margin-bottom: 14px; text-align: justify; }
+    .intro { font-size: ${Math.round(14*fs)}px; color: #333; line-height: 1.9; margin-bottom: 14px; text-align: justify; }
     .intro strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111; }
 
     /* ── Section ── */
@@ -116,27 +116,27 @@ export async function buildCtr004(
     }
     .sec-num {
       font-family: 'Montserrat', sans-serif; font-weight: 900;
-      font-size: ${Math.round(10*fs)}px; color: ${primary};
+      font-size: ${Math.round(13*fs)}px; color: ${primary};
       background: #111; padding: 2px 7px; border-radius: 3px;
       letter-spacing: 1px;
     }
     .sec-title {
       font-family: 'Montserrat', sans-serif; font-weight: 700;
-      font-size: ${Math.round(11*fs)}px; color: #111; letter-spacing: 1px;
+      font-size: ${Math.round(14*fs)}px; color: #111; letter-spacing: 1px;
       text-transform: uppercase;
     }
     .sec-body {
-      font-size: ${Math.round(12*fs)}px; color: #444;
+      font-size: ${Math.round(14*fs)}px; color: #444;
       line-height: 1.8; text-align: justify; padding-left: 28px;
     }
     .sec-body strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111; }
     .paragrafo {
-      font-size: ${Math.round(11*fs)}px; color: #555;
+      font-size: ${Math.round(13*fs)}px; color: #555;
       line-height: 1.8; margin-top: 4px; padding-left: 42px; text-align: justify;
     }
 
     .obs {
-      font-size: ${Math.round(12*fs)}px; color: #444; line-height: 1.8;
+      font-size: ${Math.round(14*fs)}px; color: #444; line-height: 1.8;
       margin: 8px 0; padding: 8px 14px;
       background: #fffdf7; border-left: 3px solid ${primary};
       break-inside: avoid;
@@ -151,24 +151,24 @@ export async function buildCtr004(
     }
     .financial-title {
       font-family: 'Montserrat', sans-serif; font-weight: 700;
-      font-size: ${Math.round(9*fs)}px; color: #aaa;
+      font-size: ${Math.round(12*fs)}px; color: #888;
       letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px;
     }
-    .financial-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee; }
+    .financial-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; }
     .financial-row:last-child { border-bottom: none; }
-    .financial-key { font-size: ${Math.round(11*fs)}px; color: #888; }
-    .financial-val { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(12*fs)}px; color: #111; }
+    .financial-key { font-size: ${Math.round(13*fs)}px; color: #777; }
+    .financial-val { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(14*fs)}px; color: #111; }
     .financial-total-row {
       display: flex; justify-content: space-between; align-items: center;
       margin-top: 8px; padding-top: 8px; border-top: 2px solid #111;
     }
     .financial-total-key {
       font-family: 'Montserrat', sans-serif; font-weight: 900;
-      font-size: ${Math.round(10*fs)}px; color: #111; letter-spacing: 2px; text-transform: uppercase;
+      font-size: ${Math.round(13*fs)}px; color: #111; letter-spacing: 2px; text-transform: uppercase;
     }
     .financial-total-val {
       font-family: 'Montserrat', sans-serif; font-weight: 900;
-      font-size: ${Math.round(18*fs)}px; color: ${primary};
+      font-size: ${Math.round(20*fs)}px; color: ${primary};
     }
 
     .banco-box {
@@ -177,28 +177,28 @@ export async function buildCtr004(
     }
     .banco-title {
       font-family: 'Montserrat', sans-serif; font-weight: 700;
-      font-size: ${Math.round(9*fs)}px; color: #aaa;
+      font-size: ${Math.round(12*fs)}px; color: #888;
       letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px;
     }
-    .banco-linha { font-size: ${Math.round(12*fs)}px; color: #444; line-height: 1.9; }
+    .banco-linha { font-size: ${Math.round(14*fs)}px; color: #444; line-height: 1.9; }
     .banco-linha strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111; }
 
     /* ── Signatures ── */
     .assinaturas { margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; break-inside: avoid; }
-    .local-data { font-size: ${Math.round(12*fs)}px; color: #555; margin-bottom: 24px; text-align: center; font-style: italic; }
+    .local-data { font-size: ${Math.round(13*fs)}px; color: #555; margin-bottom: 24px; text-align: center; font-style: italic; }
     .linha-assinatura { display: flex; justify-content: space-between; gap: 50px; margin-bottom: 24px; align-items: flex-end; }
     .assinatura-bloco { flex: 1; text-align: center; }
     .assinatura-linha { border-top: 1px solid #333; margin-bottom: 6px; }
-    .assinatura-label { font-size: ${Math.round(9*fs)}px; color: #aaa; text-transform: uppercase; letter-spacing: 2px; }
-    .testemunhas-titulo { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: ${Math.round(9*fs)}px; color: #aaa; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 2px; }
+    .assinatura-label { font-size: ${Math.round(12*fs)}px; color: #888; text-transform: uppercase; letter-spacing: 2px; }
+    .testemunhas-titulo { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: ${Math.round(12*fs)}px; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 2px; }
     .testemunhas-linha { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
-    .test-num { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(11*fs)}px; color: #111; white-space: nowrap; }
+    .test-num { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(13*fs)}px; color: #111; white-space: nowrap; }
     .test-linha { flex: 1; border-top: 1px solid #333; }
 
     .ass-dig-bloco { margin-top: 6px; padding: 6px 10px; border: 1px solid ${primary}44; border-radius: 4px; background: #fffdf5; text-align: center; }
-    .ass-dig-titulo { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(8*fs)}px; color: ${primary}; letter-spacing: 2px; margin-bottom: 3px; }
-    .ass-dig-info { font-size: ${Math.round(10*fs)}px; color: #555; line-height: 1.6; }
-    .ass-dig-codigo { font-family: 'Montserrat', sans-serif; font-size: ${Math.round(9*fs)}px; color: #aaa; margin-top: 3px; letter-spacing: 1px; word-break: break-all; }
+    .ass-dig-titulo { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(11*fs)}px; color: ${primary}; letter-spacing: 2px; margin-bottom: 3px; }
+    .ass-dig-info { font-size: ${Math.round(12*fs)}px; color: #555; line-height: 1.6; }
+    .ass-dig-codigo { font-family: 'Montserrat', sans-serif; font-size: ${Math.round(11*fs)}px; color: #aaa; margin-top: 3px; letter-spacing: 1px; word-break: break-all; }
 
     /* ── Footer ── */
     .rodape {
@@ -207,9 +207,9 @@ export async function buildCtr004(
     }
     .rodape-frase {
       font-family: 'Montserrat', sans-serif; font-weight: 700;
-      font-size: ${Math.round(10*fs)}px; color: ${primary}; letter-spacing: 2px; font-style: italic;
+      font-size: ${Math.round(12*fs)}px; color: ${primary}; letter-spacing: 2px; font-style: italic;
     }
-    .rodape-hash { font-size: ${Math.round(9*fs)}px; color: #ccc; }
+    .rodape-hash { font-size: ${Math.round(11*fs)}px; color: #ccc; }
   </style>
 </head>
 <body>

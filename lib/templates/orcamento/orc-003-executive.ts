@@ -61,9 +61,9 @@ export async function buildOrc003(
   const totalExt = valorPorExtenso(total);
 
   const socials = [
-    artist.instagram ? `<a href="${artist.instagram}" style="text-decoration:none;color:${primary};font-family:'Montserrat',sans-serif;font-size:${Math.round(10*fontScale)}px;font-weight:600;">IG</a>` : "",
-    artist.spotify ? `<a href="${artist.spotify}" style="text-decoration:none;color:${primary};font-family:'Montserrat',sans-serif;font-size:${Math.round(10*fontScale)}px;font-weight:600;">SP</a>` : "",
-    artist.youtube ? `<a href="${artist.youtube}" style="text-decoration:none;color:${primary};font-family:'Montserrat',sans-serif;font-size:${Math.round(10*fontScale)}px;font-weight:600;">YT</a>` : "",
+    artist.instagram ? `<a href="${artist.instagram}" style="text-decoration:none;color:${primary};font-family:'Montserrat',sans-serif;font-size:${Math.round(13*fontScale)}px;font-weight:600;">IG</a>` : "",
+    artist.spotify ? `<a href="${artist.spotify}" style="text-decoration:none;color:${primary};font-family:'Montserrat',sans-serif;font-size:${Math.round(13*fontScale)}px;font-weight:600;">SP</a>` : "",
+    artist.youtube ? `<a href="${artist.youtube}" style="text-decoration:none;color:${primary};font-family:'Montserrat',sans-serif;font-size:${Math.round(13*fontScale)}px;font-weight:600;">YT</a>` : "",
   ].filter(Boolean).join('<span style="color:#999;margin:0 6px;">·</span>');
 
   return `<!DOCTYPE html>
@@ -83,38 +83,38 @@ export async function buildOrc003(
     .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 18px; border-bottom: 2px solid ${primary}; }
     .header-logo { height: 48px; max-width: 160px; object-fit: contain; }
     .header-right { text-align: right; }
-    .header-doc { font-family: 'Montserrat', sans-serif; font-weight: 300; font-size: ${Math.round(9*fontScale)}px; letter-spacing: 4px; text-transform: uppercase; color: #aaa; margin-bottom: 3px; }
-    .header-name { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: ${Math.round(15*fontScale)}px; color: #111; letter-spacing: 0.5px; }
-    .header-cnpj { font-family: 'Open Sans', sans-serif; font-size: ${Math.round(10*fontScale)}px; color: #aaa; margin-top: 2px; }
+    .header-doc { font-family: 'Montserrat', sans-serif; font-weight: 300; font-size: ${Math.round(12*fontScale)}px; letter-spacing: 4px; text-transform: uppercase; color: #aaa; margin-bottom: 3px; }
+    .header-name { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: ${Math.round(17*fontScale)}px; color: #111; letter-spacing: 0.5px; }
+    .header-cnpj { font-family: 'Open Sans', sans-serif; font-size: ${Math.round(12*fontScale)}px; color: #aaa; margin-top: 2px; }
 
     /* ── Cards ── */
     .card { background: #fff; border-radius: 8px; border: 1px solid #e4e4de; overflow: hidden; }
-    .card-head { padding: 8px 18px; background: #f8f8f4; border-bottom: 1px solid #e8e8e2; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(8*fontScale)}px; letter-spacing: 3px; text-transform: uppercase; color: #bbb; }
-    .row { display: flex; align-items: baseline; justify-content: space-between; padding: 9px 18px; border-bottom: 1px solid #f2f2ee; gap: 12px; }
+    .card-head { padding: 8px 18px; background: #f8f8f4; border-bottom: 1px solid #e8e8e2; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(12*fontScale)}px; letter-spacing: 3px; text-transform: uppercase; color: #999; }
+    .row { display: flex; align-items: baseline; justify-content: space-between; padding: 10px 18px; border-bottom: 1px solid #f2f2ee; gap: 12px; }
     .row:last-child { border-bottom: none; }
-    .row-label { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: ${Math.round(10*fontScale)}px; letter-spacing: 0.5px; text-transform: uppercase; color: #999; flex-shrink: 0; }
+    .row-label { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: ${Math.round(13*fontScale)}px; letter-spacing: 0.5px; text-transform: uppercase; color: #888; flex-shrink: 0; }
     .row-right { display: flex; flex-direction: column; align-items: flex-end; }
-    .row-val { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(14*fontScale)}px; color: #111; }
+    .row-val { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(16*fontScale)}px; color: #111; }
     .row-val.money { color: ${primary}; }
-    .row-ext { font-family: 'Open Sans', sans-serif; font-size: ${Math.round(10*fontScale)}px; color: #bbb; font-style: italic; margin-top: 1px; }
+    .row-ext { font-family: 'Open Sans', sans-serif; font-size: ${Math.round(12*fontScale)}px; color: #bbb; font-style: italic; margin-top: 1px; }
 
     /* ── Total bar ── */
     .total-bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: #111; border-radius: 8px; }
-    .total-label { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(10*fontScale)}px; letter-spacing: 3px; text-transform: uppercase; color: #fff; }
+    .total-label { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(13*fontScale)}px; letter-spacing: 3px; text-transform: uppercase; color: #fff; }
     .total-right { text-align: right; }
-    .total-val { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(22*fontScale)}px; color: ${primary}; }
-    .total-ext { font-family: 'Open Sans', sans-serif; font-size: ${Math.round(10*fontScale)}px; color: #666; font-style: italic; margin-top: 2px; }
+    .total-val { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(26*fontScale)}px; color: ${primary}; }
+    .total-ext { font-family: 'Open Sans', sans-serif; font-size: ${Math.round(12*fontScale)}px; color: #666; font-style: italic; margin-top: 2px; }
 
     /* ── Obs ── */
     .obs { background: #fff; border-radius: 8px; border: 1px solid #e4e4de; padding: 12px 18px; }
-    .obs-label { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(8*fontScale)}px; letter-spacing: 3px; text-transform: uppercase; color: #bbb; margin-bottom: 6px; }
-    .obs-text { font-size: ${Math.round(11*fontScale)}px; color: #777; line-height: 1.8; }
+    .obs-label { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(12*fontScale)}px; letter-spacing: 3px; text-transform: uppercase; color: #999; margin-bottom: 6px; }
+    .obs-text { font-size: ${Math.round(13*fontScale)}px; color: #666; line-height: 1.8; }
 
     /* ── Footer ── */
     .footer { background: #111; padding: 14px 30px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
     .footer-left { display: flex; flex-direction: column; gap: 2px; }
-    .footer-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(11*fontScale)}px; color: #fff; }
-    .footer-web { font-family: 'Montserrat', sans-serif; font-size: ${Math.round(10*fontScale)}px; color: ${primary}; margin-top: 1px; }
+    .footer-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(13*fontScale)}px; color: #fff; }
+    .footer-web { font-family: 'Montserrat', sans-serif; font-size: ${Math.round(12*fontScale)}px; color: ${primary}; margin-top: 1px; }
     .footer-socials { display: flex; align-items: center; gap: 4px; }
   </style>
 </head>
