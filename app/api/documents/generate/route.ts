@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendToGotenberg, mergePdfs } from "@/lib/gotenberg";
-import { uploadToR2, getPublicUrl } from "@/lib/r2";
+import { uploadToR2, getPublicUrl, getKeyFromUrl, deleteFromR2 } from "@/lib/r2";
 import { buildTemplate } from "@/lib/templates";
 import { fetchWithCache } from "@/lib/cache";
 
@@ -145,6 +145,34 @@ export async function POST(req: NextRequest) {
         data: { artistId, type: docType, title, pdfUrl, data: data as object },
       }),
     ]);
+
+    // Rotatividade de PDFs no R2: BUDGET=10, CONTRACT=5
+    // Roda em background — não bloqueia a resposta
+    const PDF_LIMITS: Record<string, number> = { BUDGET: 10, CONTRACT: 5 };
+    const pdfLimit = PDF_LIMITS[docType];
+    prisma.document
+      .findMany({
+        where: { artistId, type: docType, pdfUrl: { not: null } },
+        orderBy: { createdAt: "asc" },
+        select: { id: true, pdfUrl: true },
+      })
+      .then(async (docsWithPdf) => {
+        const excess = docsWithPdf.length - pdfLimit;
+        if (excess <= 0) return;
+        const toClean = docsWithPdf.slice(0, excess);
+        await Promise.all([
+          ...toClean.map((doc) =>
+            deleteFromR2(getKeyFromUrl(doc.pdfUrl!)).catch((err) =>
+              console.error("[pdf-rotation] R2 delete failed:", doc.pdfUrl, err)
+            )
+          ),
+          prisma.document.updateMany({
+            where: { id: { in: toClean.map((d) => d.id) } },
+            data: { pdfUrl: null },
+          }),
+        ]);
+      })
+      .catch((err) => console.error("[pdf-rotation]", err));
 
     return NextResponse.json({ pdfUrl, documentId: document.id });
   } catch (err) {

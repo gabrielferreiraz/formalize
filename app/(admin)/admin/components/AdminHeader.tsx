@@ -13,9 +13,9 @@ interface Props {
 }
 
 const nav = [
-  { id: "orc", label: "Orçamento", href: "/admin/orcamento", icon: <IconDoc size={22} /> },
-  { id: "ctr", label: "Contrato",   href: "/admin/contrato",   icon: <IconPen size={22} /> },
-  { id: "docs", label: "Documentos", href: "/admin/documentos", icon: <IconFolder size={22} /> },
+  { id: "orc",  label: "Orçamento",  href: "/admin/orcamento",    icon: <IconDoc size={22} /> },
+  { id: "ctr",  label: "Contrato",   href: "/admin/contrato",      icon: <IconPen size={22} /> },
+  { id: "docs", label: "Documentos", href: "/admin/documentos",    icon: <IconFolder size={22} /> },
   { id: "cfg",  label: "Config.",    href: "/admin/configuracoes", icon: <IconCog size={22} /> },
 ];
 

@@ -540,6 +540,7 @@ export default function OnboardingPage() {
   const [animKey, setAnimKey] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [cnpjLoading, setCnpjLoading] = useState(false);
@@ -586,7 +587,8 @@ export default function OnboardingPage() {
 
   async function finish() {
     await patch({ onboardingDone: true });
-    router.replace("/admin/orcamento");
+    setShowWelcome(true);
+    setTimeout(() => router.replace("/admin/orcamento"), 2800);
   }
 
   async function handleContinue() {
@@ -1012,7 +1014,66 @@ export default function OnboardingPage() {
           to   { opacity: 1; }
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        @keyframes welcomeFadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes welcomeSlideUp {
+          from { opacity: 0; transform: translateY(24px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes welcomeNameIn {
+          0%   { opacity: 0; transform: translateY(16px) scale(0.95); }
+          60%  { opacity: 1; transform: translateY(-4px) scale(1.02); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes welcomeFadeOut {
+          from { opacity: 1; }
+          to   { opacity: 0; }
+        }
       `}</style>
+
+      {showWelcome && createPortal(
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 99999,
+          background: "#07090e",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          animation: "welcomeFadeIn 0.4s ease both",
+          gap: 0,
+        }}>
+          <div style={{
+            animation: "welcomeSlideUp 0.5s ease 0.2s both",
+            fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 500,
+            color: "#4b5563", letterSpacing: "0.18em", textTransform: "uppercase",
+            marginBottom: 20,
+          }}>
+            Bem-vindo ao Formalize
+          </div>
+          <div style={{
+            animation: "welcomeNameIn 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.5s both",
+            fontFamily: "'Inter', sans-serif", fontSize: 42, fontWeight: 800,
+            color: "#f1f5f9", letterSpacing: "-0.03em", textAlign: "center",
+            lineHeight: 1.1,
+          }}>
+            {data.name || "Artista"}
+          </div>
+          <div style={{
+            marginTop: 12,
+            animation: "welcomeSlideUp 0.5s ease 1s both",
+            width: 40, height: 3, borderRadius: 2,
+            background: data.primaryColor || "#e6b800",
+          }} />
+          <div style={{
+            animation: "welcomeSlideUp 0.5s ease 1.3s both",
+            fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 400,
+            color: "#374151", marginTop: 28,
+          }}>
+            Preparando seu painel...
+          </div>
+        </div>,
+        document.body
+      )}
     </div>,
     document.body
   );

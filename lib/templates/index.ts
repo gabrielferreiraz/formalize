@@ -1,18 +1,34 @@
 import { fetchWithCache } from "@/lib/cache";
 import { buildOrc001 } from "./orcamento/orc-001-classic";
 import { buildOrc002 } from "./orcamento/orc-002-light";
+import { buildOrc003 } from "./orcamento/orc-003-executive";
+import { buildOrc004 } from "./orcamento/orc-004-prestige";
 import { buildCtr001 } from "./contrato/ctr-001-classic";
 import { buildCtr002 } from "./contrato/ctr-002-light";
+import { buildCtr003 } from "./contrato/ctr-003-premium";
+import { buildCtr004 } from "./contrato/ctr-004-formal";
 import type { AssetResult, ArtistTemplateData } from "./types";
 
-const ORC_BUILDERS: Record<string, Function> = {
-  "orc-001": buildOrc001,
-  "orc-002": buildOrc002,
+type TemplateBuilder = (
+  artist: ArtistTemplateData & Record<string, any>,
+  data: Record<string, any>,
+  pageSize?: { width: string; height: string },
+  logo?: AssetResult | null,
+  background?: AssetResult | null,
+) => Promise<string>;
+
+const ORC_BUILDERS: Record<string, TemplateBuilder> = {
+  "orc-001": buildOrc001 as TemplateBuilder,
+  "orc-002": buildOrc002 as TemplateBuilder,
+  "orc-003": buildOrc003,
+  "orc-004": buildOrc004,
 };
 
-const CTR_BUILDERS: Record<string, Function> = {
-  "ctr-001": buildCtr001,
-  "ctr-002": buildCtr002,
+const CTR_BUILDERS: Record<string, TemplateBuilder> = {
+  "ctr-001": buildCtr001 as TemplateBuilder,
+  "ctr-002": buildCtr002 as TemplateBuilder,
+  "ctr-003": buildCtr003,
+  "ctr-004": buildCtr004,
 };
 
 export async function buildTemplate(
@@ -37,13 +53,11 @@ export async function buildTemplate(
 
   if (type === "orcamento") {
     const templateId = artist.orcamentoTemplate || "orc-001";
-    const builder = ORC_BUILDERS[templateId] || buildOrc001;
-    if (templateId === "orc-001") return builder(artist, data, pageSize, logo, background);
-    return builder(artist, data, logo);
+    const builder = ORC_BUILDERS[templateId] ?? ORC_BUILDERS["orc-001"];
+    return builder(artist, data as Record<string, any>, pageSize, logo, background);
   }
 
   const templateId = artist.contratoTemplate || "ctr-001";
-  const builder = CTR_BUILDERS[templateId] || buildCtr001;
-  if (templateId === "ctr-001") return builder(artist, data, pageSize, logo);
-  return builder(artist, data, logo);
+  const builder = CTR_BUILDERS[templateId] ?? CTR_BUILDERS["ctr-001"];
+  return builder(artist, data as Record<string, any>, pageSize, logo, background);
 }

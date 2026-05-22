@@ -4,6 +4,7 @@ import React from "react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { IconUpload, IconCheck } from "@/components/ui/icons";
 
 // ── File upload row component (design system style) ──
@@ -286,6 +287,7 @@ export default function ConfiguracoesPage() {
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [uploadTs, setUploadTs] = useState<Record<string, number>>({});
   const [templates, setTemplates] = useState<{ orcamento: TemplateInfo[]; contrato: TemplateInfo[] }>({
     orcamento: [],
     contrato: [],
@@ -375,6 +377,7 @@ export default function ConfiguracoesPage() {
         if (type === "base-contrato-pdf") field = "baseContractPdfUrl";
 
         setData((prev) => (prev ? { ...prev, [field]: url } : prev));
+        setUploadTs((prev) => ({ ...prev, [type]: Date.now() }));
         setMessage({ text: "Arquivo salvo com sucesso!", type: "success" });
       } else {
         setMessage({ text: "Erro ao enviar arquivo", type: "error" });
@@ -460,7 +463,7 @@ export default function ConfiguracoesPage() {
         {/* Logo */}
         <FileUploadRow
           label="Logo do Artista"
-          preview={data.logoUrl ? <img src={data.logoUrl} alt="Logo" style={{ maxHeight: 56, maxWidth: "100%", objectFit: "contain" }} /> : undefined}
+          preview={data.logoUrl ? <img src={uploadTs["logo"] ? `${data.logoUrl}?t=${uploadTs["logo"]}` : data.logoUrl} alt="Logo" style={{ maxHeight: 56, maxWidth: "100%", objectFit: "contain" }} /> : undefined}
           uploaded={!!data.logoUrl}
           uploading={uploading["logo"]}
           accept="image/*"
@@ -472,7 +475,7 @@ export default function ConfiguracoesPage() {
           label="Imagem de Fundo"
           preview={data.backgroundUrl ? (
             <div style={{ height: 56, borderRadius: 8, overflow: "hidden", background: "#0e1118" }}>
-              <img src={data.backgroundUrl} alt="Background" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={uploadTs["background"] ? `${data.backgroundUrl}?t=${uploadTs["background"]}` : data.backgroundUrl} alt="Background" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
           ) : undefined}
           uploaded={!!data.backgroundUrl}
@@ -622,25 +625,28 @@ export default function ConfiguracoesPage() {
           />
         </FSection>
 
-        <FSection title="Templates">
-          <div className="space-y-5">
-            <TemplatePicker
-              title="Orçamento"
-              items={templates.orcamento}
-              selectedId={data.orcamentoTemplate || "orc-001"}
-              primaryColor={data.primaryColor || "#e6b800"}
-              onSelect={(id) => handleChange("orcamentoTemplate", id)}
-            />
-            <TemplatePicker
-              title="Contrato"
-              items={templates.contrato}
-              selectedId={data.contratoTemplate || "ctr-001"}
-              primaryColor={data.primaryColor || "#e6b800"}
-              onSelect={(id) => handleChange("contratoTemplate", id)}
-            />
-
+        <section style={{ background: "#141824", border: "1px solid #252d3d", borderRadius: 16, padding: 18 }}>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#f1f5f9", marginBottom: 16 }}>
+            Templates
           </div>
-        </FSection>
+          <div style={{ display: "flex", flexDirection: "column" as const, gap: 10 }}>
+            <TemplateStatusRow label="Orçamento" templateId={data.orcamentoTemplate || "orc-001"} templates={templates.orcamento} />
+            <TemplateStatusRow label="Contrato" templateId={data.contratoTemplate || "ctr-001"} templates={templates.contrato} />
+            <Link href="/admin/templates" style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              height: 44, borderRadius: 10, border: "1px solid #252d3d",
+              background: "#0e1118", color: "#94a3b8",
+              fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600,
+              textDecoration: "none", marginTop: 4,
+              transition: "border-color 0.15s, color 0.15s",
+            }}>
+              Gerenciar Templates
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </Link>
+          </div>
+        </section>
 
         {/* ── Salvar ── */}
         <button
@@ -804,82 +810,22 @@ function FFormField({ label, children }: { label: string; children: React.ReactN
   );
 }
 
-function TemplatePicker({
-  title,
-  items,
-  selectedId,
-  primaryColor,
-  onSelect,
-}: {
-  title: string;
-  items: TemplateInfo[];
-  selectedId: string;
-  primaryColor: string;
-  onSelect: (id: string) => void;
+function TemplateStatusRow({ label, templateId, templates }: {
+  label: string;
+  templateId: string;
+  templates: TemplateInfo[];
 }) {
+  const tpl = templates.find((t) => t.id === templateId);
   return (
-    <div>
-      <div className="text-xs uppercase tracking-[0.14em] text-gray-400 font-semibold mb-3">{title}</div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {items.map((tpl) => {
-          const isActive = tpl.id === selectedId;
-          return (
-            <button
-              key={tpl.id}
-              type="button"
-              onClick={() => onSelect(tpl.id)}
-              className="text-left rounded-xl border p-3 transition-colors"
-              style={{
-                borderColor: isActive ? primaryColor : "#252d3d",
-                background: "#141824",
-                boxShadow: isActive ? `0 0 0 1px ${primaryColor}40` : "none",
-              }}
-            >
-              <div
-                style={{
-                  width: 120,
-                  height: 160,
-                  borderRadius: 10,
-                  background: tpl.previewBg,
-                  border: `1px solid ${tpl.previewAccent}33`,
-                  position: "relative",
-                  overflow: "hidden",
-                }}
-              >
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 20, background: tpl.previewAccent }} />
-                <div style={{ position: "absolute", top: 34, left: 12, right: 12, height: 6, background: `${tpl.previewAccent}66`, borderRadius: 999 }} />
-                <div style={{ position: "absolute", top: 48, left: 12, right: 22, height: 6, background: `${tpl.previewAccent}44`, borderRadius: 999 }} />
-                <div style={{ position: "absolute", bottom: 12, left: 12, right: 12, height: 8, background: `${tpl.previewAccent}66`, borderRadius: 999 }} />
-                {isActive && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      width: 18,
-                      height: 18,
-                      borderRadius: 999,
-                      background: primaryColor,
-                      color: "#111",
-                      fontWeight: 700,
-                      fontSize: 12,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    ✓
-                  </div>
-                )}
-              </div>
-              <div className="mt-3">
-                <div className="text-sm font-semibold text-gray-100">{tpl.name}</div>
-                <div className="text-xs text-gray-500 mt-1">{tpl.description}</div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "10px 14px", background: "#1a1f2e",
+      border: "1px solid #252d3d", borderRadius: 10,
+    }}>
+      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#6b7280", fontWeight: 500 }}>{label}</span>
+      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#f1f5f9", fontWeight: 600 }}>
+        {tpl?.name ?? templateId}
+      </span>
     </div>
   );
 }

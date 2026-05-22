@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import FormContrato from "@/components/forms/FormContrato";
 import { RecentDocs } from "@/components/ui/RecentDocs";
 import { PdfReadyModal } from "@/components/ui/PdfReadyModal";
@@ -8,7 +9,8 @@ import { LoadingDocument } from "@/components/ui/LoadingDocument";
 import { gerarNumeroDoc } from "@/utils/form";
 import { useFormContext } from "@/context/FormContext";
 
-export default function ContratoPage() {
+function ContratoContent() {
+  const searchParams = useSearchParams();
   const {
     artistDisplayName,
     contrato, setContrato,
@@ -23,7 +25,13 @@ export default function ContratoPage() {
 
   useEffect(() => {
     if (!numeroCtr) setNumeroCtr(gerarNumeroDoc("CTR"));
-  }, [numeroCtr, setNumeroCtr]);
+
+    // Capturar data do calendário se houver
+    const dateParam = searchParams.get("date");
+    if (dateParam) {
+      setContrato((prev) => ({ ...prev, data: dateParam }));
+    }
+  }, [numeroCtr, setNumeroCtr, searchParams, setContrato]);
 
   async function handleSubmit() {
     setLoading(true);
@@ -150,5 +158,13 @@ export default function ContratoPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function ContratoPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray-500">Carregando...</div>}>
+      <ContratoContent />
+    </Suspense>
   );
 }

@@ -82,3 +82,19 @@ export function getPublicUrl(key: string): string {
   }
   return `${R2_ENDPOINT}/${R2_BUCKET_NAME}/${key}`;
 }
+
+/**
+ * Extract the R2 storage key from a public URL.
+ * Reverse of getPublicUrl.
+ */
+export function getKeyFromUrl(url: string): string {
+  if (R2_PUBLIC_URL) {
+    const base = R2_PUBLIC_URL.endsWith("/") ? R2_PUBLIC_URL : `${R2_PUBLIC_URL}/`;
+    if (url.startsWith(base)) return url.slice(base.length);
+  }
+  // Fallback: extract everything after /{bucketName}/
+  const marker = `/${R2_BUCKET_NAME}/`;
+  const idx = url.indexOf(marker);
+  if (idx !== -1) return url.slice(idx + marker.length);
+  return url;
+}

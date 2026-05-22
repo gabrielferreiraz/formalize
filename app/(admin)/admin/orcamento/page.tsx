@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import FormOrcamento from "@/components/forms/FormOrcamento";
 import { RecentDocs } from "@/components/ui/RecentDocs";
 import { PdfReadyModal } from "@/components/ui/PdfReadyModal";
@@ -10,8 +10,9 @@ import { gerarNumeroDoc, hoje } from "@/utils/form";
 import { useFormContext } from "@/context/FormContext";
 import { defaultContratoValues } from "@/components/forms/FormContrato";
 
-export default function OrcamentoPage() {
+function OrcamentoContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     artistDisplayName,
     orcamento, setOrcamento,
@@ -27,7 +28,13 @@ export default function OrcamentoPage() {
 
   useEffect(() => {
     if (!numeroOrc) setNumeroOrc(gerarNumeroDoc("ORC"));
-  }, [numeroOrc, setNumeroOrc]);
+    
+    // Capturar data do calendário se houver
+    const dateParam = searchParams.get("date");
+    if (dateParam) {
+      setOrcamento((prev) => ({ ...prev, data: dateParam }));
+    }
+  }, [numeroOrc, setNumeroOrc, searchParams, setOrcamento]);
 
   async function handleSubmit() {
     setLoading(true);
@@ -177,5 +184,13 @@ export default function OrcamentoPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function OrcamentoPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray-500">Carregando...</div>}>
+      <OrcamentoContent />
+    </Suspense>
   );
 }

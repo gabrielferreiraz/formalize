@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { deleteFromR2, getKeyFromUrl } from "@/lib/r2";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
 
   const where = {
     artistId: session.user.artistId,
-    ...(type && type !== "all" ? { type: type as "BUDGET" | "CONTRACT" } : {}),
+    ...(type && type !== "all" ? { type: type as any } : {}),
     ...(fromDate && toDate
       ? {
           OR: [
@@ -78,9 +79,18 @@ export async function DELETE(req: NextRequest) {
 
   const doc = await prisma.document.findFirst({
     where: { id, artistId: session.user.artistId },
+    select: { id: true, pdfUrl: true },
   });
   if (!doc) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
 
-  await prisma.document.delete({ where: { id } });
+  await Promise.all([
+    prisma.document.delete({ where: { id } }),
+    doc.pdfUrl
+      ? deleteFromR2(getKeyFromUrl(doc.pdfUrl)).catch((err) =>
+          console.error("[doc-delete] R2 delete failed:", doc.pdfUrl, err)
+        )
+      : Promise.resolve(),
+  ]);
+
   return NextResponse.json({ ok: true });
 }

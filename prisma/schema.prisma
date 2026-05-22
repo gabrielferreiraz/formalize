@@ -36,6 +36,7 @@ enum DocumentType {
   CONTRACT
   PORTFOLIO
   STAGE_MAP
+  GENERIC_EVENT
 }
 
 // ------------------------------------------------------------------
