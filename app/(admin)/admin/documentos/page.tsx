@@ -902,10 +902,10 @@ export default function DocumentosPage() {
                         </div>
                         <div className="flex items-center justify-between gap-2 mt-0.5 min-w-0">
                           <div className="flex items-center gap-1.5 text-[11px] opacity-60 min-w-0 overflow-hidden">
-                            {doc.data?.horario && (
+                            {typeof doc.data?.horario === "string" && doc.data.horario && (
                               <span className="flex items-center gap-1 shrink-0">
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                {String(doc.data.horario)}
+                                {doc.data.horario}
                               </span>
                             )}
                             <span className="truncate">{parseEventLocal(doc)}</span>
