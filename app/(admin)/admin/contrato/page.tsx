@@ -29,9 +29,9 @@ function ContratoContent() {
     // Capturar data do calendário se houver
     const dateParam = searchParams.get("date");
     if (dateParam) {
-      setContrato((prev) => ({ ...prev, data: dateParam }));
+      setContrato({ ...contrato, data: dateParam });
     }
-  }, [numeroCtr, setNumeroCtr, searchParams, setContrato]);
+  }, [numeroCtr, setNumeroCtr, searchParams, setContrato]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit() {
     setLoading(true);
@@ -138,7 +138,7 @@ function ContratoContent() {
         recentDocs={
           <RecentDocs
             type="CONTRACT"
-            onLoad={(d) => setContrato((prev) => ({ ...prev, ...d }))}
+            onLoad={(d) => setContrato({ ...contrato, ...d })}
           />
         }
       />

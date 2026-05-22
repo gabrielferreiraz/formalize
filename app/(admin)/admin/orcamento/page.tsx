@@ -32,9 +32,9 @@ function OrcamentoContent() {
     // Capturar data do calendário se houver
     const dateParam = searchParams.get("date");
     if (dateParam) {
-      setOrcamento((prev) => ({ ...prev, data: dateParam }));
+      setOrcamento({ ...orcamento, data: dateParam });
     }
-  }, [numeroOrc, setNumeroOrc, searchParams, setOrcamento]);
+  }, [numeroOrc, setNumeroOrc, searchParams, setOrcamento]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit() {
     setLoading(true);
