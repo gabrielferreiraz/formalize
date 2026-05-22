@@ -910,7 +910,7 @@ export default function DocumentosPage() {
                             )}
                             <span className="truncate">{parseEventLocal(doc)}</span>
                           </div>
-                          {doc.type !== "GENERIC_EVENT" && doc.data?.cache && (
+                          {doc.type !== "GENERIC_EVENT" && !!doc.data?.cache && (
                             <span className="text-[11px] font-bold font-mono shrink-0 opacity-90 ml-1">
                               {formatMoneyFromCache(doc.data.cache)}
                             </span>
