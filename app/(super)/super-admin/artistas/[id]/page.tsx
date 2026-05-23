@@ -22,7 +22,15 @@ type Artist = {
   _count: { documents: number };
 };
 
-type User = { id: string; name: string | null; email: string; role: string; createdAt: string };
+type User = {
+  id: string;
+  name: string | null;
+  email: string;
+  role: string;
+  active: boolean;
+  forcePasswordChange: boolean;
+  createdAt: string;
+};
 type Doc = { id: string; type: string; title: string; pdfUrl: string | null; createdAt: string };
 
 const STATUS_OPTIONS = ["ACTIVE", "SUSPENDED", "CANCELLED"] as const;
@@ -154,46 +162,119 @@ function TabDados({ artist, onSaved }: { artist: Artist; onSaved: () => void }) 
   );
 }
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function genPassword() {
+  const chars = "abcdefghjkmnpqrstuvwxyz23456789!@#";
+  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+}
+
+function CopyBtn({ text, label = "Copiar" }: { text: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+      className="text-xs text-gold-400 hover:text-gold-300 font-medium shrink-0 transition-colors"
+    >
+      {copied ? "Copiado!" : label}
+    </button>
+  );
+}
+
 // ── Tab: Usuários ────────────────────────────────────────────────────────────
 
 function TabUsuarios({ artist, onRefresh }: { artist: Artist; onRefresh: () => void }) {
   const [users, setUsers] = useState<User[]>(artist.users);
   const [showNew, setShowNew] = useState(false);
-  const [newForm, setNewForm] = useState({ name: "", email: "", password: "" });
+  const [newForm, setNewForm] = useState({ name: "", email: "", password: genPassword(), forcePasswordChange: true });
+  const [showNewPass, setShowNewPass] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
+
+  // Per-user reset state
   const [resetId, setResetId] = useState<string | null>(null);
-  const [newPass, setNewPass] = useState("");
-  const [resetResult, setResetResult] = useState<Record<string, string>>({});
+  const [resetPass, setResetPass] = useState(() => genPassword());
+  const [showResetPass, setShowResetPass] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
+  // Per-user toggling (active / forcePasswordChange)
+  const [toggling, setToggling] = useState<string | null>(null);
 
   useEffect(() => { setUsers(artist.users); }, [artist.users]);
+
+  function openReset(uid: string) {
+    setResetId(uid);
+    setResetPass(genPassword());
+    setShowResetPass(false);
+  }
+
+  function patchUser(updated: User) {
+    setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+  }
 
   async function createUser(e: React.FormEvent) {
     e.preventDefault();
     setCreating(true);
+    setCreateError("");
     try {
       const res = await fetch(`/api/super/artists/${artist.id}/users`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newForm),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newForm),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       setUsers((u) => [...u, json]);
       setShowNew(false);
-      setNewForm({ name: "", email: "", password: "" });
+      setNewForm({ name: "", email: "", password: genPassword(), forcePasswordChange: true });
       onRefresh();
-    } catch (err) { alert(err instanceof Error ? err.message : "Erro"); }
+    } catch (err) { setCreateError(err instanceof Error ? err.message : "Erro"); }
     finally { setCreating(false); }
   }
 
-  async function resetPassword(uid: string) {
-    if (!newPass.trim()) return;
-    const res = await fetch(`/api/super/artists/${artist.id}/users/${uid}`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: newPass }),
-    });
-    if (res.ok) { setResetResult((r) => ({ ...r, [uid]: "Senha alterada!" })); setResetId(null); setNewPass(""); }
+  async function resetPassword() {
+    if (!resetId || !resetPass.trim()) return;
+    setResetting(true);
+    try {
+      const res = await fetch(`/api/super/artists/${artist.id}/users/${resetId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: resetPass, forcePasswordChange: true }),
+      });
+      const json = await res.json();
+      if (res.ok) { patchUser(json); setResetId(null); }
+    } finally { setResetting(false); }
+  }
+
+  async function toggleActive(u: User) {
+    setToggling(u.id);
+    try {
+      const res = await fetch(`/api/super/artists/${artist.id}/users/${u.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !u.active }),
+      });
+      const json = await res.json();
+      if (res.ok) patchUser(json);
+    } finally { setToggling(null); }
+  }
+
+  async function toggleForcePasswordChange(u: User) {
+    setToggling(u.id);
+    try {
+      const res = await fetch(`/api/super/artists/${artist.id}/users/${u.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forcePasswordChange: !u.forcePasswordChange }),
+      });
+      const json = await res.json();
+      if (res.ok) patchUser(json);
+    } finally { setToggling(null); }
   }
 
   async function deleteUser(uid: string) {
-    if (!confirm("Remover este usuário?")) return;
+    if (!confirm("Remover este usuário permanentemente?")) return;
     await fetch(`/api/super/artists/${artist.id}/users/${uid}`, { method: "DELETE" });
     setUsers((u) => u.filter((x) => x.id !== uid));
     onRefresh();
@@ -203,52 +284,132 @@ function TabUsuarios({ artist, onRefresh }: { artist: Artist; onRefresh: () => v
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-400">{users.length} usuário{users.length !== 1 ? "s" : ""}</p>
-        <button onClick={() => setShowNew(!showNew)}
-          className="px-3 py-1.5 text-xs font-medium rounded-xl border border-stage-500 text-gray-400 hover:border-gold-600 hover:text-gold-400 transition-colors">
+        <button
+          onClick={() => { setShowNew(!showNew); setCreateError(""); }}
+          className="px-3 py-1.5 text-xs font-medium rounded-xl border border-stage-500 text-gray-400 hover:border-gold-600 hover:text-gold-400 transition-colors"
+        >
           + Novo usuário
         </button>
       </div>
 
+      {/* ── Create user form ── */}
       {showNew && (
-        <form onSubmit={createUser} className="card space-y-3 animate-fade-in">
-          <p className="text-sm font-semibold text-gray-300">Novo usuário</p>
-          {(["name", "email", "password"] as const).map((k) => (
-            <div key={k}>
-              <label className="label">{k === "name" ? "Nome" : k === "email" ? "E-mail" : "Senha"}</label>
-              <input type={k === "password" ? "password" : k === "email" ? "email" : "text"}
-                className="input-field" value={newForm[k]}
-                onChange={(e) => setNewForm((f) => ({ ...f, [k]: e.target.value }))}
-                required={k !== "name"} />
+        <form onSubmit={createUser} className="card space-y-3 animate-fade-in border-gold-500/30">
+          <p className="text-sm font-semibold text-gray-200">Novo usuário</p>
+
+          <div>
+            <label className="label">Nome</label>
+            <input type="text" className="input-field" value={newForm.name}
+              onChange={(e) => setNewForm((f) => ({ ...f, name: e.target.value }))} />
+          </div>
+
+          <div>
+            <label className="label">E-mail</label>
+            <input type="email" className="input-field" value={newForm.email}
+              onChange={(e) => setNewForm((f) => ({ ...f, email: e.target.value }))} required />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="label mb-0">Senha inicial</label>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => setNewForm((f) => ({ ...f, password: genPassword() }))}
+                  className="text-xs text-gold-400 hover:text-gold-300">Gerar nova</button>
+                <CopyBtn text={newForm.password} />
+              </div>
             </div>
-          ))}
+            <div className="relative">
+              <input type={showNewPass ? "text" : "password"} className="input-field pr-14 font-mono"
+                value={newForm.password} onChange={(e) => setNewForm((f) => ({ ...f, password: e.target.value }))}
+                required minLength={6} />
+              <button type="button" onClick={() => setShowNewPass((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-gray-300">
+                {showNewPass ? "Ocultar" : "Ver"}
+              </button>
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" checked={newForm.forcePasswordChange}
+              onChange={(e) => setNewForm((f) => ({ ...f, forcePasswordChange: e.target.checked }))}
+              className="accent-gold-500 w-4 h-4" />
+            <span className="text-xs text-gray-400">Forçar troca de senha no primeiro acesso</span>
+          </label>
+
+          {createError && (
+            <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2">{createError}</p>
+          )}
+
           <div className="flex gap-2">
             <button type="button" onClick={() => setShowNew(false)}
-              className="flex-1 py-2 rounded-xl border border-stage-500 text-gray-400 text-sm transition-colors">Cancelar</button>
+              className="flex-1 py-2 rounded-xl border border-stage-500 text-gray-400 text-sm transition-colors">
+              Cancelar
+            </button>
             <button type="submit" disabled={creating} className="flex-1 btn-primary text-sm py-2">
-              {creating ? "Criando..." : "Criar"}
+              {creating ? "Criando..." : "Criar usuário"}
             </button>
           </div>
         </form>
       )}
 
+      {/* ── User list ── */}
       <div className="space-y-2">
         {users.map((u) => (
-          <div key={u.id} className="card space-y-2">
-            <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-200 truncate">{u.name || "—"}</p>
-                <p className="text-xs text-gray-500">{u.email}</p>
+          <div key={u.id} className="card space-y-3">
+            {/* Header row */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-medium text-gray-200 truncate">{u.name || "—"}</p>
+                  {/* Active / blocked badge */}
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-md border shrink-0 ${
+                    u.active
+                      ? "text-green-400 bg-green-500/10 border-green-500/30"
+                      : "text-red-400 bg-red-500/10 border-red-500/30"
+                  }`}>
+                    {u.active ? "Ativo" : "Bloqueado"}
+                  </span>
+                  {/* Force password change badge */}
+                  {u.forcePasswordChange && (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md border text-yellow-400 bg-yellow-500/10 border-yellow-500/30 shrink-0">
+                      Senha pendente
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">{u.email}</p>
+                <p className="text-xs text-gray-700 mt-0.5">Criado {new Date(u.createdAt).toLocaleDateString("pt-BR")}</p>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs text-gray-600 hidden sm:block">
-                  {new Date(u.createdAt).toLocaleDateString("pt-BR")}
-                </span>
-                <button onClick={() => { setResetId(resetId === u.id ? null : u.id); setNewPass(""); }}
-                  className="px-2.5 py-1 text-xs rounded-lg border border-stage-500 text-gray-400 hover:border-gold-600 hover:text-gold-400 transition-colors">
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-1 shrink-0">
+                {/* Reset password */}
+                <button
+                  onClick={() => resetId === u.id ? setResetId(null) : openReset(u.id)}
+                  className={`px-2.5 py-1 text-xs rounded-lg border transition-colors ${
+                    resetId === u.id
+                      ? "border-gold-500/60 text-gold-400 bg-gold-500/10"
+                      : "border-stage-500 text-gray-400 hover:border-gold-600 hover:text-gold-400"
+                  }`}
+                >
                   Senha
                 </button>
-                <button onClick={() => deleteUser(u.id)}
-                  className="p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                {/* Block / Unblock */}
+                <button
+                  onClick={() => toggleActive(u)}
+                  disabled={toggling === u.id}
+                  className={`px-2.5 py-1 text-xs rounded-lg border transition-colors ${
+                    u.active
+                      ? "border-stage-500 text-gray-400 hover:border-red-500/50 hover:text-red-400"
+                      : "border-green-500/40 text-green-400 hover:bg-green-500/10"
+                  }`}
+                >
+                  {toggling === u.id ? "..." : u.active ? "Bloquear" : "Ativar"}
+                </button>
+                {/* Delete */}
+                <button
+                  onClick={() => deleteUser(u.id)}
+                  className="p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                     <path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
@@ -256,18 +417,61 @@ function TabUsuarios({ artist, onRefresh }: { artist: Artist; onRefresh: () => v
                 </button>
               </div>
             </div>
+
+            {/* Force password change toggle row */}
+            <div className="flex items-center justify-between gap-2 pt-1 border-t border-stage-700">
+              <span className="text-xs text-gray-500">
+                {u.forcePasswordChange ? "Troca de senha obrigatória no próximo login" : "Senha confirmada pelo usuário"}
+              </span>
+              <button
+                type="button"
+                onClick={() => toggleForcePasswordChange(u)}
+                disabled={toggling === u.id}
+                className="text-xs text-gold-400 hover:text-gold-300 transition-colors shrink-0"
+              >
+                {u.forcePasswordChange ? "Remover obrigação" : "Forçar troca"}
+              </button>
+            </div>
+
+            {/* Password reset panel */}
             {resetId === u.id && (
-              <div className="flex gap-2 animate-fade-in">
-                <input type="password" className="input-field text-sm" placeholder="Nova senha"
-                  value={newPass} onChange={(e) => setNewPass(e.target.value)} />
-                <button onClick={() => resetPassword(u.id)}
-                  className="px-3 py-2 bg-gold-500 text-stage-900 text-xs font-bold rounded-xl hover:bg-gold-400 transition-colors whitespace-nowrap">
-                  Confirmar
-                </button>
+              <div className="space-y-2 pt-2 border-t border-stage-700 animate-fade-in">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-gray-400 font-medium">Nova senha</span>
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={() => setResetPass(genPassword())}
+                      className="text-xs text-gold-400 hover:text-gold-300">Gerar nova</button>
+                    <CopyBtn text={resetPass} />
+                  </div>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showResetPass ? "text" : "password"}
+                    className="input-field text-sm font-mono pr-14"
+                    value={resetPass}
+                    onChange={(e) => setResetPass(e.target.value)}
+                  />
+                  <button type="button" onClick={() => setShowResetPass((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-gray-300">
+                    {showResetPass ? "Ocultar" : "Ver"}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-600">A troca de senha no próximo login será ativada automaticamente.</p>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setResetId(null)}
+                    className="flex-1 py-1.5 rounded-xl border border-stage-500 text-gray-400 text-xs transition-colors">
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetPassword}
+                    disabled={resetting || resetPass.length < 6}
+                    className="flex-1 btn-primary text-xs py-1.5"
+                  >
+                    {resetting ? "Salvando..." : "Confirmar nova senha"}
+                  </button>
+                </div>
               </div>
-            )}
-            {resetResult[u.id] && (
-              <p className="text-xs text-green-400 animate-fade-in">{resetResult[u.id]}</p>
             )}
           </div>
         ))}

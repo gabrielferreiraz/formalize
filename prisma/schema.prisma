@@ -112,6 +112,9 @@ model User {
   artistId String?
   artist   Artist? @relation(fields: [artistId], references: [id], onDelete: SetNull)
 
+  forcePasswordChange Boolean @default(false)
+  active              Boolean @default(true)
+
   createdAt DateTime @default(now())
 
   @@unique([email, artistId])
@@ -156,6 +159,18 @@ model Template {
 
   @@unique([artistId, type])
   @@index([artistId])
+}
+
+/// Token de redefinição de senha (sem SMTP — admin entrega o link via WhatsApp)
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  email     String
+  token     String    @unique @default(cuid())
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email])
 }
 
 /// Requisições de onboarding de novos artistas

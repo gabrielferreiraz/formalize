@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
+import Image from "next/image";
 import NavLink from "./super-admin/components/NavLink";
 import SignOutButton from "./super-admin/components/SignOutButton";
 
@@ -13,9 +14,13 @@ export default async function SuperAdminLayout({ children }: { children: React.R
       <header className="bg-stage-800/80 backdrop-blur border-b border-stage-600 px-4 h-14 flex items-center sticky top-0 z-40">
         <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <span className="text-sm font-black tracking-widest text-gold-500 uppercase">
-              Formalize
-            </span>
+            <Image
+              src="/icon-512.png"
+              alt="Formalize"
+              width={32}
+              height={32}
+              style={{ width: 32, height: 32, borderRadius: 8 }}
+            />
             <nav className="flex items-center gap-1">
               <NavLink href="/super-admin">Dashboard</NavLink>
               <NavLink href="/super-admin/artistas">Artistas</NavLink>

@@ -29,10 +29,12 @@ export const authOptions: NextAuthOptions = {
   },
 
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [GoogleProvider({
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        })]
+      : []),
 
     CredentialsProvider({
       name: "credentials",
@@ -62,6 +64,11 @@ export const authOptions: NextAuthOptions = {
         const passwordMatch = await compare(credentials.password, user.password);
         if (!passwordMatch) return null;
 
+        // Verifica se o usuário está ativo
+        if (!user.active) {
+          throw new Error("Esta conta foi desativada.");
+        }
+
         // Verifica se o artista vinculado está ativo (somente para ARTIST_ADMIN)
         if (user.role === "ARTIST_ADMIN" && user.artistId) {
           const artist = await prisma.artist.findUnique({
@@ -79,6 +86,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name ?? "",
           role: user.role,
           artistId: user.artistId ?? null,
+          forcePasswordChange: user.forcePasswordChange,
         };
       },
     }),
@@ -109,6 +117,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = user.role;
         token.artistId = user.artistId ?? null;
+        token.forcePasswordChange = (user as any).forcePasswordChange ?? false;
         return token;
       }
 
@@ -134,6 +143,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.artistId = (token.artistId as string) ?? null;
+        session.user.forcePasswordChange = (token.forcePasswordChange as boolean) ?? false;
       }
       return session;
     },
@@ -159,6 +169,7 @@ declare module "next-auth" {
       name: string;
       role: string;
       artistId: string | null;
+      forcePasswordChange: boolean;
     };
   }
 }
@@ -168,5 +179,6 @@ declare module "next-auth/jwt" {
     id: string;
     role: string;
     artistId: string | null;
+    forcePasswordChange: boolean;
   }
 }

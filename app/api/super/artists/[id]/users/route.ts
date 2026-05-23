@@ -8,7 +8,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (error) return error;
 
   const { id: artistId } = await params;
-  const { name, email, password } = await req.json();
+  const { name, email, password, forcePasswordChange } = await req.json();
 
   if (!email || !password) {
     return NextResponse.json({ error: "email e password são obrigatórios" }, { status: 400 });
@@ -19,8 +19,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const hashed = await hash(password, 12);
   const user = await prisma.user.create({
-    data: { email, password: hashed, name: name ?? email, role: "ARTIST_ADMIN", artistId },
-    select: { id: true, email: true, name: true, role: true, createdAt: true },
+    data: {
+      email,
+      password: hashed,
+      name: name ?? email,
+      role: "ARTIST_ADMIN",
+      artistId,
+      forcePasswordChange: forcePasswordChange ?? true,
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      active: true,
+      forcePasswordChange: true,
+      createdAt: true,
+    },
   });
 
   return NextResponse.json(user, { status: 201 });

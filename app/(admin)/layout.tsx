@@ -23,25 +23,28 @@ export default async function AdminLayout({
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") ?? "";
 
-  let artist = null;
-  try {
-    artist = session.user.artistId
-      ? await prisma.artist.findUnique({
-          where: { id: session.user.artistId },
-          select: {
-            name: true,
-            logoUrl: true,
-            primaryColor: true,
-            orcamentoFontScale: true,
-            contratoFontScale: true,
-            orcamentoLogoScale: true,
-            contratoLogoScale: true,
-            onboardingDone: true,
-          },
-        })
-      : null;
-  } catch (err) {
-    console.error("Erro ao buscar artista no layout:", err);
+  const artist = session.user.artistId
+    ? await prisma.artist.findUnique({
+        where: { id: session.user.artistId },
+        select: {
+          name: true,
+          logoUrl: true,
+          primaryColor: true,
+          orcamentoFontScale: true,
+          contratoFontScale: true,
+          orcamentoLogoScale: true,
+          contratoLogoScale: true,
+          onboardingDone: true,
+        },
+      }).catch((err: unknown) => {
+        console.error("Erro ao buscar artista no layout:", err);
+        return null;
+      })
+    : null;
+
+  // Force password change takes priority over everything else
+  if (session.user.forcePasswordChange && !pathname.startsWith("/admin/trocar-senha")) {
+    redirect("/admin/trocar-senha");
   }
 
   if (artist && !artist.onboardingDone && !pathname.startsWith("/admin/onboarding")) {

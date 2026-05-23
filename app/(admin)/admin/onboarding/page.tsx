@@ -680,12 +680,10 @@ export default function OnboardingPage() {
     }
   }
 
-  if (!mounted) return null;
-
   const colorRgb = hexToRgb(data.primaryColor);
   const ctaLabel = step === TOTAL_STEPS ? "Concluir" : "Continuar";
 
-  return createPortal(
+  return (
     <div
       style={
         {
@@ -1086,7 +1084,7 @@ export default function OnboardingPage() {
         }
       `}</style>
 
-      {showWelcome && createPortal(
+      {mounted && showWelcome && createPortal(
         <div style={{
           position: "fixed", inset: 0, zIndex: 99999,
           background: "#07090e",
@@ -1126,7 +1124,6 @@ export default function OnboardingPage() {
         </div>,
         document.body
       )}
-    </div>,
-    document.body
+    </div>
   );
 }

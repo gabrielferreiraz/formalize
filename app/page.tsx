@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { IconDoc, IconPen, IconFolder } from "@/components/ui/icons";
 import { RequestForm } from "@/components/RequestForm";
 
@@ -10,12 +11,7 @@ export default function Home() {
       <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-white/5 bg-[#07090e]/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/20">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <path d="M14 2v6h6" />
-              </svg>
-            </div>
+            <Image src="/icon-512.png" alt="Formalize" width={32} height={32} style={{ borderRadius: 8 }} priority />
             <span className="font-bold text-xl tracking-wide text-white">Formalize</span>
           </div>
           <div className="flex items-center gap-4">

@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 
 const ERROR_MESSAGES: Record<string, string> = {
   not_registered: "Este e-mail Google não está cadastrado no sistema.",
@@ -109,16 +110,12 @@ function LoginForm() {
             width: 64,
             height: 64,
             borderRadius: 20,
-            background: "linear-gradient(135deg, rgba(245,200,66,0.14) 0%, rgba(245,200,66,0.04) 100%)",
-            border: "1px solid rgba(245,200,66,0.22)",
-            boxShadow: "0 0 40px rgba(245,200,66,0.10)",
+            background: "transparent",
+            border: "none",
+            boxShadow: "none",
             marginBottom: 18,
           }}>
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#f5c842" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 18V5l12-2v13" />
-              <circle cx="6" cy="18" r="3" />
-              <circle cx="18" cy="16" r="3" />
-            </svg>
+            <Image src="/icon-512.png" alt="Formalize" width={64} height={64} style={{ borderRadius: 16 }} priority />
           </div>
 
           <h1 style={{
@@ -151,8 +148,8 @@ function LoginForm() {
           boxShadow: "0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)",
         }}>
 
-          {/* Google */}
-          <button
+          {/* Google — only shown when OAuth is configured */}
+          {process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" && <button
             type="button"
             onClick={handleGoogle}
             disabled={disabled}
@@ -188,14 +185,15 @@ function LoginForm() {
                 Entrar com Google
               </>
             )}
-          </button>
+          </button>}
 
-          {/* Divisor */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "22px 0" }}>
-            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
-            <span style={{ fontSize: 11, color: "#334155", letterSpacing: "0.06em", fontWeight: 600 }}>OU</span>
-            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
-          </div>
+          {process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "22px 0" }}>
+              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+              <span style={{ fontSize: 11, color: "#334155", letterSpacing: "0.06em", fontWeight: 600 }}>OU</span>
+              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+            </div>
+          )}
 
           {/* Formulário */}
           <form onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -348,6 +346,12 @@ function LoginForm() {
             >
               {loading ? "Entrando..." : "Entrar"}
             </button>
+
+            <div style={{ textAlign: "center", marginTop: 16 }}>
+              <a href="/forgot-password" style={{ fontSize: 12, color: "#334155", textDecoration: "none", fontWeight: 500 }}>
+                Esqueci minha senha
+              </a>
+            </div>
           </form>
         </div>
 
