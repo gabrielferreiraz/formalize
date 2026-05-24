@@ -607,9 +607,14 @@ export default function DocumentosPage() {
                       </p>
                       
                       <div className="flex items-center justify-between mt-auto">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className={`w-1.5 h-1.5 rounded-full ${status.color}`}></span>
                           <span className={`text-[11px] font-medium ${status.text}`}>{status.label}</span>
+                          {!doc.pdfUrl && doc.type !== "GENERIC_EVENT" && (
+                            <span className="text-[9px] font-bold text-amber-400/80 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-[4px]">
+                              PDF expirado
+                            </span>
+                          )}
                         </div>
                         <div className="text-[11px] font-bold text-gold-400 font-mono bg-gold-500/5 px-2 py-0.5 rounded border border-gold-500/10">
                           {formatMoneyFromCache(doc.data?.cache)}
@@ -786,6 +791,12 @@ export default function DocumentosPage() {
                 </p>
               </div>
             </div>
+
+            {!selectedDoc.pdfUrl && selectedDoc.type !== "GENERIC_EVENT" && (
+              <p className="text-[11px] text-amber-300/80 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2.5 leading-relaxed">
+                O PDF foi removido automaticamente pela política de armazenamento do plano. Os dados estão preservados — clique em <strong>Gerar PDF</strong> para recriar.
+              </p>
+            )}
 
             <div className="flex justify-between gap-2 pt-2 border-t border-stage-700">
               <button

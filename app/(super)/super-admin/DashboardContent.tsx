@@ -48,10 +48,18 @@ type Totals = {
   fromManual: number;
 };
 
+type Pagination = {
+  page: number;
+  pages: number;
+  total: number;
+  limit: number;
+};
+
 type DashData = {
   artists: ArtistRow[];
   chartMonthly: MonthPoint[];
   totals: Totals;
+  pagination: Pagination;
 };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -189,16 +197,18 @@ function ArtistExpandRow({ artist }: { artist: ArtistRow }) {
 export default function DashboardContent() {
   const [data, setData] = useState<DashData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "SUSPENDED" | "CANCELLED">("ALL");
   const [sortBy, setSortBy] = useState<"name" | "budgets" | "contracts" | "billing">("billing");
 
   useEffect(() => {
-    fetch("/api/super/dashboard")
+    setLoading(true);
+    fetch(`/api/super/dashboard?page=${page}`)
       .then((r) => r.json())
       .then((d) => setData(d))
       .finally(() => setLoading(false));
-  }, []);
+  }, [page]);
 
   const filtered = useMemo(() => {
     if (!data) return [];
@@ -449,6 +459,56 @@ export default function DashboardContent() {
             </table>
           </div>
         </div>
+
+        {/* Pagination controls */}
+        {data.pagination && data.pagination.pages > 1 && (
+          <div className="flex items-center justify-between pt-2">
+            <span className="text-xs text-gray-500">
+              Página {data.pagination.page} de {data.pagination.pages} · {data.pagination.total} artistas
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1 || loading}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium border border-stage-600 text-gray-400 hover:text-gray-200 hover:bg-stage-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                ← Anterior
+              </button>
+              {Array.from({ length: data.pagination.pages }, (_, i) => i + 1)
+                .filter((p) => p === 1 || p === data.pagination.pages || Math.abs(p - page) <= 1)
+                .reduce<(number | "…")[]>((acc, p, i, arr) => {
+                  if (i > 0 && (p as number) - (arr[i - 1] as number) > 1) acc.push("…");
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, i) =>
+                  p === "…" ? (
+                    <span key={`ellipsis-${i}`} className="px-2 py-1.5 text-xs text-gray-600">…</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p as number)}
+                      disabled={loading}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors disabled:opacity-30 ${
+                        page === p
+                          ? "bg-gold-500 text-stage-900 border-gold-500"
+                          : "border-stage-600 text-gray-400 hover:text-gray-200 hover:bg-stage-700"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+              <button
+                onClick={() => setPage((p) => Math.min(data.pagination.pages, p + 1))}
+                disabled={page >= data.pagination.pages || loading}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium border border-stage-600 text-gray-400 hover:text-gray-200 hover:bg-stage-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Próxima →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

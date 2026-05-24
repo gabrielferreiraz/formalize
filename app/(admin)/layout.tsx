@@ -21,6 +21,10 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
+  if (session.user.active === false) {
+    redirect("/login?error=conta_suspensa");
+  }
+
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") ?? "";
   const requestId = headersList.get("x-request-id") ?? undefined;
@@ -47,12 +51,12 @@ export default async function AdminLayout({
       })
     : null;
 
-  // Force password change takes priority over everything else
-  if (session.user.forcePasswordChange && !pathname.startsWith("/admin/trocar-senha")) {
-    redirect("/admin/trocar-senha");
-  }
-
-  if (artist && !artist.onboardingDone && !pathname.startsWith("/admin/onboarding")) {
+  // Force password change takes priority — must complete before anything else
+  if (session.user.forcePasswordChange) {
+    if (!pathname.startsWith("/admin/trocar-senha")) {
+      redirect("/admin/trocar-senha");
+    }
+  } else if (artist && !artist.onboardingDone && !pathname.startsWith("/admin/onboarding")) {
     redirect("/admin/onboarding");
   }
 

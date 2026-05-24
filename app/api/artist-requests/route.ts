@@ -16,6 +16,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Preencha todos os campos obrigatórios" }, { status: 400 });
   }
 
+  // Reject duplicate submissions from the same email that are still pending or already approved
+  const existing = await prisma.artistRequest.findFirst({
+    where: { email: email.trim(), status: { in: ["PENDING", "APPROVED"] } },
+    select: { id: true, status: true },
+  });
+  if (existing) {
+    return NextResponse.json(
+      {
+        error:
+          existing.status === "APPROVED"
+            ? "Este e-mail j\u00e1 possui uma conta ativa no Formalize."
+            : "J\u00e1 existe uma solicita\u00e7\u00e3o pendente com este e-mail. Aguarde o contato da nossa equipe.",
+      },
+      { status: 409 }
+    );
+  }
+
   const subdomain = artistName
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")

@@ -5,8 +5,18 @@ import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
-// Rate limiting — simple in-memory store (replace with Redis in production)
+// Rate limiting — simple in-memory store (replace with Redis when scaling horizontally)
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+
+// Purge expired entries every 30 minutes to prevent unbounded memory growth.
+// In serverless environments each instance is short-lived so this rarely fires,
+// but in long-running Node processes it prevents the map from growing forever.
+setInterval(() => {
+  const now = Date.now();
+  loginAttempts.forEach((entry, key) => {
+    if (entry.resetAt < now) loginAttempts.delete(key);
+  });
+}, 30 * 60 * 1000);
 
 function checkRateLimit(key: string): boolean {
   const now = Date.now();
@@ -154,7 +164,45 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as string;
         session.user.artistId = (token.artistId as string) ?? null;
         session.user.forcePasswordChange = (token.forcePasswordChange as boolean) ?? false;
+        session.user.active = true;
       }
+
+      // Re-validate user and artist status periodically.
+      // Ensures suspended/deactivated accounts lose access without waiting for session expiry.
+      // Cache window: 5 minutes via token.validatedAt to avoid a DB hit on every single request.
+      if (token.id && session.user) {
+        const validatedAt = (token.validatedAt as number) ?? 0;
+        const FIVE_MIN = 5 * 60 * 1000;
+
+        if (Date.now() - validatedAt > FIVE_MIN) {
+          try {
+            const dbUser = await prisma.user.findUnique({
+              where: { id: token.id as string },
+              select: { active: true },
+            });
+
+            if (!dbUser || !dbUser.active) {
+              session.user.active = false;
+              session.user.artistId = null;
+              return session;
+            }
+
+            if (token.artistId) {
+              const artist = await prisma.artist.findUnique({
+                where: { id: token.artistId as string },
+                select: { status: true },
+              });
+              if (artist?.status !== "ACTIVE") {
+                session.user.active = false;
+                session.user.artistId = null;
+              }
+            }
+          } catch {
+            // On transient DB error, fail open — don't lock out users due to infrastructure issues
+          }
+        }
+      }
+
       return session;
     },
   },
@@ -180,6 +228,7 @@ declare module "next-auth" {
       role: string;
       artistId: string | null;
       forcePasswordChange: boolean;
+      active: boolean;
     };
   }
 }
@@ -190,5 +239,6 @@ declare module "next-auth/jwt" {
     role: string;
     artistId: string | null;
     forcePasswordChange: boolean;
+    validatedAt?: number;
   }
 }

@@ -785,6 +785,7 @@ function scaleFontSizes(html: string, scale: number): string {
 export async function buildCtr002(
   artist: ArtistData,
   data: Record<string, any>,
+  _pageSize?: { width: string; height: string },
   logo?: AssetResult | null,
 ): Promise<string> {
   const fontScale = (artist.contratoFontScale || 100) / 71;

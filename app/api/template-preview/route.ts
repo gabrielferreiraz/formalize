@@ -57,7 +57,7 @@ const SAMPLE_DATA = {
 export async function GET() {
   const [html001, html002] = await Promise.all([
     buildOrc001(SAMPLE_ARTIST as any, SAMPLE_DATA, { width: "21.0", height: "29.7" }, null, null),
-    buildOrc002(SAMPLE_ARTIST as any, SAMPLE_DATA, null),
+    buildOrc002(SAMPLE_ARTIST as any, SAMPLE_DATA, undefined, null),
   ]);
 
   const payload = JSON.stringify({ html001, html002 });

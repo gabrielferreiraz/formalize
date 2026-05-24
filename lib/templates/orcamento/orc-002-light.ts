@@ -512,6 +512,7 @@ function scaleFontSizes(html: string, scale: number): string {
 export async function buildOrc002(
   artist: ArtistData,
   data: Record<string, any>,
+  _pageSize?: { width: string; height: string },
   logo?: AssetResult | null,
 ): Promise<string> {
   const fontScale = (artist.orcamentoFontScale || 100) / 71;

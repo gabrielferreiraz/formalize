@@ -152,30 +152,48 @@ export async function POST(req: NextRequest) {
     }
 
     const d = data as Record<string, string>;
-    const slugify = (s: string) =>
-      (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().trim().replace(/\s+/g, " ");
-    const nomeArquivo = `${isContrato ? "CONTRATO" : "ORCAMENTO"} - ${slugify(d.contratante || d.contratanteNome || "")} ${slugify(d.evento || "")} - ${(d.data || "").split("-").reverse().join("-")}.pdf`;
-    const key = `documents/${artistId}/${nomeArquivo}`;
-    const pdfUrl = getPublicUrl(key);
-
     const docType = isContrato ? "CONTRACT" : "BUDGET";
     const title = `${isContrato ? "Contrato" : "Orçamento"} — ${d.contratante || d.contratanteNome || ""}`.trim();
 
     const tUpload = Date.now();
-    log.debug({ key, docType }, "uploading to R2 and saving to database");
 
-    let document: { id: string };
+    // Step 1: Create DB record first to obtain a stable unique ID.
+    // This prevents filename collisions in R2 and gives us a rollback target.
+    let docRecord: { id: string };
     try {
-      [, document] = await Promise.all([
-        uploadToR2(key, pdfBuffer, "application/pdf"),
-        prisma.document.create({
-          data: { artistId, type: docType, title, pdfUrl, data: data as object },
-        }),
-      ]);
+      docRecord = await prisma.document.create({
+        data: { artistId, type: docType, title, data: data as object },
+        select: { id: true },
+      });
     } catch (err) {
-      log.error({ err, key, docType, durationMs: Date.now() - tUpload }, "R2 upload or database save failed");
+      log.error({ err, docType, durationMs: Date.now() - tUpload }, "database record creation failed");
       throw err;
     }
+
+    // Step 2: Key uses document ID — collision-free regardless of content.
+    const key = `documents/${artistId}/${docRecord.id}.pdf`;
+    const pdfUrl = getPublicUrl(key);
+
+    log.debug({ key, docType, docId: docRecord.id }, "uploading PDF to R2");
+
+    // Step 3: Upload to R2. On failure, roll back the DB record so no orphan exists.
+    try {
+      await uploadToR2(key, pdfBuffer, "application/pdf");
+    } catch (err) {
+      log.error({ err, key, docType, durationMs: Date.now() - tUpload }, "R2 upload failed — rolling back DB record");
+      await prisma.document.delete({ where: { id: docRecord.id } }).catch((deleteErr) =>
+        log.error({ deleteErr, docId: docRecord.id }, "failed to rollback DB record after R2 failure")
+      );
+      throw err;
+    }
+
+    // Step 4: Persist the confirmed pdfUrl into the record.
+    await prisma.document.update({
+      where: { id: docRecord.id },
+      data: { pdfUrl },
+    });
+
+    const document = docRecord;
 
     log.info({
       documentId: document.id,

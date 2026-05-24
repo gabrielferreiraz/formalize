@@ -1,35 +1,46 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+const PAGE_SIZE = 20;
+
 function nextBillingDate(planStartDate: Date, cycleMonths: number): Date {
   const now = new Date();
-  const start = new Date(planStartDate);
-  const next = new Date(start);
-
+  const next = new Date(planStartDate);
   while (next <= now) {
     next.setMonth(next.getMonth() + cycleMonths);
   }
   return next;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (session?.user.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const [artists, monthlyDocs] = await Promise.all([
+  const { searchParams } = new URL(req.url);
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+  const skip = (page - 1) * PAGE_SIZE;
+
+  // Run all independent queries in parallel.
+  // allArtistsSummary: lightweight (no joins) — used only for global totals.
+  // pagedArtists: full detail with users — only current page.
+  const [allArtistsSummary, pagedArtists, monthlyDocs, globalDocTotals] = await Promise.all([
+    prisma.artist.findMany({
+      select: { id: true, status: true, source: true, planStartDate: true, billingCycleMonths: true },
+    }),
+
     prisma.artist.findMany({
       include: {
         users: { select: { id: true, name: true, email: true, role: true, createdAt: true } },
-        _count: { select: { documents: true } },
       },
       orderBy: { createdAt: "desc" },
+      skip,
+      take: PAGE_SIZE,
     }),
 
-    // Documents created per month, last 6 months, grouped by type
     prisma.$queryRaw<{ month: string; type: string; count: bigint }[]>`
       SELECT
         TO_CHAR(DATE_TRUNC('month', "createdAt"), 'YYYY-MM') AS month,
@@ -40,23 +51,34 @@ export async function GET() {
       GROUP BY month, type
       ORDER BY month ASC
     `,
+
+    prisma.document.groupBy({
+      by: ["type"],
+      _count: true,
+      where: { type: { in: ["BUDGET", "CONTRACT"] } },
+    }),
   ]);
 
-  // Per-artist budget/contract counts
-  const docTypeCounts = await prisma.document.groupBy({
-    by: ["artistId", "type"],
-    _count: true,
-  });
+  // Doc counts only for the artists on the current page — avoids scanning every document row.
+  const pagedIds = pagedArtists.map((a) => a.id);
+  const pagedDocCounts = pagedIds.length
+    ? await prisma.document.groupBy({
+        by: ["artistId", "type"],
+        _count: true,
+        where: { artistId: { in: pagedIds } },
+      })
+    : [];
 
+  // Build per-artist count map for the current page.
   const countMap: Record<string, { BUDGET: number; CONTRACT: number; total: number }> = {};
-  for (const row of docTypeCounts) {
+  for (const row of pagedDocCounts) {
     if (!countMap[row.artistId]) countMap[row.artistId] = { BUDGET: 0, CONTRACT: 0, total: 0 };
     if (row.type === "BUDGET") countMap[row.artistId].BUDGET = row._count;
     if (row.type === "CONTRACT") countMap[row.artistId].CONTRACT = row._count;
     countMap[row.artistId].total += row._count;
   }
 
-  const artistsWithBilling = artists.map((a) => {
+  const artistsWithBilling = pagedArtists.map((a) => {
     const billing = nextBillingDate(a.planStartDate, a.billingCycleMonths);
     const daysUntil = Math.ceil((billing.getTime() - Date.now()) / 86_400_000);
     const counts = countMap[a.id] ?? { BUDGET: 0, CONTRACT: 0, total: 0 };
@@ -79,7 +101,7 @@ export async function GET() {
     };
   });
 
-  // Build monthly chart data
+  // Monthly chart
   const monthMap: Record<string, { month: string; BUDGET: number; CONTRACT: number }> = {};
   for (const row of monthlyDocs) {
     const m = row.month;
@@ -89,23 +111,36 @@ export async function GET() {
   }
   const chartMonthly = Object.values(monthMap).sort((a, b) => a.month.localeCompare(b.month));
 
-  const totalBudgets = artistsWithBilling.reduce((s, a) => s + a.budgets, 0);
-  const totalContracts = artistsWithBilling.reduce((s, a) => s + a.contracts, 0);
-  const fromLP = artists.filter((a) => a.source === "LP").length;
-  const fromManual = artists.filter((a) => a.source !== "LP").length;
+  // Global totals computed from the lightweight summary (no joins).
+  const totalCount = allArtistsSummary.length;
+  const fromLP = allArtistsSummary.filter((a) => a.source === "LP").length;
+  const fromManual = allArtistsSummary.filter((a) => a.source !== "LP").length;
+  const billingNext7 = allArtistsSummary.filter((a) => {
+    const billing = nextBillingDate(a.planStartDate, a.billingCycleMonths);
+    return Math.ceil((billing.getTime() - Date.now()) / 86_400_000) <= 7;
+  }).length;
+
+  const totalBudgets = globalDocTotals.find((r) => r.type === "BUDGET")?._count ?? 0;
+  const totalContracts = globalDocTotals.find((r) => r.type === "CONTRACT")?._count ?? 0;
 
   return NextResponse.json({
     artists: artistsWithBilling,
     chartMonthly,
     totals: {
-      artists: artists.length,
-      active: artists.filter((a) => a.status === "ACTIVE").length,
-      suspended: artists.filter((a) => a.status === "SUSPENDED").length,
+      artists: totalCount,
+      active: allArtistsSummary.filter((a) => a.status === "ACTIVE").length,
+      suspended: allArtistsSummary.filter((a) => a.status === "SUSPENDED").length,
       budgets: totalBudgets,
       contracts: totalContracts,
-      billingNext7: artistsWithBilling.filter((a) => a.daysUntilBilling <= 7).length,
+      billingNext7,
       fromLP,
       fromManual,
+    },
+    pagination: {
+      page,
+      pages: Math.ceil(totalCount / PAGE_SIZE),
+      total: totalCount,
+      limit: PAGE_SIZE,
     },
   });
 }
