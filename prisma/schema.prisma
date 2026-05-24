@@ -94,6 +94,9 @@ model Artist {
 
   status ArtistStatus @default(ACTIVE)
 
+  /// Origem do cadastro: "LP" = veio do formulário do site, "MANUAL" = criado pelo super-admin
+  source String @default("MANUAL")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

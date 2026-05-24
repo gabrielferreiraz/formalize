@@ -6,33 +6,38 @@ import { sendToGotenberg, mergePdfs } from "@/lib/gotenberg";
 import { uploadToR2, getPublicUrl, getKeyFromUrl, deleteFromR2 } from "@/lib/r2";
 import { buildTemplate } from "@/lib/templates";
 import { fetchWithCache } from "@/lib/cache";
+import { requestLogger, getRequestId } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
+  const requestId = getRequestId(req);
   const session = await getServerSession(authOptions);
 
   if (!session?.user.artistId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { type: "orcamento" | "contrato"; data: Record<string, unknown> };
+  const artistId = session.user.artistId;
+  const log = requestLogger({ requestId, artistId, action: "pdf.generate" });
 
+  let body: { type: "orcamento" | "contrato"; data: Record<string, unknown> };
   try {
     body = await req.json();
   } catch {
+    log.warn("invalid JSON body");
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
   const { type, data } = body;
 
   if (!type || !["orcamento", "contrato"].includes(type)) {
+    log.warn({ receivedType: type }, "invalid document type");
     return NextResponse.json({ error: "type inválido" }, { status: 400 });
   }
 
   if (!data || typeof data !== "object") {
+    log.warn("missing or invalid data field");
     return NextResponse.json({ error: "data obrigatório" }, { status: 400 });
   }
-
-  const artistId = session.user.artistId;
 
   const artist = await prisma.artist.findUnique({
     where: { id: artistId },
@@ -72,11 +77,17 @@ export async function POST(req: NextRequest) {
   });
 
   if (!artist) {
+    log.warn("artist not found in database");
     return NextResponse.json({ error: "Artista não encontrado" }, { status: 404 });
   }
 
+  const t0 = Date.now();
+  const isContrato = type === "contrato";
+  const template = isContrato ? (artist.contratoTemplate ?? "ctr-001") : (artist.orcamentoTemplate ?? "orc-001");
+
+  log.info({ type, template }, "pdf generation started");
+
   try {
-    const isContrato = type === "contrato";
     const basePdfUrl = isContrato ? artist.baseContractPdfUrl : artist.basePdfUrl;
     const effectivePaperWidth = isContrato
       ? (artist.contractPaperWidth ?? "21.0")
@@ -87,6 +98,7 @@ export async function POST(req: NextRequest) {
     const pageSize = { width: effectivePaperWidth, height: effectivePaperHeight };
 
     // Busca todos os assets em paralelo (basePdf + logo + background)
+    log.debug({ hasBasePdf: !!basePdfUrl, hasLogo: !!artist.logoUrl }, "fetching assets");
     const [basePdfResult, logoResult, backgroundResult] = await Promise.all([
       basePdfUrl ? fetchWithCache(basePdfUrl) : Promise.resolve(null),
       artist.logoUrl ? fetchWithCache(artist.logoUrl) : Promise.resolve(null),
@@ -98,7 +110,6 @@ export async function POST(req: NextRequest) {
       background: backgroundResult ? { base64: backgroundResult.buffer.toString("base64"), mime: backgroundResult.mime } : null,
     };
 
-    // Se houver fontScale ou logoScale no body.data, sobrescreve o do artista para a geração
     const artistWithOverride = {
       ...artist,
       orcamentoFontScale: type === "orcamento" ? ((data.fontScale as number) ?? artist.orcamentoFontScale) : artist.orcamentoFontScale,
@@ -107,18 +118,31 @@ export async function POST(req: NextRequest) {
       contratoLogoScale: type === "contrato" ? ((data.logoScale as number) ?? artist.contratoLogoScale) : artist.contratoLogoScale,
     };
 
-    // Gera HTML e converte via Gotenberg
+    log.debug({ template }, "building HTML template");
     const html = await buildTemplate(type, artistWithOverride, data, pageSize, preloaded);
-    const dynamicPdf = await sendToGotenberg(html, {
-      paperWidth: effectivePaperWidth,
-      paperHeight: effectivePaperHeight,
-    });
+
+    const tGotenberg = Date.now();
+    log.debug({ paperWidth: effectivePaperWidth, paperHeight: effectivePaperHeight }, "sending to Gotenberg");
+
+    let dynamicPdf: Buffer;
+    try {
+      dynamicPdf = await sendToGotenberg(html, {
+        paperWidth: effectivePaperWidth,
+        paperHeight: effectivePaperHeight,
+      });
+    } catch (err) {
+      log.error({ err, durationMs: Date.now() - tGotenberg }, "Gotenberg conversion failed");
+      throw err;
+    }
+
+    log.info({ durationMs: Date.now() - tGotenberg }, "Gotenberg conversion completed");
 
     // Mescla com PDF base se houver permissão e arquivo
     let pdfBuffer: Buffer;
-    const usarBase = type === 'orcamento' ? artist.usarBasePdfOrcamento : artist.usarBasePdfContrato;
+    const usarBase = type === "orcamento" ? artist.usarBasePdfOrcamento : artist.usarBasePdfContrato;
 
     if (usarBase && basePdfResult) {
+      log.debug("merging with base PDF");
       const A4 = { width: 595.28, height: 841.89 };
       pdfBuffer = isContrato
         ? await mergePdfs([dynamicPdf, basePdfResult.buffer], A4)
@@ -127,10 +151,9 @@ export async function POST(req: NextRequest) {
       pdfBuffer = dynamicPdf;
     }
 
-    // Computa key/URL antes do upload para paralelizar com DB save
     const d = data as Record<string, string>;
     const slugify = (s: string) =>
-      (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim().replace(/\s+/g, " ");
+      (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().trim().replace(/\s+/g, " ");
     const nomeArquivo = `${isContrato ? "CONTRATO" : "ORCAMENTO"} - ${slugify(d.contratante || d.contratanteNome || "")} ${slugify(d.evento || "")} - ${(d.data || "").split("-").reverse().join("-")}.pdf`;
     const key = `documents/${artistId}/${nomeArquivo}`;
     const pdfUrl = getPublicUrl(key);
@@ -138,16 +161,30 @@ export async function POST(req: NextRequest) {
     const docType = isContrato ? "CONTRACT" : "BUDGET";
     const title = `${isContrato ? "Contrato" : "Orçamento"} — ${d.contratante || d.contratanteNome || ""}`.trim();
 
-    // Upload R2 + DB save em paralelo
-    const [, document] = await Promise.all([
-      uploadToR2(key, pdfBuffer, "application/pdf"),
-      prisma.document.create({
-        data: { artistId, type: docType, title, pdfUrl, data: data as object },
-      }),
-    ]);
+    const tUpload = Date.now();
+    log.debug({ key, docType }, "uploading to R2 and saving to database");
 
-    // Rotatividade de PDFs no R2: BUDGET=10, CONTRACT=5
-    // Roda em background — não bloqueia a resposta
+    let document: { id: string };
+    try {
+      [, document] = await Promise.all([
+        uploadToR2(key, pdfBuffer, "application/pdf"),
+        prisma.document.create({
+          data: { artistId, type: docType, title, pdfUrl, data: data as object },
+        }),
+      ]);
+    } catch (err) {
+      log.error({ err, key, docType, durationMs: Date.now() - tUpload }, "R2 upload or database save failed");
+      throw err;
+    }
+
+    log.info({
+      documentId: document.id,
+      docType,
+      uploadDurationMs: Date.now() - tUpload,
+      totalDurationMs: Date.now() - t0,
+    }, "pdf generation completed");
+
+    // Rotatividade de PDFs no R2: BUDGET=10, CONTRACT=5 — fire and forget
     const PDF_LIMITS: Record<string, number> = { BUDGET: 10, CONTRACT: 5 };
     const pdfLimit = PDF_LIMITS[docType];
     prisma.document
@@ -160,10 +197,11 @@ export async function POST(req: NextRequest) {
         const excess = docsWithPdf.length - pdfLimit;
         if (excess <= 0) return;
         const toClean = docsWithPdf.slice(0, excess);
+        log.debug({ count: toClean.length, docType }, "rotating old PDFs from R2");
         await Promise.all([
           ...toClean.map((doc) =>
             deleteFromR2(getKeyFromUrl(doc.pdfUrl!)).catch((err) =>
-              console.error("[pdf-rotation] R2 delete failed:", doc.pdfUrl, err)
+              log.error({ err, pdfUrl: doc.pdfUrl }, "R2 rotation delete failed")
             )
           ),
           prisma.document.updateMany({
@@ -172,11 +210,16 @@ export async function POST(req: NextRequest) {
           }),
         ]);
       })
-      .catch((err) => console.error("[pdf-rotation]", err));
+      .catch((err) => log.error({ err, docType }, "pdf rotation background job failed"));
 
     return NextResponse.json({ pdfUrl, documentId: document.id });
   } catch (err) {
-    console.error("[generate]", err);
+    log.error({
+      err,
+      type,
+      template,
+      durationMs: Date.now() - t0,
+    }, "pdf generation failed");
     const message = err instanceof Error ? err.message : "Erro interno";
     return NextResponse.json({ error: message }, { status: 500 });
   }

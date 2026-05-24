@@ -22,6 +22,7 @@ type ArtistRow = {
   name: string;
   subdomain: string;
   status: "ACTIVE" | "SUSPENDED" | "CANCELLED";
+  source: string;
   planLabel: string;
   planStartDate: string;
   billingCycleMonths: number;
@@ -43,6 +44,8 @@ type Totals = {
   budgets: number;
   contracts: number;
   billingNext7: number;
+  fromLP: number;
+  fromManual: number;
 };
 
 type DashData = {
@@ -112,7 +115,13 @@ function ArtistExpandRow({ artist }: { artist: ArtistRow }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
             <div>
-              <p className="text-sm font-semibold text-gray-200">{artist.name}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold text-gray-200">{artist.name}</p>
+                {artist.source === "LP"
+                  ? <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">LP</span>
+                  : <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-blue-500/15 text-blue-400 border border-blue-500/25">Manual</span>
+                }
+              </div>
               <p className="text-xs text-gray-500">{artist.subdomain}.formalize.com.br</p>
             </div>
           </div>
@@ -269,6 +278,39 @@ export default function DashboardContent() {
           accent={totals.billingNext7 > 0 ? "#f87171" : "#4ade80"}
           sub="artistas urgentes"
         />
+      </div>
+
+      {/* Origem dos artistas */}
+      <div className="card p-5">
+        <h3 className="text-sm font-bold text-gray-300 mb-4 tracking-wide uppercase">Origem dos artistas</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* LP */}
+          <div className="flex items-center gap-4 bg-stage-800 rounded-2xl px-5 py-4 border border-stage-700">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-lg">🌐</div>
+            <div>
+              <p className="text-2xl font-black text-emerald-400">{totals.fromLP}</p>
+              <p className="text-xs text-gray-500 font-medium">Formulário do site (LP)</p>
+            </div>
+          </div>
+          {/* Manual */}
+          <div className="flex items-center gap-4 bg-stage-800 rounded-2xl px-5 py-4 border border-stage-700">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-lg">⚙️</div>
+            <div>
+              <p className="text-2xl font-black text-blue-400">{totals.fromManual}</p>
+              <p className="text-xs text-gray-500 font-medium">Criado manualmente</p>
+            </div>
+          </div>
+          {/* Conversão */}
+          <div className="flex items-center gap-4 bg-stage-800 rounded-2xl px-5 py-4 border border-stage-700">
+            <div className="w-10 h-10 rounded-xl bg-gold-500/10 flex items-center justify-center text-lg">📊</div>
+            <div>
+              <p className="text-2xl font-black text-gold-400">
+                {totals.artists === 0 ? "—" : `${Math.round((totals.fromLP / totals.artists) * 100)}%`}
+              </p>
+              <p className="text-xs text-gray-500 font-medium">Vieram da LP</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Charts */}

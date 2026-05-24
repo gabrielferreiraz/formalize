@@ -304,12 +304,15 @@ function PdfPaperControls({
 export default function ConfiguracoesPage() {
   const router = useRouter();
   const [data, setData] = useState<ArtistConfig | null>(null);
+  const [initialData, setInitialData] = useState<ArtistConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [uploadTs, setUploadTs] = useState<Record<string, number>>({});
+
+  const isDirty = data !== null && initialData !== null &&
+    JSON.stringify(data) !== JSON.stringify(initialData);
   const [templates, setTemplates] = useState<{ orcamento: TemplateInfo[]; contrato: TemplateInfo[] }>({
     orcamento: [],
     contrato: [],
@@ -319,13 +322,15 @@ export default function ConfiguracoesPage() {
     fetch("/api/artist/me")
       .then((res) => res.json())
       .then((artist) => {
-        setData({
+        const normalized: ArtistConfig = {
           ...artist,
           address: typeof artist.address === "string" ? JSON.parse(artist.address) : artist.address || { rua: "", numero: "", bairro: "", cidade: "", estado: "" },
           bankInfo: typeof artist.bankInfo === "string" ? JSON.parse(artist.bankInfo) : artist.bankInfo || { titular: "", pix: "", banco: "", conta: "", agencia: "" },
           usarBasePdfOrcamento: artist.usarBasePdfOrcamento ?? true,
           usarBasePdfContrato: artist.usarBasePdfContrato ?? true,
-        });
+        };
+        setData(normalized);
+        setInitialData(normalized);
         setLoading(false);
       })
       .catch((err) => {
@@ -414,7 +419,6 @@ export default function ConfiguracoesPage() {
 
   const doSave = async () => {
     if (!data) return;
-    setShowConfirmModal(false);
     setSaving(true);
     setMessage(null);
 
@@ -426,6 +430,7 @@ export default function ConfiguracoesPage() {
       });
 
       if (res.ok) {
+        setInitialData(data);
         setMessage({ text: "Alterações salvas com sucesso!", type: "success" });
         router.refresh();
       } else {
@@ -700,100 +705,42 @@ export default function ConfiguracoesPage() {
           </button>
         </section>
 
-        {/* ── Salvar ── */}
-        <button
-          id="tut-cfg-save"
-          type="button"
-          disabled={saving}
-          onClick={() => setShowConfirmModal(true)}
-          style={{
-            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
-            height: 52, borderRadius: 12, border: "none",
-            background: saving ? "#252d3d" : "linear-gradient(180deg, #f5c842 0%, #e6b800 100%)",
-            color: saving ? "#6b7280" : "#1a1200",
-            fontFamily: "'Inter', sans-serif", fontSize: 15, fontWeight: 700, letterSpacing: "0.02em",
-            cursor: saving ? "not-allowed" : "pointer",
-            boxShadow: saving ? "none" : "0 4px 14px rgba(230,184,0,0.25)",
-            transition: "opacity 0.15s",
-            width: "100%",
-          }}
-        >
-          {saving ? "Salvando..." : "Salvar Alterações"}
-        </button>
       </form>
 
-      {/* ── Modal de confirmação — portal direto no body ── */}
-      {showConfirmModal && createPortal(
-        <div
-          onClick={() => setShowConfirmModal(false)}
-          style={{
-            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-            width: "100%", height: "100dvh", zIndex: 9999,
-            background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
-            display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
+      {/* ── Floating save bar ── */}
+      <div
+        id="tut-cfg-save"
+        className="sticky bottom-[72px] md:bottom-0 left-0 right-0 z-50 pt-2 pb-4 -mx-4 px-4 pointer-events-none"
+      >
+        <div className="pointer-events-auto">
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            marginBottom: 6, padding: "0 2px",
+          }}>
+            <span style={{ fontSize: 11, color: isDirty ? "#f5c842" : "#334155", fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>
+              {isDirty ? "● Alterações não salvas" : "✓ Configurações salvas"}
+            </span>
+          </div>
+          <button
+            type="button"
+            disabled={saving || !isDirty}
+            onClick={doSave}
             style={{
-              background: "#141824", border: "1px solid #252d3d", borderRadius: 20,
-              padding: 28, width: "100%", maxWidth: 380,
-              boxShadow: "0 24px 64px rgba(0,0,0,0.5)",
-              fontFamily: "'Inter', sans-serif",
+              width: "100%", height: 54, borderRadius: 18,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              background: isDirty ? "linear-gradient(180deg, #f5c842, #e6b800)" : "#1a1f2e",
+              color: isDirty ? "#1a1200" : "#334155",
+              fontFamily: "'Inter', sans-serif", fontSize: 15, fontWeight: 700,
+              cursor: (saving || !isDirty) ? "not-allowed" : "pointer",
+              boxShadow: isDirty ? "0 6px 20px rgba(230,184,0,0.3), 0 2px 4px rgba(0,0,0,0.2)" : "none",
+              transition: "background 0.2s, box-shadow 0.2s, color 0.2s",
+              border: isDirty ? "none" : "1px solid #252d3d",
             }}
           >
-            {/* Ícone */}
-            <div style={{
-              width: 48, height: 48, borderRadius: 14, marginBottom: 18,
-              background: "rgba(245,200,66,0.10)", border: "1px solid rgba(245,200,66,0.22)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5c842" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                <polyline points="17 21 17 13 7 13 7 21" />
-                <polyline points="7 3 7 8 15 8" />
-              </svg>
-            </div>
-
-            <div style={{ fontSize: 17, fontWeight: 700, color: "#f1f5f9", marginBottom: 8 }}>
-              Salvar alterações?
-            </div>
-            <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5, marginBottom: 24 }}>
-              As configurações do artista serão atualizadas imediatamente. PDFs gerados anteriormente não serão afetados.
-            </div>
-
-            <div style={{ display: "flex", gap: 10 }}>
-              <button
-                type="button"
-                onClick={() => setShowConfirmModal(false)}
-                style={{
-                  flex: 1, height: 44, borderRadius: 11, border: "1px solid #252d3d",
-                  background: "transparent", color: "#94a3b8",
-                  fontSize: 14, fontWeight: 600, cursor: "pointer",
-                  fontFamily: "'Inter', sans-serif",
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={doSave}
-                style={{
-                  flex: 1, height: 44, borderRadius: 11, border: "none",
-                  background: "linear-gradient(135deg, #f5c842 0%, #dba000 100%)",
-                  color: "#1a1000",
-                  fontSize: 14, fontWeight: 700, cursor: "pointer",
-                  fontFamily: "'Inter', sans-serif",
-                  boxShadow: "0 4px 14px rgba(245,200,66,0.22)",
-                }}
-              >
-                Confirmar
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+            {saving ? "Salvando..." : isDirty ? "Salvar Alterações" : "Sem alterações"}
+          </button>
+        </div>
+      </div>
 
       <PageTutorial pageKey="configuracoes" steps={CFG_TUTORIAL} />
     </div>

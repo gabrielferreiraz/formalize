@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { IconCheck, IconWhatsApp, IconShare, IconX, IconDoc } from "./icons";
 
@@ -11,6 +11,9 @@ interface PdfReadyModalProps {
 }
 
 export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const label = documentType === 'contrato' ? 'Contrato' : 'Orçamento';
   
   useEffect(() => {
@@ -84,6 +87,8 @@ export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalPr
     window.open(pdfUrl, '_blank');
   };
 
+  if (!mounted) return null;
+
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overlay-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100dvh', overscrollBehavior: 'contain' }}>
       <div className="relative w-full max-w-md bg-stage-900 border border-stage-700 rounded-3xl overflow-hidden shadow-2xl modal-scale-in">
@@ -113,29 +118,41 @@ export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalPr
           </p>
 
           <div className="grid grid-cols-1 gap-3">
-            <button
-              onClick={handleOpen}
-              className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl bg-white text-stage-950 font-bold hover:bg-gray-100 transition-colors"
+            {/* Primary: open in new tab (works everywhere) */}
+            <a
+              href={pdfUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl bg-white text-stage-950 font-bold hover:bg-gray-100 transition-colors no-underline"
             >
               <IconDoc size={20} />
-              Abrir PDF
-            </button>
+              Ver PDF
+            </a>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
+              {/* Download — works on all desktop/mobile browsers */}
+              <a
+                href={pdfUrl}
+                download={`${label}_${new Date().getTime()}.pdf`}
+                className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-stage-800 border border-stage-700 text-white font-semibold hover:bg-stage-700 transition-colors no-underline text-sm"
+              >
+                ↓ Baixar
+              </a>
+
               <button
                 onClick={handleShare}
-                className="flex items-center justify-center gap-3 py-4 rounded-2xl bg-stage-800 border border-stage-700 text-white font-semibold hover:bg-stage-700 transition-colors"
+                className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-stage-800 border border-stage-700 text-white font-semibold hover:bg-stage-700 transition-colors text-sm"
               >
-                <IconShare size={18} />
-                Compartilhar
+                <IconShare size={16} />
+                Link
               </button>
 
               <button
                 onClick={handleWhatsApp}
-                className="flex items-center justify-center gap-3 py-4 rounded-2xl bg-green-600/10 border border-green-600/30 text-green-500 font-semibold hover:bg-green-600/20 transition-colors"
+                className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-green-600/10 border border-green-600/30 text-green-500 font-semibold hover:bg-green-600/20 transition-colors text-sm"
               >
-                <IconWhatsApp size={18} />
-                WhatsApp
+                <IconWhatsApp size={16} />
+                Zap
               </button>
             </div>
           </div>

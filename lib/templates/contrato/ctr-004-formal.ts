@@ -17,7 +17,7 @@ export async function buildCtr004(
   const bank = (artist.bankInfo as any) || {};
   const logoMime = logo?.mime || "image/png";
   const logoBase64 = logo?.base64 || "";
-  const fontScale = (artist.contratoFontScale || 100) / 100;
+  const fontScale = (artist.contratoFontScale || 100) / 71;
 
   const valorCache = (parseFloat(d.cache) || 0) / 100;
   const backlineN = d.backline === "valor" ? (parseFloat(d.backlineValor) || 0) / 100 : 0;

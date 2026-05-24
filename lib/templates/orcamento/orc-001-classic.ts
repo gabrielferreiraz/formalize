@@ -12,7 +12,7 @@ export async function buildOrc001(
 ): Promise<string> {
   const d = data;
   const primaryColor = artist.primaryColor || "#E8A045";
-  const fontScale = (artist.orcamentoFontScale || 100) / 100;
+  const fontScale = (artist.orcamentoFontScale || 100) / 71;
 
   const valorCache = (parseFloat(d.cache) || 0) / 100;
   const valorCacheFormatado = valorCache.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });

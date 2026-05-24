@@ -21,10 +21,23 @@ export async function sendToGotenberg(
   form.append("printBackground", "true");
   form.append("preferCssPageSize", "true");
 
-  const res = await fetch(
-    `${GOTENBERG_URL}/forms/chromium/convert/html`,
-    { method: "POST", body: form },
-  );
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45_000);
+
+  let res: Response;
+  try {
+    res = await fetch(
+      `${GOTENBERG_URL}/forms/chromium/convert/html`,
+      { method: "POST", body: form, signal: controller.signal },
+    );
+  } catch (err) {
+    if ((err as Error).name === "AbortError") {
+      throw new Error("Geração de PDF expirou (45s). Tente novamente.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");

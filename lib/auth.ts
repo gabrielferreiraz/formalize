@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 // Rate limiting — simple in-memory store (replace with Redis in production)
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -43,42 +44,51 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Senha", type: "password" },
       },
 
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const ip = "unknown";
+        const fwd = (req as any)?.headers?.["x-forwarded-for"];
+        const ip = (typeof fwd === "string" ? fwd.split(",")[0]?.trim() : null) ?? "unknown";
         const ipKey = `ip:${ip}`;
         const emailKey = `email:${credentials.email}`;
 
         if (!checkRateLimit(ipKey) || !checkRateLimit(emailKey)) {
+          logger.warn({ ip, action: "auth.login" }, "login rate limit exceeded");
           throw new Error("Muitas tentativas. Tente novamente em 15 minutos.");
         }
 
-        // Busca o usuário pelo e-mail
         const user = await prisma.user.findFirst({
           where: { email: credentials.email },
         });
 
-        if (!user) return null;
+        if (!user) {
+          logger.info({ ip, action: "auth.login" }, "login failed — user not found");
+          return null;
+        }
 
         const passwordMatch = await compare(credentials.password, user.password);
-        if (!passwordMatch) return null;
+        if (!passwordMatch) {
+          logger.info({ ip, userId: user.id, action: "auth.login" }, "login failed — wrong password");
+          return null;
+        }
 
-        // Verifica se o usuário está ativo
         if (!user.active) {
+          logger.warn({ userId: user.id, action: "auth.login" }, "login rejected — account deactivated");
           throw new Error("Esta conta foi desativada.");
         }
 
-        // Verifica se o artista vinculado está ativo (somente para ARTIST_ADMIN)
         if (user.role === "ARTIST_ADMIN" && user.artistId) {
           const artist = await prisma.artist.findUnique({
             where: { id: user.artistId },
             select: { status: true },
           });
           if (artist?.status !== "ACTIVE") {
+            logger.warn({ userId: user.id, artistId: user.artistId, artistStatus: artist?.status, action: "auth.login" }, "login rejected — artist suspended");
             throw new Error("Esta conta está suspensa ou cancelada.");
           }
         }
+
+        logger.info({ userId: user.id, role: user.role, artistId: user.artistId, action: "auth.login" }, "login successful");
 
         return {
           id: user.id,

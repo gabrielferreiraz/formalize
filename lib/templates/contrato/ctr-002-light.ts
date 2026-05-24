@@ -776,11 +776,18 @@ function renderLightTemplate(template: string, ctx: Record<string, any>): string
 }
 
 
+function scaleFontSizes(html: string, scale: number): string {
+  return html.replace(/font-size:\s*(\d+(?:\.\d+)?)px/g, (_, n) =>
+    `font-size: ${Math.round(parseFloat(n) * scale)}px`
+  );
+}
+
 export async function buildCtr002(
   artist: ArtistData,
   data: Record<string, any>,
   logo?: AssetResult | null,
 ): Promise<string> {
+  const fontScale = (artist.contratoFontScale || 100) / 71;
   const addr = (artist.address as any) || {};
   const bank = (artist.bankInfo as any) || {};
   const primaryColor = artist.primaryColor || "#E8A045";
@@ -861,7 +868,7 @@ export async function buildCtr002(
     horario: escapeHtml(data.horario),
   };
 
-  return renderLightTemplate(templateContratoLight, ctx);
+  return scaleFontSizes(renderLightTemplate(templateContratoLight, ctx), fontScale);
 }
 
 // ── Wrapper Principal ────────────────────────────────────────────────────────

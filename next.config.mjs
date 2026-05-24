@@ -5,6 +5,11 @@ const nextConfig = {
   // recharts v3 and its deps ship ESM-only modules that webpack can't handle
   // without explicit transpilation
   transpilePackages: ["recharts", "victory-vendor"],
+
+  // pino uses worker_threads for transports — must not be bundled by webpack
+  experimental: {
+    serverComponentsExternalPackages: ["pino", "pino-pretty"],
+  },
   webpack(config, { dev }) {
     if (dev) {
       config.cache = false;

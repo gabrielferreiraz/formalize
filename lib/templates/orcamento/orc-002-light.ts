@@ -503,11 +503,18 @@ function renderLightTemplate(template: string, ctx: Record<string, any>): string
 }
 
 
+function scaleFontSizes(html: string, scale: number): string {
+  return html.replace(/font-size:\s*(\d+(?:\.\d+)?)px/g, (_, n) =>
+    `font-size: ${Math.round(parseFloat(n) * scale)}px`
+  );
+}
+
 export async function buildOrc002(
   artist: ArtistData,
   data: Record<string, any>,
   logo?: AssetResult | null,
 ): Promise<string> {
+  const fontScale = (artist.orcamentoFontScale || 100) / 71;
   const primaryColor = artist.primaryColor || "#E8A045";
   const logoMime = logo?.mime || "image/png";
   const logoBase64 = logo?.base64 || "";
@@ -578,5 +585,5 @@ export async function buildOrc002(
     website: escapeHtml(artist.website)
   };
 
-  return renderLightTemplate(templateOrcamentoLight, ctx);
+  return scaleFontSizes(renderLightTemplate(templateOrcamentoLight, ctx), fontScale);
 }

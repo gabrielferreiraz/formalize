@@ -201,11 +201,8 @@ export default function Home() {
 
       {/* ── Footer ── */}
       <footer className="border-t border-white/5 py-10 px-6 text-center text-gray-500 text-sm">
-        <div className="flex items-center justify-center gap-2 mb-4 text-gold-500">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <path d="M14 2v6h6" />
-          </svg>
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <Image src="/icon-512.png" alt="Formalize" width={24} height={24} style={{ borderRadius: 6 }} />
           <span className="font-bold text-lg text-white tracking-wide">Formalize</span>
         </div>
         <p>Feito para quem vive de música.</p>

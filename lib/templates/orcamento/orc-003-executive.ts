@@ -44,7 +44,7 @@ export async function buildOrc003(
 ): Promise<string> {
   const d = data;
   const primary = artist.primaryColor || "#e6b800";
-  const fontScale = (artist.orcamentoFontScale || 100) / 100;
+  const fontScale = (artist.orcamentoFontScale || 100) / 71;
   const logoMime = logo?.mime || "image/png";
   const logoBase64 = logo?.base64 || "";
 

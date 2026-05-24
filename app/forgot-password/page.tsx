@@ -63,16 +63,21 @@ export default function ForgotPasswordPage() {
             <p style={{ fontSize: 13, color: "#4b5563", lineHeight: 1.6, marginBottom: 24 }}>
               Nossa equipe vai entrar em contato pelo WhatsApp cadastrado com o link de redefinição em breve.
             </p>
-            <Link href="/login" style={{
-              display: "block",
-              textAlign: "center",
-              fontSize: 13,
-              color: "#e6b800",
-              textDecoration: "none",
-              fontWeight: 600,
-            }}>
-              Voltar ao login
-            </Link>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
+              {process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP && (
+                <a
+                  href={`https://wa.me/${process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP.replace(/\D/g, "")}?text=${encodeURIComponent("Olá! Esqueci minha senha do Formalize.")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: 13, color: "#4ade80", textDecoration: "none", fontWeight: 600 }}
+                >
+                  Chamar suporte no WhatsApp
+                </a>
+              )}
+              <Link href="/login" style={{ fontSize: 12, color: "#334155", textDecoration: "none" }}>
+                Voltar ao login
+              </Link>
+            </div>
           </div>
         ) : (
           <div style={{

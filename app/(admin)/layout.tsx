@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { AdminHeader } from "./admin/components/AdminHeader";
 import { FormProvider } from "@/context/FormContext";
 import { PwaInstallBanner } from "@/components/ui/PwaInstallBanner";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ export default async function AdminLayout({
 
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") ?? "";
+  const requestId = headersList.get("x-request-id") ?? undefined;
 
   const artist = session.user.artistId
     ? await prisma.artist.findUnique({
@@ -37,7 +39,10 @@ export default async function AdminLayout({
           onboardingDone: true,
         },
       }).catch((err: unknown) => {
-        console.error("Erro ao buscar artista no layout:", err);
+        logger.error(
+          { err, requestId, artistId: session.user.artistId, action: "layout.fetchArtist" },
+          "failed to fetch artist in admin layout"
+        );
         return null;
       })
     : null;
@@ -76,8 +81,21 @@ export default async function AdminLayout({
             {children}
           </main>
         </FormProvider>
-        <footer className="hidden md:block text-center text-xs text-gray-600 py-6">
-          {artist?.name ?? "Formalize"} &copy; {new Date().getFullYear()}
+        <footer className="hidden md:flex items-center justify-center gap-4 text-xs text-gray-600 py-6">
+          <span>{artist?.name ?? "Formalize"} &copy; {new Date().getFullYear()}</span>
+          {process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP && (
+            <>
+              <span className="text-gray-800">·</span>
+              <a
+                href={`https://wa.me/${process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP.replace(/\D/g, "")}?text=${encodeURIComponent("Olá! Preciso de ajuda com o Formalize.")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600 hover:text-gray-400 transition-colors"
+              >
+                Suporte
+              </a>
+            </>
+          )}
         </footer>
       </div>
       <PwaInstallBanner />

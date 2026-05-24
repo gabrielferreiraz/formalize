@@ -62,7 +62,7 @@ export async function buildCtr001(
     : "não informado";
   const horasNum = d.horas || 2;
   const horasFormatado = (horasNum % 1 !== 0) ? `${Math.floor(horasNum)}:30` : `${horasNum}:00`;
-  const fontScale = (artist.contratoFontScale || 100) / 100;
+  const fontScale = (artist.contratoFontScale || 100) / 71;
 
   return `<!DOCTYPE html>
 <html>

@@ -6,6 +6,9 @@ export default withAuth(
     const url = req.nextUrl;
     const token = req.nextauth?.token;
 
+    // Every request gets a unique trace ID for log correlation
+    const requestId = crypto.randomUUID();
+
     // ── /super-admin → apenas SUPER_ADMIN ────────────────────────────────────
     if (url.pathname.startsWith("/super-admin")) {
       if (!token) {
@@ -14,7 +17,9 @@ export default withAuth(
       if (token.role !== "SUPER_ADMIN") {
         return NextResponse.redirect(new URL("/login", req.url));
       }
-      return NextResponse.next();
+      const res = NextResponse.next();
+      res.headers.set("x-request-id", requestId);
+      return res;
     }
 
     // ── /admin → apenas ARTIST_ADMIN com artistId válido ─────────────────────
@@ -28,12 +33,15 @@ export default withAuth(
         return NextResponse.redirect(new URL("/login", req.url));
       }
 
-      // Injeta o artistId nos headers para que Server Components possam lê-lo
+      // Injeta headers para Server Components e rastreio de logs
       const requestHeaders = new Headers(req.headers);
       requestHeaders.set("x-artist-id", token.artistId as string);
       requestHeaders.set("x-pathname", url.pathname);
+      requestHeaders.set("x-request-id", requestId);
 
-      return NextResponse.next({ request: { headers: requestHeaders } });
+      const res = NextResponse.next({ request: { headers: requestHeaders } });
+      res.headers.set("x-request-id", requestId);
+      return res;
     }
 
     return NextResponse.next();

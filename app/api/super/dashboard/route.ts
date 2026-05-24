@@ -65,6 +65,7 @@ export async function GET() {
       name: a.name,
       subdomain: a.subdomain,
       status: a.status,
+      source: a.source,
       planLabel: a.planLabel,
       planStartDate: a.planStartDate.toISOString(),
       billingCycleMonths: a.billingCycleMonths,
@@ -90,6 +91,8 @@ export async function GET() {
 
   const totalBudgets = artistsWithBilling.reduce((s, a) => s + a.budgets, 0);
   const totalContracts = artistsWithBilling.reduce((s, a) => s + a.contracts, 0);
+  const fromLP = artists.filter((a) => a.source === "LP").length;
+  const fromManual = artists.filter((a) => a.source !== "LP").length;
 
   return NextResponse.json({
     artists: artistsWithBilling,
@@ -101,6 +104,8 @@ export async function GET() {
       budgets: totalBudgets,
       contracts: totalContracts,
       billingNext7: artistsWithBilling.filter((a) => a.daysUntilBilling <= 7).length,
+      fromLP,
+      fromManual,
     },
   });
 }

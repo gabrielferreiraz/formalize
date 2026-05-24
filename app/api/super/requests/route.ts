@@ -59,6 +59,7 @@ export async function PATCH(req: NextRequest) {
           subdomain: request.subdomain,
           email: request.email,
           whatsapp: request.whatsapp,
+          source: "LP",
         },
       });
 
