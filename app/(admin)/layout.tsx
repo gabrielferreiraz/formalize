@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { AdminHeader } from "./admin/components/AdminHeader";
 import { FormProvider } from "@/context/FormContext";
 import { PwaInstallBanner } from "@/components/ui/PwaInstallBanner";
+import { SessionWrapper } from "./SessionWrapper";
 import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -51,13 +52,20 @@ export default async function AdminLayout({
       })
     : null;
 
-  // Force password change takes priority — must complete before anything else
+  // Force password change — naked shell, no chrome, SessionProvider needed for useSession()
   if (session.user.forcePasswordChange) {
     if (!pathname.startsWith("/admin/trocar-senha")) {
       redirect("/admin/trocar-senha");
     }
-  } else if (artist && !artist.onboardingDone && !pathname.startsWith("/admin/onboarding")) {
-    redirect("/admin/onboarding");
+    return <SessionWrapper>{children}</SessionWrapper>;
+  }
+
+  // First-time onboarding — full-screen takeover, no chrome needed
+  if (artist && !artist.onboardingDone) {
+    if (!pathname.startsWith("/admin/onboarding")) {
+      redirect("/admin/onboarding");
+    }
+    return <>{children}</>;
   }
 
   const initialArtist = artist
@@ -71,7 +79,7 @@ export default async function AdminLayout({
     : null;
 
   return (
-    <>
+    <SessionWrapper>
       <div className="min-h-screen bg-stage-900 text-gray-100 font-body" style={{ overflowX: "clip" }}>
         <AdminHeader
           artistName={artist?.name ?? session.user.name ?? "Artista"}
@@ -103,6 +111,6 @@ export default async function AdminLayout({
         </footer>
       </div>
       <PwaInstallBanner />
-    </>
+    </SessionWrapper>
   );
 }

@@ -409,28 +409,28 @@ const templateOrcamentoLight = `<!DOCTYPE html>
         </div>
 
         {{#if backlineFormatado}}
-        <div class="valor-row {{#if backlineIncluso}}incluso{{/if}}">
+        <div class="valor-row {{backlineRowClass}}">
           <div class="valor-row-label">Backline</div>
           <div class="valor-row-value">{{backlineFormatado}}</div>
         </div>
         {{/if}}
 
         {{#if transporteFormatado}}
-        <div class="valor-row {{#if transporteIncluso}}incluso{{/if}}">
+        <div class="valor-row {{transporteRowClass}}">
           <div class="valor-row-label">Transporte</div>
           <div class="valor-row-value">{{transporteFormatado}}</div>
         </div>
         {{/if}}
 
         {{#if alimentacaoFormatado}}
-        <div class="valor-row {{#if alimentacaoIncluso}}incluso{{/if}}">
+        <div class="valor-row {{alimentacaoRowClass}}">
           <div class="valor-row-label">Alimentação</div>
           <div class="valor-row-value">{{alimentacaoFormatado}}</div>
         </div>
         {{/if}}
 
         {{#if hospedagemFormatado}}
-        <div class="valor-row {{#if hospedagemIncluso}}incluso{{/if}}">
+        <div class="valor-row {{hospedagemRowClass}}">
           <div class="valor-row-label">Hospedagem</div>
           <div class="valor-row-value">{{hospedagemFormatado}}</div>
         </div>
@@ -571,13 +571,13 @@ export async function buildOrc002(
     valorCacheFormatado,
     valorCacheExtenso,
     backlineFormatado,
-    backlineIncluso: backlineRaw === 'incluso',
+    backlineRowClass: backlineRaw === 'incluso' ? 'incluso' : '',
     transporteFormatado,
-    transporteIncluso: transporteRaw === 'incluso',
+    transporteRowClass: transporteRaw === 'incluso' ? 'incluso' : '',
     alimentacaoFormatado,
-    alimentacaoIncluso: alimentacaoRaw === 'incluso',
+    alimentacaoRowClass: alimentacaoRaw === 'incluso' ? 'incluso' : '',
     hospedagemFormatado,
-    hospedagemIncluso: hospedagemRaw === 'incluso',
+    hospedagemRowClass: hospedagemRaw === 'incluso' ? 'incluso' : '',
     totalFormatado,
     totalExtenso,
     formaPagamento: escapeHtml(data.formaPagamento),

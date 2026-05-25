@@ -138,6 +138,8 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.artistId = user.artistId ?? null;
         token.forcePasswordChange = (user as any).forcePasswordChange ?? false;
+        token.active = true;
+        token.validatedAt = Date.now();
         return token;
       }
 
@@ -150,11 +152,44 @@ export const authOptions: NextAuthOptions = {
           token.id = dbUser.id;
           token.role = dbUser.role;
           token.artistId = dbUser.artistId ?? null;
+          token.active = true;
+          token.validatedAt = Date.now();
         }
         return token;
       }
 
-      // Renovação de token — mantém os campos já existentes
+      // Renovação de token — re-valida conta no banco a cada 5 minutos.
+      // jwt callback tem write access ao token; session callback não.
+      const validatedAt = token.validatedAt ?? 0;
+      if (token.id && Date.now() - validatedAt > 5 * 60 * 1000) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { active: true },
+          });
+          if (!dbUser || !dbUser.active) {
+            token.active = false;
+            token.artistId = null;
+            token.validatedAt = Date.now();
+            return token;
+          }
+          if (token.artistId) {
+            const artist = await prisma.artist.findUnique({
+              where: { id: token.artistId as string },
+              select: { status: true },
+            });
+            if (artist?.status !== "ACTIVE") {
+              token.active = false;
+              token.artistId = null;
+            }
+          }
+          token.active = true;
+          token.validatedAt = Date.now();
+        } catch {
+          // On transient DB error, fail open — don't lock out users due to infrastructure issues
+        }
+      }
+
       return token;
     },
 
@@ -164,45 +199,8 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as string;
         session.user.artistId = (token.artistId as string) ?? null;
         session.user.forcePasswordChange = (token.forcePasswordChange as boolean) ?? false;
-        session.user.active = true;
+        session.user.active = (token.active as boolean) ?? true;
       }
-
-      // Re-validate user and artist status periodically.
-      // Ensures suspended/deactivated accounts lose access without waiting for session expiry.
-      // Cache window: 5 minutes via token.validatedAt to avoid a DB hit on every single request.
-      if (token.id && session.user) {
-        const validatedAt = (token.validatedAt as number) ?? 0;
-        const FIVE_MIN = 5 * 60 * 1000;
-
-        if (Date.now() - validatedAt > FIVE_MIN) {
-          try {
-            const dbUser = await prisma.user.findUnique({
-              where: { id: token.id as string },
-              select: { active: true },
-            });
-
-            if (!dbUser || !dbUser.active) {
-              session.user.active = false;
-              session.user.artistId = null;
-              return session;
-            }
-
-            if (token.artistId) {
-              const artist = await prisma.artist.findUnique({
-                where: { id: token.artistId as string },
-                select: { status: true },
-              });
-              if (artist?.status !== "ACTIVE") {
-                session.user.active = false;
-                session.user.artistId = null;
-              }
-            }
-          } catch {
-            // On transient DB error, fail open — don't lock out users due to infrastructure issues
-          }
-        }
-      }
-
       return session;
     },
   },
@@ -239,6 +237,7 @@ declare module "next-auth/jwt" {
     role: string;
     artistId: string | null;
     forcePasswordChange: boolean;
+    active: boolean;
     validatedAt?: number;
   }
 }
