@@ -49,7 +49,6 @@ button, a, input, select, textarea, label, [role="button"] {
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 1rem;
-  overflow-x: hidden;
 }
 
 body {
