@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface TemplateInfo {
   id: string;
@@ -21,6 +22,7 @@ const STYLE_LABEL: Record<string, string> = {
 };
 
 export default function TemplatesPage() {
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("orcamento");
   const [templates, setTemplates] = useState<{ orcamento: TemplateInfo[]; contrato: TemplateInfo[] }>({
     orcamento: [],
@@ -96,6 +98,24 @@ export default function TemplatesPage() {
     <div style={{ paddingBottom: 120 }}>
       {/* ── Header ── */}
       <div style={{ padding: "22px 0 18px" }}>
+        <button
+          onClick={() => router.push("/admin/configuracoes")}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            marginBottom: 14, padding: "6px 12px 6px 8px", borderRadius: 8,
+            border: "1px solid #252d3d", background: "transparent",
+            color: "#6b7280", fontFamily: "'Inter', sans-serif",
+            fontSize: 13, fontWeight: 500, cursor: "pointer",
+            transition: "all 0.15s",
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#f1f5f9"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#374151"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#6b7280"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#252d3d"; }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          Configurações
+        </button>
         <h1 style={{
           margin: 0, fontFamily: "'Inter', sans-serif", fontWeight: 600,
           fontSize: 26, letterSpacing: "-0.02em", color: "#f1f5f9", lineHeight: 1.15,
