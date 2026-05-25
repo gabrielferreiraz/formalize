@@ -13,15 +13,18 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Formalize",
   description: "Plataforma de gestão automática para músicos e artistas",
-  manifest: "/manifest.json?v=2",
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Formalize",
   },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
   icons: {
-    icon: "/icon-512.png?v=2",
-    apple: "/icon-512.png?v=2",
+    icon: "/icon-512.png",
+    apple: "/icon-512.png",
   },
 };
 
