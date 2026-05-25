@@ -1,6 +1,3 @@
-export type {};
-declare const self: ServiceWorkerGlobalScope;
-
 // Bypass Workbox for authenticated page routes.
 //
 // When Next.js redirects /admin/orcamento → /admin/onboarding inside a Server Component,
@@ -12,11 +9,11 @@ declare const self: ServiceWorkerGlobalScope;
 // This listener is prepended before Workbox's own fetch handler by @ducanh2912/next-pwa.
 // By calling event.respondWith() here, we take ownership of the request and Workbox
 // never sees it — the browser handles the full redirect chain natively.
-self.addEventListener("fetch", (event) => {
+self.addEventListener("fetch", (event: any) => {
   if (event.request.method !== "GET") return;
 
   const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) return;
+  if (url.origin !== location.origin) return;
 
   if (
     url.pathname.startsWith("/admin") ||
