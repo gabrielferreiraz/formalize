@@ -1,3 +1,4 @@
+export type {};
 declare const self: ServiceWorkerGlobalScope;
 
 // Bypass Workbox for authenticated page routes.
