@@ -2,20 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export default function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   const pathname = usePathname();
-  const isActive = href === "/super-admin"
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isActive = mounted && (href === "/super-admin"
     ? pathname === href
-    : !!pathname?.startsWith(href);
+    : !!pathname?.startsWith(href));
 
   return (
     <Link
       href={href}
-      // suppressHydrationWarning: server and client may compute different
-      // active classes since usePathname() can diverge during hydration.
-      // Element structure (<a>) is always present on both — only className differs.
-      suppressHydrationWarning
       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 ${
         isActive
           ? "bg-gold-500 text-stage-900"

@@ -36,10 +36,15 @@ export default withAuth(
       // Injeta headers para Server Components e rastreio de logs
       const requestHeaders = new Headers(req.headers);
       requestHeaders.set("x-artist-id", token.artistId as string);
-      requestHeaders.set("x-pathname", url.pathname);
+      // Ensure pathname is always set and clean
+      requestHeaders.set("x-pathname", url.pathname || "/");
       requestHeaders.set("x-request-id", requestId);
 
-      const res = NextResponse.next({ request: { headers: requestHeaders } });
+      const res = NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
       res.headers.set("x-request-id", requestId);
       return res;
     }

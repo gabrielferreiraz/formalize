@@ -27,43 +27,47 @@ export default async function AdminLayout({
   }
 
   const headersList = await headers();
-  const pathname = headersList.get("x-pathname") ?? "";
-  const requestId = headersList.get("x-request-id") ?? undefined;
+  const pathname = headersList.get("x-pathname") || "";
+  const requestId = headersList.get("x-request-id") || undefined;
 
   const artist = session.user.artistId
-    ? await prisma.artist.findUnique({
-        where: { id: session.user.artistId },
-        select: {
-          name: true,
-          logoUrl: true,
-          primaryColor: true,
-          orcamentoFontScale: true,
-          contratoFontScale: true,
-          orcamentoLogoScale: true,
-          contratoLogoScale: true,
-          onboardingDone: true,
-        },
-      }).catch((err: unknown) => {
-        logger.error(
-          { err, requestId, artistId: session.user.artistId, action: "layout.fetchArtist" },
-          "failed to fetch artist in admin layout"
-        );
-        return null;
-      })
+    ? await prisma.artist
+        .findUnique({
+          where: { id: session.user.artistId },
+          select: {
+            name: true,
+            logoUrl: true,
+            primaryColor: true,
+            orcamentoFontScale: true,
+            contratoFontScale: true,
+            orcamentoLogoScale: true,
+            contratoLogoScale: true,
+            onboardingDone: true,
+          },
+        })
+        .catch((err: unknown) => {
+          logger.error(
+            { err, requestId, artistId: session.user.artistId, action: "layout.fetchArtist" },
+            "failed to fetch artist in admin layout"
+          );
+          return null;
+        })
     : null;
 
   // Force password change — naked shell, no chrome, SessionProvider needed for useSession()
   if (session.user.forcePasswordChange) {
-    if (!pathname.startsWith("/admin/trocar-senha")) {
-      redirect("/admin/trocar-senha");
+    // Only redirect if we HAVE a pathname and we KNOW it's not the right page.
+    // This prevents infinite loops if the header is missing or delayed.
+    if (pathname && !pathname.startsWith("/admin/trocar-senha")) {
+      return redirect("/admin/trocar-senha");
     }
     return <SessionWrapper>{children}</SessionWrapper>;
   }
 
   // First-time onboarding — full-screen takeover, no chrome needed
   if (artist && !artist.onboardingDone) {
-    if (!pathname.startsWith("/admin/onboarding")) {
-      redirect("/admin/onboarding");
+    if (pathname && !pathname.startsWith("/admin/onboarding")) {
+      return redirect("/admin/onboarding");
     }
     return <>{children}</>;
   }
