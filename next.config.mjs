@@ -37,6 +37,7 @@ const withPWAConfig = withPWA({
   cacheOnFrontEndNav: false,
   aggressiveFrontEndNavCaching: false,
   reloadOnOnline: false,
+  customWorkerSrc: "worker",
 });
 
 export default withPWAConfig(nextConfig);
