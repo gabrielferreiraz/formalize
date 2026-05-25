@@ -1,24 +1,31 @@
-// Bypass Workbox for authenticated page routes.
+// Bypass Workbox for authenticated sub-requests (RSC fetches, prefetches, etc.).
 //
-// When Next.js redirects /admin/orcamento → /admin/onboarding inside a Server Component,
-// Workbox's NetworkFirst strategy follows the redirect via fetch(), but the resulting
-// request may fail (auth context lost across redirect) or return a non-2xx that Workbox
-// treats as "failed". With no cache entry, Workbox returns no-response and the client
-// gets a black screen followed by a history.replaceState throttling loop.
+// Problem: Workbox's NetworkFirst strategy intercepts RSC fetches for /admin/* routes.
+// When Next.js server-side redirect() returns a non-2xx response, Workbox treats it
+// as a network failure, finds no cache fallback, and returns no-response — causing
+// a black screen followed by a history.replaceState throttling loop.
 //
-// This listener is prepended before Workbox's own fetch handler by @ducanh2912/next-pwa.
-// By calling event.respondWith() here, we take ownership of the request and Workbox
-// never sees it — the browser handles the full redirect chain natively.
+// This listener is prepended before Workbox's own fetch handler by @ducanh2912/next-pwa,
+// so event.respondWith() here takes ownership before Workbox sees the request.
+//
+// Navigate requests (full page loads / browser-followed HTTP redirects) are skipped —
+// fetch(navigateRequest) throws TypeError in SW context. Workbox handles navigate
+// requests fine: it follows the HTTP redirect and returns the final 200 HTML page.
 self.addEventListener("fetch", (event: any) => {
   if (event.request.method !== "GET") return;
+  if (event.request.mode === "navigate") return;
 
   const url = new URL(event.request.url);
-  if (url.origin !== location.origin) return;
+  if (url.origin !== self.location.origin) return;
 
   if (
     url.pathname.startsWith("/admin") ||
     url.pathname.startsWith("/super-admin")
   ) {
-    event.respondWith(fetch(event.request));
+    // redirect:'follow' overrides any redirect:'error' the browser may have set on
+    // Next.js RSC requests, preventing TypeError when the server returns a redirect.
+    event.respondWith(
+      fetch(new Request(event.request, { redirect: "follow" }))
+    );
   }
 });
