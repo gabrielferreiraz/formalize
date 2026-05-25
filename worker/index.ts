@@ -1,3 +1,16 @@
+// On every SW activation, delete Workbox runtime caches so stale chunks
+// from old deployments are never served after a new deploy.
+// Workbox manages its own precache cleanup separately.
+self.addEventListener("activate", (event: any) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.filter((k) => !k.includes("precache")).map((k) => caches.delete(k))
+      )
+    )
+  );
+});
+
 // Bypass Workbox for authenticated sub-requests (RSC fetches, prefetches, etc.).
 //
 // Problem: Workbox's NetworkFirst strategy intercepts RSC fetches for /admin/* routes.
@@ -22,10 +35,17 @@ self.addEventListener("fetch", (event: any) => {
     url.pathname.startsWith("/admin") ||
     url.pathname.startsWith("/super-admin")
   ) {
-    // redirect:'follow' overrides any redirect:'error' the browser may have set on
-    // Next.js RSC requests, preventing TypeError when the server returns a redirect.
+    // Use a fresh fetch (not new Request from event.request) to avoid inheriting
+    // any problematic request properties (e.g. redirect:'error' on RSC requests).
+    // credentials:'include' ensures cookies are sent for auth.
+    // .catch returns Response.error() instead of rejecting — prevents the
+    // "FetchEvent promise was rejected" console error on transient network failures.
     event.respondWith(
-      fetch(new Request(event.request, { redirect: "follow" }))
+      fetch(event.request.url, {
+        headers: event.request.headers,
+        credentials: "include",
+        redirect: "follow",
+      }).catch(() => Response.error())
     );
   }
 });
