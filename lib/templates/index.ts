@@ -7,7 +7,9 @@ import { buildCtr001 } from "./contrato/ctr-001-classic";
 import { buildCtr002 } from "./contrato/ctr-002-light";
 import { buildCtr003 } from "./contrato/ctr-003-premium";
 import { buildCtr004 } from "./contrato/ctr-004-formal";
+import { buildFromClausulas } from "./contrato/build-from-clausulas";
 import type { AssetResult, ArtistTemplateData } from "./types";
+import type { ClausulaContrato } from "@/lib/contrato-clausulas";
 
 type TemplateBuilder = (
   artist: ArtistTemplateData & Record<string, any>,
@@ -55,6 +57,12 @@ export async function buildTemplate(
     const templateId = artist.orcamentoTemplate || "orc-001";
     const builder = ORC_BUILDERS[templateId] ?? ORC_BUILDERS["orc-001"];
     return builder(artist, data as Record<string, any>, pageSize, logo, background);
+  }
+
+  const clausulas = data._clausulas;
+  if (Array.isArray(clausulas) && clausulas.length > 0) {
+    const titulo = data._clausulasTitulo as string | undefined;
+    return buildFromClausulas(artist, data as Record<string, any>, clausulas as ClausulaContrato[], pageSize, logo, titulo);
   }
 
   const templateId = artist.contratoTemplate || "ctr-001";

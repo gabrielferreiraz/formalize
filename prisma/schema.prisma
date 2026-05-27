@@ -87,6 +87,7 @@ model Artist {
   usarBasePdfContrato  Boolean @default(true)
 
   onboardingDone Boolean @default(false)
+  categoria      String? // "banda" | "solo" | "dj" | "dupla" | "cantor" | "outros"
 
   planStartDate      DateTime  @default(now())
   billingCycleMonths Int       @default(1)
@@ -100,9 +101,10 @@ model Artist {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users     User[]
-  documents Document[]
-  templates Template[]
+  users               User[]
+  documents           Document[]
+  templates           Template[]
+  contratoTemplates   ContratoTemplate[]
 }
 
 model User {
@@ -174,6 +176,23 @@ model PasswordResetToken {
   createdAt DateTime  @default(now())
 
   @@index([email])
+}
+
+/// Templates de contrato com cláusulas customizáveis por artista
+model ContratoTemplate {
+  id        String   @id @default(cuid())
+  artistId  String
+  nome      String
+  tipo      String   @default("custom") // "banda" | "solo" | "dj" | "generico" | "custom"
+  titulo    String   @default("Contrato de Prestação de Serviços")
+  clausulas Json     // ClausulaContrato[]
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@index([artistId])
 }
 
 /// Requisições de onboarding de novos artistas

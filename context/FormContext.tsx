@@ -10,7 +10,20 @@ export type ArtistBootstrap = {
   contratoFontScale: number;
   orcamentoLogoScale: number;
   contratoLogoScale: number;
+  categoria?: string | null;
 };
+
+function categoriaToPreset(categoria?: string | null): NonNullable<ContratoValues["clausulasPreset"]> {
+  switch (categoria) {
+    case "banda":   return "banda";
+    case "solo":    return "solo";
+    case "dj":      return "dj";
+    case "dupla":   return "solo";
+    case "cantor":  return "solo";
+    case "coral":   return "banda";
+    default:        return "generico";
+  }
+}
 
 interface FormContextType {
   artistDisplayName: string;
@@ -42,7 +55,9 @@ export function FormProvider({
   initialArtist?: ArtistBootstrap | null;
 }) {
   const [orcamento, setOrcamento] = useState<OrcamentoValues>(defaultOrcamentoValues());
-  const [contrato, setContrato] = useState<ContratoValues>(defaultContratoValues());
+  const [contrato, setContrato] = useState<ContratoValues>(
+    defaultContratoValues(categoriaToPreset(initialArtist?.categoria))
+  );
   const [numeroOrc, setNumeroOrc] = useState("");
   const [numeroCtr, setNumeroCtr] = useState("");
   const [orcamentoFontScale, setOrcamentoFontScale] = useState(

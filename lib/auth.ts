@@ -181,6 +181,8 @@ export const authOptions: NextAuthOptions = {
             if (artist?.status !== "ACTIVE") {
               token.active = false;
               token.artistId = null;
+              token.validatedAt = Date.now();
+              return token;
             }
           }
           token.active = true;

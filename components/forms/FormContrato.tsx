@@ -55,6 +55,9 @@ export interface ContratoValues {
   clausulasEspeciais: string;
   riderTecnico: string;
   fraseRodape: string;
+  clausulasPreset?: "banda" | "solo" | "dj" | "generico";
+  clausulasTemplateId?: string;
+  pessoasBanda?: number;
 }
 
 export interface FormContratoProps {
@@ -259,6 +262,7 @@ export default function FormContrato({
   const [locaisSalvos, setLocaisSalvos] = useState<string[]>([]);
   const [eventosSalvos, setEventosSalvos] = useState<string[]>([]);
   const [frasesSalvas, setFrasesSalvas] = useState<string[]>([]);
+  const [savedTemplates, setSavedTemplates] = useState<{ id: string; nome: string; tipo: string }[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [buscandoCnpj, setBuscandoCnpj] = useState(false);
@@ -271,6 +275,10 @@ export default function FormContrato({
     setLocaisSalvos(carregarLocais());
     setEventosSalvos(carregarEventos());
     setFrasesSalvas(carregarFrasesRodape());
+    fetch("/api/admin/contrato-templates")
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => Array.isArray(data) && setSavedTemplates(data))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -414,6 +422,87 @@ export default function FormContrato({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-4 pb-4">
+      {/* ── Modelo do Contrato ─────────────────────────────────── */}
+      <Section title="Modelo do Contrato">
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            {(["banda", "solo", "dj", "generico"] as const).map((preset) => {
+              const labels: Record<string, string> = {
+                banda: "Banda", solo: "Solo", dj: "DJ", generico: "Genérico",
+              };
+              const descs: Record<string, string> = {
+                banda: "Banda completa, alimentação, riders",
+                solo: "Artista solo ou duo",
+                dj: "DJ set com cláusula de equipamentos",
+                generico: "Minimalista, sem especificações",
+              };
+              const isActive = !values.clausulasTemplateId && values.clausulasPreset === preset;
+              return (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => onChange({ ...values, clausulasPreset: preset, clausulasTemplateId: undefined })}
+                  className={`text-left px-3 py-2.5 rounded-xl border transition-colors ${
+                    isActive
+                      ? "bg-gold-500/20 border-gold-500"
+                      : "border-stage-500 bg-stage-700 hover:border-gold-600"
+                  }`}
+                >
+                  <div className={`text-sm font-semibold ${isActive ? "text-gold-400" : "text-gray-300"}`}>
+                    {labels[preset]}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-0.5">{descs[preset]}</div>
+                </button>
+              );
+            })}
+          </div>
+          {values.clausulasPreset === "banda" && !values.clausulasTemplateId && (
+            <div className="flex items-center gap-3 pt-1">
+              <label className="text-xs text-gray-400 whitespace-nowrap">Integrantes na banda</label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => set("pessoasBanda", Math.max(1, (values.pessoasBanda ?? 7) - 1))}
+                  className="w-8 h-8 rounded-lg border border-stage-500 bg-stage-700 text-gray-400 hover:border-gold-600 hover:text-gold-400 transition-colors text-base font-bold"
+                >−</button>
+                <span className="bg-stage-700 border border-stage-500 rounded-lg px-3 py-1 text-sm font-mono font-semibold text-gold-400 min-w-[40px] text-center">
+                  {values.pessoasBanda ?? 7}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => set("pessoasBanda", Math.min(30, (values.pessoasBanda ?? 7) + 1))}
+                  className="w-8 h-8 rounded-lg border border-stage-500 bg-stage-700 text-gray-400 hover:border-gold-600 hover:text-gold-400 transition-colors text-base font-bold"
+                >+</button>
+              </div>
+            </div>
+          )}
+
+          {savedTemplates.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs text-gray-500 uppercase tracking-wider">Seus templates</p>
+              {savedTemplates.map((t) => {
+                const isActive = values.clausulasTemplateId === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => onChange({ ...values, clausulasTemplateId: t.id, clausulasPreset: undefined })}
+                    className={`w-full text-left px-3 py-2 rounded-xl border text-sm transition-colors ${
+                      isActive
+                        ? "bg-gold-500/20 border-gold-500 text-gold-400"
+                        : "border-stage-500 bg-stage-700 text-gray-300 hover:border-gold-600"
+                    }`}
+                  >
+                    {t.nome}
+                    <span className="text-xs text-gray-500 ml-2">{t.tipo}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </Section>
+
       {/* ── Contratante ────────────────────────────────────────── */}
       <Section title="Contratante">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -785,7 +874,7 @@ export default function FormContrato({
 
 // ── Default values factory ───────────────────────────────────────────────────
 
-export function defaultContratoValues(): ContratoValues {
+export function defaultContratoValues(preset?: ContratoValues["clausulasPreset"]): ContratoValues {
   return {
     contratanteNome: "",
     contratanteCpfCnpj: "",
@@ -812,5 +901,8 @@ export function defaultContratoValues(): ContratoValues {
     clausulasEspeciais: "",
     riderTecnico: "",
     fraseRodape: "",
+    clausulasPreset: preset ?? "banda",
+    clausulasTemplateId: undefined,
+    pessoasBanda: 7,
   };
 }

@@ -46,6 +46,7 @@ export async function GET() {
       usarBasePdfOrcamento: true,
       usarBasePdfContrato: true,
       onboardingDone: true,
+      categoria: true,
     },
   });
 
@@ -66,6 +67,7 @@ const ALLOWED_FIELDS = [
   "orcamentoTemplate", "contratoTemplate",
   "usarBasePdfOrcamento", "usarBasePdfContrato",
   "onboardingDone",
+  "categoria",
 ] as const;
 
 export async function PUT(req: NextRequest) {

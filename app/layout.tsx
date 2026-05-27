@@ -35,7 +35,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body>
+        {process.env.NODE_ENV === "development" && (
+          <script dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker'in navigator){navigator.serviceWorker.getRegistrations().then(r=>r.forEach(sw=>sw.unregister()))}`
+          }} />
+        )}
+        {children}
+      </body>
     </html>
   );
 }

@@ -43,6 +43,7 @@ export default async function AdminLayout({
             orcamentoLogoScale: true,
             contratoLogoScale: true,
             onboardingDone: true,
+            categoria: true,
           },
         })
         .catch((err: unknown) => {
@@ -79,6 +80,7 @@ export default async function AdminLayout({
         contratoFontScale: artist.contratoFontScale,
         orcamentoLogoScale: artist.orcamentoLogoScale,
         contratoLogoScale: artist.contratoLogoScale,
+        categoria: artist.categoria ?? null,
       }
     : null;
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 // Curated artist palettes — named, intentional
 const PALETTES = [
@@ -17,6 +17,7 @@ const PALETTES = [
 ];
 
 interface OnboardingData {
+  categoria: string;
   name: string;
   primaryColor: string;
   legalName: string;
@@ -91,7 +92,86 @@ function Field({ delay = 0, children }: { delay?: number; children: React.ReactN
   );
 }
 
-// ── Step 1 — Identidade ─────────────────────────────────────────
+// ── Step 1 — Categoria ──────────────────────────────────────────
+const CATEGORIAS = [
+  { value: "banda",  label: "Banda",        emoji: "🎵", desc: "Grupo com vários músicos" },
+  { value: "solo",   label: "Músico Solo",   emoji: "🎸", desc: "Instrumentista independente" },
+  { value: "dj",     label: "DJ",            emoji: "🎧", desc: "Sets e produção eletrônica" },
+  { value: "dupla",  label: "Dupla / Trio",  emoji: "👥", desc: "Pequeno grupo" },
+  { value: "cantor", label: "Cantor(a)",     emoji: "🎤", desc: "Voz principal" },
+  { value: "outros", label: "Outros",        emoji: "✨", desc: "Outro tipo de artista" },
+];
+
+const KNOWN_VALORES = ["banda", "solo", "dj", "dupla", "cantor"];
+
+function StepCategoria({
+  data,
+  onChange,
+}: {
+  data: OnboardingData;
+  onChange: (d: OnboardingData) => void;
+}) {
+  const outrosActive = !KNOWN_VALORES.includes(data.categoria);
+  const outrosTextValue = outrosActive && data.categoria !== "outros" ? data.categoria : "";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
+      <Field>
+        <div className="ob-step-n">01</div>
+        <h1 className="ob-headline">Qual é o<br />seu perfil?</h1>
+        <p className="ob-sub">Usamos isso para configurar seus contratos automaticamente.</p>
+      </Field>
+
+      <Field delay={60}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          {CATEGORIAS.map((cat) => {
+            const isOutros = cat.value === "outros";
+            const active = isOutros ? outrosActive : data.categoria === cat.value;
+            return (
+              <div key={cat.value}>
+                <button
+                  className="ob-palette-row"
+                  style={isOutros && outrosActive ? { borderBottom: "none" } : undefined}
+                  onClick={() => onChange({ ...data, categoria: isOutros ? "outros" : cat.value })}
+                >
+                  <span style={{ fontSize: 20, flexShrink: 0, width: 28, textAlign: "center" }}>
+                    {cat.emoji}
+                  </span>
+                  <span style={{ flex: 1, textAlign: "left" }}>
+                    <span style={{ fontSize: 14, fontWeight: active ? 600 : 400, color: active ? "#dde4f0" : "#3d5068", display: "block" }}>
+                      {cat.label}
+                    </span>
+                    <span style={{ fontSize: 11, color: "#1a2535", display: "block", marginTop: 1 }}>
+                      {cat.desc}
+                    </span>
+                  </span>
+                  {active && (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </button>
+                {isOutros && outrosActive && (
+                  <div style={{ paddingBottom: 14, animation: "fieldIn 0.2s ease both" }}>
+                    <UInput
+                      label="Descreva seu perfil"
+                      value={outrosTextValue}
+                      onChange={(e) => onChange({ ...data, categoria: e.target.value || "outros" })}
+                      placeholder="Ex: Coral, Banda de Casamento..."
+                      autoFocus
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Field>
+    </div>
+  );
+}
+
+// ── Step 2 — Identidade ─────────────────────────────────────────
 function Step1({
   data,
   onChange,
@@ -107,7 +187,7 @@ function Step1({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
       <Field>
-        <div className="ob-step-n">01</div>
+        <div className="ob-step-n">02</div>
         <h1 className="ob-headline">Seu nome<br />no palco</h1>
         <p className="ob-sub">Aparece em todos os documentos enviados.</p>
       </Field>
@@ -309,7 +389,7 @@ function Step1({
   );
 }
 
-// ── Step 2 — Jurídico ───────────────────────────────────────────
+// ── Step 3 — Jurídico ───────────────────────────────────────────
 function Step2({
   data,
   onChange,
@@ -324,7 +404,7 @@ function Step2({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
       <Field>
-        <div className="ob-step-n">02</div>
+        <div className="ob-step-n">03</div>
         <h1 className="ob-headline">Dados<br />jurídicos</h1>
         <p className="ob-sub">Para assinar contratos com validade legal.</p>
       </Field>
@@ -367,7 +447,7 @@ function Step2({
   );
 }
 
-// ── Step 3 — Contato ────────────────────────────────────────────
+// ── Step 4 — Contato ────────────────────────────────────────────
 function Step3({
   data,
   onChange,
@@ -378,7 +458,7 @@ function Step3({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
       <Field>
-        <div className="ob-step-n">03</div>
+        <div className="ob-step-n">04</div>
         <h1 className="ob-headline">Como<br />te encontram</h1>
         <p className="ob-sub">Aparece nos documentos enviados aos contratantes.</p>
       </Field>
@@ -405,7 +485,7 @@ function Step3({
   );
 }
 
-// ── Step 4 — Logo ───────────────────────────────────────────────
+// ── Step 5 — Logo ───────────────────────────────────────────────
 function Step4({
   data,
   logoUrl,
@@ -420,7 +500,7 @@ function Step4({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
       <Field>
-        <div className="ob-step-n">04</div>
+        <div className="ob-step-n">05</div>
         <h1 className="ob-headline">Sua marca<br />visual</h1>
         <p className="ob-sub">Opcional. Um logo transforma o documento.</p>
       </Field>
@@ -553,6 +633,7 @@ export default function OnboardingPage() {
   const [cnpjLoading, setCnpjLoading] = useState(false);
 
   const [data, setData] = useState<OnboardingData>({
+    categoria: "",
     name: "",
     primaryColor: "#e6b800",
     legalName: "",
@@ -567,6 +648,7 @@ export default function OnboardingPage() {
       .then((r) => r.json())
       .then((artist) => {
         setData((prev) => ({
+          categoria: artist.categoria || prev.categoria,
           name: artist.name || prev.name,
           primaryColor: artist.primaryColor || prev.primaryColor,
           legalName: artist.legalName || prev.legalName,
@@ -600,9 +682,10 @@ export default function OnboardingPage() {
   }
 
   async function handleContinue() {
-    if (step === 1) await patch({ name: data.name, primaryColor: data.primaryColor });
-    else if (step === 2) await patch({ legalName: data.legalName, cnpj: data.cnpj });
-    else if (step === 3) await patch({ whatsapp: data.whatsapp, pixKey: data.pixKey });
+    if (step === 1) await patch({ categoria: data.categoria });
+    else if (step === 2) await patch({ name: data.name, primaryColor: data.primaryColor });
+    else if (step === 3) await patch({ legalName: data.legalName, cnpj: data.cnpj });
+    else if (step === 4) await patch({ whatsapp: data.whatsapp, pixKey: data.pixKey });
     if (step < TOTAL_STEPS) {
       setDirection("forward");
       setAnimKey((k) => k + 1);
@@ -781,8 +864,9 @@ export default function OnboardingPage() {
           animation: `${direction === "forward" ? "stepIn" : "stepInBack"} 0.28s ease both`,
         }}
       >
-        {step === 1 && <Step1 data={data} onChange={setData} />}
-        {step === 2 && (
+        {step === 1 && <StepCategoria data={data} onChange={setData} />}
+        {step === 2 && <Step1 data={data} onChange={setData} />}
+        {step === 3 && (
           <Step2
             data={data}
             onChange={setData}
@@ -790,8 +874,8 @@ export default function OnboardingPage() {
             cnpjLoading={cnpjLoading}
           />
         )}
-        {step === 3 && <Step3 data={data} onChange={setData} />}
-        {step === 4 && (
+        {step === 4 && <Step3 data={data} onChange={setData} />}
+        {step === 5 && (
           <Step4
             data={data}
             logoUrl={logoUrl}
