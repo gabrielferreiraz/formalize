@@ -90,7 +90,7 @@ function ContratoContent() {
   return (
     <div>
       {/* Header com visual do design */}
-      <div style={{
+      <div id="tut-ctr-form" style={{
         display: "flex",
         alignItems: "flex-start",
         justifyContent: "space-between",
@@ -145,7 +145,7 @@ function ContratoContent() {
         </div>
       )}
 
-      <div id="tut-ctr-form">
+      <div>
         <FormContrato
           values={contrato}
           onChange={setContrato}

@@ -33,6 +33,17 @@ function extractSubtitle(doc: Doc): string {
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
+const EXEMPLOS = {
+  BUDGET: [
+    { contratante: "João da Silva", evento: "Aniversário 30 Anos", data: "15/06/26" },
+    { contratante: "Espaço Monteiro", evento: "Casamento · Sábado", data: "20/07/26" },
+  ],
+  CONTRACT: [
+    { contratante: "Ana Paula Santos", evento: "Formatura Turma", data: "30/05/26" },
+    { contratante: "Bar Estação Viva", evento: "Show Semanal", data: "05/06/26" },
+  ],
+};
+
 export function RecentDocs({ type, onLoad, onToContrato }: Props) {
   const { data, isLoading: loading } = useSWR(`/api/documents?type=${type}&page=1&limit=3&includeData=1`, fetcher);
   const docs = (data?.documents ?? []) as Doc[];
@@ -45,9 +56,29 @@ export function RecentDocs({ type, onLoad, onToContrato }: Props) {
     </div>
   );
 
-  if (docs.length === 0) return null;
-
   const label = type === "BUDGET" ? "Orçamentos recentes" : "Contratos recentes";
+
+  if (docs.length === 0) return (
+    <div className="space-y-3">
+      <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{label}</p>
+      <div className="!mt-3 space-y-2" style={{ opacity: 0.4, pointerEvents: "none" }}>
+        {EXEMPLOS[type].map((ex, i) => (
+          <div key={i} className="card flex items-center gap-3 py-3" style={{ borderStyle: "dashed" }}>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-gray-300 truncate">{ex.contratante}</p>
+              <p className="text-xs text-gray-600 truncate">{ex.evento} · {ex.data}</p>
+            </div>
+            <span style={{ fontSize: 9, color: "#4b5563", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>
+              exemplo
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-gray-700" style={{ marginTop: 4 }}>
+        {label} aparecerão aqui
+      </p>
+    </div>
+  );
 
   return (
     <div className="space-y-3">

@@ -114,7 +114,7 @@ function OrcamentoContent() {
   return (
     <div>
       {/* Header com visual do design */}
-      <div style={{
+      <div id="tut-orc-form" style={{
         display: "flex",
         alignItems: "flex-start",
         justifyContent: "space-between",
@@ -169,7 +169,7 @@ function OrcamentoContent() {
         </div>
       )}
 
-      <div id="tut-orc-form">
+      <div>
         <FormOrcamento
           values={orcamento}
           onChange={setOrcamento}
