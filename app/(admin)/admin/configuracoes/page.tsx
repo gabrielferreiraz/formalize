@@ -502,70 +502,35 @@ export default function ConfiguracoesPage() {
         </div>
       )}
 
-      {/* ── Arquivos & Imagens ── */}
-      <section id="tut-cfg-logo" style={{ background: "#141824", border: "1px solid #252d3d", borderRadius: 16, padding: 18, marginBottom: 14 }}>
-        <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#f1f5f9", marginBottom: 16 }}>
-          Arquivos & Imagens
-        </div>
+      <form onSubmit={(e) => e.preventDefault()} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
 
-        {/* Logo */}
-        <FileUploadRow
-          label="Logo do Artista"
-          preview={data.logoUrl ? <img src={uploadTs["logo"] ? `${data.logoUrl}?t=${uploadTs["logo"]}` : data.logoUrl} alt="Logo" style={{ maxHeight: 56, maxWidth: "100%", objectFit: "contain" }} /> : undefined}
-          uploaded={!!data.logoUrl}
-          uploading={uploading["logo"]}
-          accept="image/*"
-          onChange={(e) => handleUpload("logo", e)}
-        />
-
-        {/* Background */}
-        <FileUploadRow
-          label="Imagem de Fundo"
-          preview={data.backgroundUrl ? (
-            <div style={{ height: 56, borderRadius: 8, overflow: "hidden", background: "#0e1118" }}>
-              <img src={uploadTs["background"] ? `${data.backgroundUrl}?t=${uploadTs["background"]}` : data.backgroundUrl} alt="Background" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-          ) : undefined}
-          uploaded={!!data.backgroundUrl}
-          uploading={uploading["background"]}
-          accept="image/*"
-          onChange={(e) => handleUpload("background", e)}
-        />
-
-        {/* PDFs */}
-        <FileUploadRow
-          label="PDF Base — Orçamento"
-          pdfName={data.basePdfUrl ? "orcamento-base.pdf" : undefined}
-          uploaded={!!data.basePdfUrl}
-          uploading={uploading["base-pdf"]}
-          accept="application/pdf"
-          onChange={(e) => handleUpload("base-pdf", e)}
-        />
-        <FToggleRow
-          label="Usar este PDF no orçamento"
-          checked={data.usarBasePdfOrcamento}
-          onChange={(v) => setData({ ...data, usarBasePdfOrcamento: v })}
-        />
-        <FileUploadRow
-          label="PDF Base — Contrato"
-          pdfName={data.baseContractPdfUrl ? "contrato-base.pdf" : undefined}
-          uploaded={!!data.baseContractPdfUrl}
-          uploading={uploading["base-contrato-pdf"]}
-          accept="application/pdf"
-          onChange={(e) => handleUpload("base-contrato-pdf", e)}
-        />
-        <FToggleRow
-          label="Usar este PDF no contrato"
-          checked={data.usarBasePdfContrato}
-          onChange={(v) => setData({ ...data, usarBasePdfContrato: v })}
-        />
-      </section>
-
-
-      <form onSubmit={(e) => e.preventDefault()} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-
-        {/* ── Identidade ── */}
-        <FSection title="Identidade">
+        {/* ── 1. Identidade Visual ── */}
+        <AccordionSection
+          id="tut-cfg-logo"
+          title="Identidade Visual"
+          defaultOpen
+          filled={!!(data.logoUrl || data.backgroundUrl || data.primaryColor || data.name)}
+        >
+          <FileUploadRow
+            label="Logo do Artista"
+            preview={data.logoUrl ? <img src={uploadTs["logo"] ? `${data.logoUrl}?t=${uploadTs["logo"]}` : data.logoUrl} alt="Logo" style={{ maxHeight: 56, maxWidth: "100%", objectFit: "contain" }} /> : undefined}
+            uploaded={!!data.logoUrl}
+            uploading={uploading["logo"]}
+            accept="image/*"
+            onChange={(e) => handleUpload("logo", e)}
+          />
+          <FileUploadRow
+            label="Imagem de Fundo"
+            preview={data.backgroundUrl ? (
+              <div style={{ height: 56, borderRadius: 8, overflow: "hidden", background: "#0e1118" }}>
+                <img src={uploadTs["background"] ? `${data.backgroundUrl}?t=${uploadTs["background"]}` : data.backgroundUrl} alt="Background" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+            ) : undefined}
+            uploaded={!!data.backgroundUrl}
+            uploading={uploading["background"]}
+            accept="image/*"
+            onChange={(e) => handleUpload("background", e)}
+          />
           <FRow>
             <FFormField label="Nome Artístico">
               <input className="input-field" type="text" value={data.name || ""} onChange={(e) => handleChange("name", e.target.value)} required />
@@ -578,6 +543,13 @@ export default function ConfiguracoesPage() {
               </div>
             </FFormField>
           </FRow>
+        </AccordionSection>
+
+        {/* ── 2. Presença Online ── */}
+        <AccordionSection
+          title="Presença Online"
+          filled={!!(data.website || data.instagram)}
+        >
           <FRow>
             <FFormField label="Website">
               <input className="input-field" type="url" value={data.website || ""} onChange={(e) => handleChange("website", e.target.value)} placeholder="https://" />
@@ -586,10 +558,28 @@ export default function ConfiguracoesPage() {
               <input className="input-field" type="text" value={data.instagram || ""} onChange={(e) => handleChange("instagram", e.target.value)} placeholder="@" />
             </FFormField>
           </FRow>
-        </FSection>
+        </AccordionSection>
 
-        {/* ── Dados Jurídicos ── */}
-        <FSection title="Dados Jurídicos">
+        {/* ── 3. Contato ── */}
+        <AccordionSection
+          title="Contato"
+          filled={!!(data.whatsapp || data.email)}
+        >
+          <FRow>
+            <FFormField label="WhatsApp">
+              <input className="input-field" type="text" value={data.whatsapp || ""} onChange={(e) => handleChange("whatsapp", e.target.value)} />
+            </FFormField>
+            <FFormField label="E-mail">
+              <input className="input-field" type="email" value={data.email || ""} onChange={(e) => handleChange("email", e.target.value)} />
+            </FFormField>
+          </FRow>
+        </AccordionSection>
+
+        {/* ── 4. Dados Jurídicos ── */}
+        <AccordionSection
+          title="Dados Jurídicos"
+          filled={!!(data.legalName || data.cnpj)}
+        >
           <FFormField label="Razão Social">
             <input className="input-field" type="text" value={data.legalName || ""} onChange={(e) => handleChange("legalName", e.target.value)} />
           </FFormField>
@@ -597,14 +587,17 @@ export default function ConfiguracoesPage() {
             <FFormField label="CNPJ">
               <input className="input-field" type="text" value={data.cnpj || ""} onChange={(e) => handleChange("cnpj", e.target.value)} />
             </FFormField>
-            <FFormField label="Instrumentos da Banda">
+            <FFormField label="Instrumentos">
               <input className="input-field" type="text" value={data.instruments || ""} onChange={(e) => handleChange("instruments", e.target.value)} placeholder="Baixo, Bateria, Teclado..." />
             </FFormField>
           </FRow>
-        </FSection>
+        </AccordionSection>
 
-        {/* ── Endereço ── */}
-        <FSection title="Endereço">
+        {/* ── 5. Endereço ── */}
+        <AccordionSection
+          title="Endereço"
+          filled={!!(data.address?.rua)}
+        >
           <FFormField label="Rua">
             <input className="input-field" type="text" value={data.address?.rua || ""} onChange={(e) => handleAddressChange("rua", e.target.value)} />
           </FFormField>
@@ -624,10 +617,13 @@ export default function ConfiguracoesPage() {
               <input className="input-field" type="text" value={data.address?.estado || ""} onChange={(e) => handleAddressChange("estado", e.target.value)} maxLength={2} />
             </FFormField>
           </FRow>
-        </FSection>
+        </AccordionSection>
 
-        {/* ── Dados Bancários ── */}
-        <FSection title="Dados Bancários">
+        {/* ── 6. Dados Bancários ── */}
+        <AccordionSection
+          title="Dados Bancários"
+          filled={!!(data.bankInfo?.pix || data.bankInfo?.titular)}
+        >
           <FFormField label="Titular">
             <input className="input-field" type="text" value={data.bankInfo?.titular || ""} onChange={(e) => handleBankChange("titular", e.target.value)} />
           </FFormField>
@@ -647,63 +643,70 @@ export default function ConfiguracoesPage() {
               <input className="input-field" type="text" value={data.bankInfo?.agencia || ""} onChange={(e) => handleBankChange("agencia", e.target.value)} />
             </FFormField>
           </FRow>
-        </FSection>
+        </AccordionSection>
 
-        {/* ── Contato ── */}
-        <FSection title="Contato">
-          <FRow>
-            <FFormField label="WhatsApp">
-              <input className="input-field" type="text" value={data.whatsapp || ""} onChange={(e) => handleChange("whatsapp", e.target.value)} />
-            </FFormField>
-            <FFormField label="E-mail">
-              <input className="input-field" type="email" value={data.email || ""} onChange={(e) => handleChange("email", e.target.value)} />
-            </FFormField>
-          </FRow>
-        </FSection>
-
-        {/* ── PDF — tamanhos de papel ── */}
-        <FSection title="Configurações de PDF">
+        {/* ── 7. PDF & Templates ── */}
+        <AccordionSection
+          id="tut-cfg-templates"
+          title="PDF & Templates"
+          filled={!!(data.basePdfUrl || data.baseContractPdfUrl)}
+        >
+          <FileUploadRow
+            label="PDF Base — Orçamento"
+            pdfName={data.basePdfUrl ? "orcamento-base.pdf" : undefined}
+            uploaded={!!data.basePdfUrl}
+            uploading={uploading["base-pdf"]}
+            accept="application/pdf"
+            onChange={(e) => handleUpload("base-pdf", e)}
+          />
+          <FToggleRow
+            label="Usar este PDF no orçamento"
+            checked={data.usarBasePdfOrcamento}
+            onChange={(v) => setData({ ...data, usarBasePdfOrcamento: v })}
+          />
+          <FileUploadRow
+            label="PDF Base — Contrato"
+            pdfName={data.baseContractPdfUrl ? "contrato-base.pdf" : undefined}
+            uploaded={!!data.baseContractPdfUrl}
+            uploading={uploading["base-contrato-pdf"]}
+            accept="application/pdf"
+            onChange={(e) => handleUpload("base-contrato-pdf", e)}
+          />
+          <FToggleRow
+            label="Usar este PDF no contrato"
+            checked={data.usarBasePdfContrato}
+            onChange={(v) => setData({ ...data, usarBasePdfContrato: v })}
+          />
           <PdfPaperControls
-            data={data} title="Orçamento" hint="Tamanho do papel usado na geração do PDF de orçamento."
+            data={data} title="Tamanho — Orçamento" hint="Tamanho do papel na geração do PDF de orçamento."
             wKey="paperWidth" hKey="paperHeight" wEmpty={21} hEmpty={29.7} onPatch={patchPaper}
           />
           <PdfPaperControls
-            data={data} title="Contrato" hint="Tamanho do papel usado na geração do PDF de contrato."
+            data={data} title="Tamanho — Contrato" hint="Tamanho do papel na geração do PDF de contrato."
             wKey="contractPaperWidth" hKey="contractPaperHeight" wEmpty={21} hEmpty={29.7} onPatch={patchPaper}
           />
-        </FSection>
+          <TemplateStatusRow label="Orçamento" templateId={data.orcamentoTemplate || "orc-001"} templates={templates.orcamento} />
+          <TemplateStatusRow label="Contrato" templateId={data.contratoTemplate || "ctr-001"} templates={templates.contrato} />
+          <Link href="/admin/templates" style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            height: 44, borderRadius: 10, border: "1px solid #252d3d",
+            background: "#0e1118", color: "#94a3b8",
+            fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600,
+            textDecoration: "none", marginTop: 4,
+            transition: "border-color 0.15s, color 0.15s",
+          }}>
+            Gerenciar Templates
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </Link>
+        </AccordionSection>
 
-        <section id="tut-cfg-templates" style={{ background: "#141824", border: "1px solid #252d3d", borderRadius: 16, padding: 18 }}>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#f1f5f9", marginBottom: 16 }}>
-            Templates
-          </div>
-          <div style={{ display: "flex", flexDirection: "column" as const, gap: 10 }}>
-            <TemplateStatusRow label="Orçamento" templateId={data.orcamentoTemplate || "orc-001"} templates={templates.orcamento} />
-            <TemplateStatusRow label="Contrato" templateId={data.contratoTemplate || "ctr-001"} templates={templates.contrato} />
-            <Link href="/admin/templates" style={{
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              height: 44, borderRadius: 10, border: "1px solid #252d3d",
-              background: "#0e1118", color: "#94a3b8",
-              fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600,
-              textDecoration: "none", marginTop: 4,
-              transition: "border-color 0.15s, color 0.15s",
-            }}>
-              Gerenciar Templates
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-              </svg>
-            </Link>
-          </div>
-        </section>
-
-        {/* ── Tutorial ── */}
-        <section style={{ background: "#141824", border: "1px solid #252d3d", borderRadius: 16, padding: 18 }}>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#f1f5f9", marginBottom: 6 }}>
-            Tutorial
-          </div>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#4b5563", marginBottom: 14 }}>
-            Rever o formulário de configuração inicial.
-          </div>
+        {/* ── 8. Avançado ── */}
+        <AccordionSection title="Avançado">
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#4b5563", margin: "0 0 14px" }}>
+            Reinicia o formulário de configuração inicial e o tutorial de todas as páginas.
+          </p>
           <button
             type="button"
             onClick={async () => {
@@ -717,14 +720,14 @@ export default function ConfiguracoesPage() {
             }}
             style={{
               width: "100%", height: 42, borderRadius: 10,
-              border: "1px solid #252d3d", background: "#0e1118",
-              color: "#94a3b8", fontFamily: "'Inter', sans-serif",
+              border: "1px solid #3d1a1a", background: "rgba(239,68,68,0.06)",
+              color: "#f87171", fontFamily: "'Inter', sans-serif",
               fontSize: 13, fontWeight: 600, cursor: "pointer",
             }}
           >
             Reiniciar configuração inicial
           </button>
-        </section>
+        </AccordionSection>
 
       </form>
 
@@ -819,6 +822,62 @@ function FToggleRow({ label, checked, onChange }: { label: string; checked: bool
         }} />
       </div>
     </div>
+  );
+}
+
+// ── Accordion section ──
+function AccordionSection({
+  id, title, filled, defaultOpen = false, children,
+}: {
+  id?: string;
+  title: string;
+  filled?: boolean;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section id={id} style={{ background: "#141824", border: "1px solid #252d3d", borderRadius: 16, overflow: "hidden" }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          width: "100%", padding: "15px 18px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          background: "none", border: "none", cursor: "pointer",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{
+            fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 11,
+            letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#f1f5f9",
+          }}>
+            {title}
+          </span>
+          {filled && (
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", flexShrink: 0 }} />
+          )}
+        </div>
+        <svg
+          width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="#4b5563" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.25s ease", flexShrink: 0 }}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      <div style={{
+        display: "grid",
+        gridTemplateRows: open ? "1fr" : "0fr",
+        transition: "grid-template-rows 0.3s cubic-bezier(0.4,0,0.2,1)",
+      }}>
+        <div style={{ overflow: "hidden" }}>
+          <div style={{ padding: "0 18px 18px", display: "flex", flexDirection: "column" as const, gap: 12 }}>
+            {children}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
