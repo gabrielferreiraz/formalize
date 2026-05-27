@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, ChevronUp, ChevronDown, Save, AlertCircle } from "lucide-react";
+import { Plus, Trash2, ChevronUp, ChevronDown, Save, AlertCircle, Check } from "lucide-react";
 import { getPresetClausulas, PRESET_LABELS, type ClausulaContrato, type ContratoTipo } from "@/lib/contrato-clausulas";
+import { useFormContext } from "@/context/FormContext";
 
 interface SavedTemplate {
   id: string;
@@ -36,7 +37,19 @@ function validateClausulas(clausulas: ClausulaContrato[]): string | null {
   return null;
 }
 
+const PRESET_DESCS: Record<string, string> = {
+  banda: "Banda completa, riders e alimentação",
+  solo: "Artista solo ou duo",
+  dj: "DJ com cláusula de equipamentos",
+  generico: "Minimalista, sem especificações",
+};
+
+const PRESET_TO_CATEGORIA: Record<string, string> = {
+  banda: "banda", solo: "solo", dj: "dj", generico: "outros",
+};
+
 export default function ContratoTemplatesPage() {
+  const { contrato, setContrato } = useFormContext();
   const [templates, setTemplates] = useState<SavedTemplate[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<SavedTemplate | null>(null);
@@ -170,6 +183,25 @@ export default function ContratoTemplatesPage() {
     }
   }
 
+  async function handleSetPreset(preset: "banda" | "solo" | "dj" | "generico") {
+    setContrato({ ...contrato, clausulasPreset: preset, clausulasTemplateId: undefined });
+    await fetch("/api/artist/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ categoria: PRESET_TO_CATEGORIA[preset] }),
+    }).catch(() => {});
+  }
+
+  async function handleSetTemplateDefault(t: SavedTemplate) {
+    setContrato({ ...contrato, clausulasTemplateId: t.id, clausulasPreset: undefined });
+    await fetch(`/api/admin/contrato-templates/${t.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isDefault: true }),
+    }).catch(() => {});
+    await loadTemplates();
+  }
+
   const isEditing = creating || !!selected;
 
   return (
@@ -193,10 +225,85 @@ export default function ContratoTemplatesPage() {
         </div>
       )}
 
+      {/* ── Modelo padrão ────────────────────────────────────── */}
+      {!isEditing && (
+        <div className="card space-y-3">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Modelo padrão do contrato</p>
+
+          <div className="grid grid-cols-2 gap-2">
+            {(["banda", "solo", "dj", "generico"] as const).map((preset) => {
+              const isActive = !contrato.clausulasTemplateId && contrato.clausulasPreset === preset;
+              return (
+                <button
+                  key={preset}
+                  onClick={() => handleSetPreset(preset)}
+                  className={`text-left px-3 py-2.5 rounded-xl border transition-colors relative ${
+                    isActive
+                      ? "bg-gold-500/15 border-gold-500"
+                      : "border-stage-500 bg-stage-700 hover:border-gold-600"
+                  }`}
+                >
+                  <div className={`text-sm font-semibold ${isActive ? "text-gold-400" : "text-gray-300"}`}>
+                    {PRESET_LABELS[preset]}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-0.5 leading-snug">{PRESET_DESCS[preset]}</div>
+                  {isActive && (
+                    <Check size={12} className="absolute top-2.5 right-2.5 text-gold-400" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {contrato.clausulasPreset === "banda" && !contrato.clausulasTemplateId && (
+            <div className="flex items-center gap-3 pt-1">
+              <span className="text-xs text-gray-400 whitespace-nowrap">Integrantes na banda</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setContrato({ ...contrato, pessoasBanda: Math.max(1, (contrato.pessoasBanda ?? 7) - 1) })}
+                  className="w-8 h-8 rounded-lg border border-stage-500 bg-stage-700 text-gray-400 hover:border-gold-600 hover:text-gold-400 transition-colors text-base font-bold"
+                >−</button>
+                <span className="bg-stage-700 border border-stage-500 rounded-lg px-3 py-1 text-sm font-mono font-semibold text-gold-400 min-w-[40px] text-center">
+                  {contrato.pessoasBanda ?? 7}
+                </span>
+                <button
+                  onClick={() => setContrato({ ...contrato, pessoasBanda: Math.min(30, (contrato.pessoasBanda ?? 7) + 1) })}
+                  className="w-8 h-8 rounded-lg border border-stage-500 bg-stage-700 text-gray-400 hover:border-gold-600 hover:text-gold-400 transition-colors text-base font-bold"
+                >+</button>
+              </div>
+            </div>
+          )}
+
+          {templates.length > 0 && (
+            <div className="space-y-1.5 pt-1 border-t border-stage-600">
+              <p className="text-xs text-gray-600 uppercase tracking-wider pt-1">Templates personalizados</p>
+              {templates.map((t) => {
+                const isActive = contrato.clausulasTemplateId === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => handleSetTemplateDefault(t)}
+                    className={`w-full text-left px-3 py-2 rounded-xl border text-sm transition-colors relative ${
+                      isActive
+                        ? "bg-gold-500/15 border-gold-500 text-gold-400"
+                        : "border-stage-500 bg-stage-700 text-gray-300 hover:border-gold-600"
+                    }`}
+                  >
+                    <span className="font-medium">{t.nome}</span>
+                    <span className="text-xs text-gray-500 ml-2">{t.tipo}</span>
+                    {isActive && <Check size={12} className="absolute top-2.5 right-2.5 text-gold-400" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Preset starters */}
       {!isEditing && (
         <div>
-          <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Criar a partir de um preset</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Criar template a partir de preset</p>
           <div className="grid grid-cols-4 gap-2">
             {PRESET_OPTIONS.map((p) => (
               <button

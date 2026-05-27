@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function GlobalError({
   error,
@@ -9,9 +9,20 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [retrying, setRetrying] = useState(false);
+
   useEffect(() => {
     console.error(error);
   }, [error]);
+
+  function handleRetry() {
+    setRetrying(true);
+    // Pequeno delay para mostrar a animação antes de tentar
+    setTimeout(() => {
+      reset();
+      setRetrying(false);
+    }, 600);
+  }
 
   return (
     <main style={{
@@ -33,7 +44,8 @@ export default function GlobalError({
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
           <button
-            onClick={reset}
+            onClick={handleRetry}
+            disabled={retrying}
             style={{
               padding: "11px 24px",
               borderRadius: 12,
@@ -42,11 +54,27 @@ export default function GlobalError({
               color: "#e2e8f0",
               fontWeight: 600,
               fontSize: 14,
-              cursor: "pointer",
+              cursor: retrying ? "not-allowed" : "pointer",
               fontFamily: "inherit",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              opacity: retrying ? 0.7 : 1,
+              transition: "opacity 0.2s",
             }}
           >
-            Tentar novamente
+            {retrying && (
+              <span style={{
+                display: "inline-block",
+                width: 14,
+                height: 14,
+                border: "2px solid rgba(255,255,255,0.2)",
+                borderTopColor: "#e2e8f0",
+                borderRadius: "50%",
+                animation: "spin 0.7s linear infinite",
+              }} />
+            )}
+            {retrying ? "Tentando..." : "Tentar novamente"}
           </button>
           <a
             href="/login"
@@ -64,6 +92,9 @@ export default function GlobalError({
           </a>
         </div>
       </div>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </main>
   );
 }

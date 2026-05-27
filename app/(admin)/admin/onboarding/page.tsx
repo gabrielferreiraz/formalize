@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 
 const TOTAL_STEPS = 5;
@@ -621,7 +620,6 @@ function Step4({
 
 // ── Main ────────────────────────────────────────────────────────
 export default function OnboardingPage() {
-  const router = useRouter();
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [animKey, setAnimKey] = useState(0);
@@ -678,7 +676,8 @@ export default function OnboardingPage() {
     await patch({ onboardingDone: true });
     sessionStorage.setItem("just_onboarded", "1");
     setShowWelcome(true);
-    setTimeout(() => router.replace("/admin/orcamento"), 2800);
+    // Hard reload garante que o server component releia onboardingDone=true do DB
+    setTimeout(() => { window.location.href = "/admin/orcamento"; }, 2800);
   }
 
   async function handleContinue() {
@@ -715,7 +714,7 @@ export default function OnboardingPage() {
 
   async function skipAll() {
     await patch({ onboardingDone: true });
-    router.replace("/admin/orcamento");
+    window.location.href = "/admin/orcamento";
   }
 
   async function handleCnpj(raw: string) {

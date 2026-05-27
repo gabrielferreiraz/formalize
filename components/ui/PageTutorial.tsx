@@ -83,33 +83,58 @@ export function PageTutorial({ pageKey, steps, accentColor = "#e6b800" }: Props)
 
   const rafRef = useRef<number | null>(null);
   const retryRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const elevatedElRef = useRef<{ el: HTMLElement; position: string; zIndex: string } | null>(null);
 
   const stopRetry = () => {
     if (retryRef.current) { clearInterval(retryRef.current); retryRef.current = null; }
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
   };
 
+  const restoreElevation = () => {
+    if (!elevatedElRef.current) return;
+    const { el, position, zIndex } = elevatedElRef.current;
+    el.style.position = position;
+    el.style.zIndex = zIndex;
+    elevatedElRef.current = null;
+  };
+
+  const elevateEl = (el: HTMLElement) => {
+    restoreElevation();
+    elevatedElRef.current = {
+      el,
+      position: el.style.position,
+      zIndex: el.style.zIndex,
+    };
+    // Bring element above the overlay so it appears sharp and in full color
+    el.style.position = "relative";
+    el.style.zIndex = "9205";
+  };
+
   const hide = useCallback(() => {
     stopRetry();
+    restoreElevation();
     setVisible(false);
     setRect(null);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const dismiss = useCallback(() => {
     localStorage.setItem(PREFIX + pageKey, "1");
     stopRetry();
+    restoreElevation();
     setVisible(false);
     setRect(null);
-  }, [pageKey]);
+  }, [pageKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const snapRect = useCallback((targetId: string) => {
     stopRetry();
+    restoreElevation();
 
     const tryFind = () => {
       const el = document.getElementById(targetId);
       if (!el) return false;
       const style = window.getComputedStyle(el);
       if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0") return false;
+      elevateEl(el);
       el.scrollIntoView({ behavior: "smooth", block: "nearest" });
       const start = performance.now();
       const poll = (now: number) => {
@@ -127,7 +152,7 @@ export function PageTutorial({ pageKey, steps, accentColor = "#e6b800" }: Props)
       if (tryFind()) { stopRetry(); return; }
       if (Date.now() - started > RETRY_MAX_MS) { stopRetry(); hide(); }
     }, RETRY_INTERVAL_MS);
-  }, [hide]);
+  }, [hide]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!visible || !rect) return;
@@ -167,7 +192,7 @@ export function PageTutorial({ pageKey, steps, accentColor = "#e6b800" }: Props)
     return () => clearTimeout(t);
   }, [pageKey, steps, snapRect]);
 
-  useEffect(() => () => stopRetry(), []);
+  useEffect(() => () => { stopRetry(); restoreElevation(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function next() {
     const nextIdx = step + 1;

@@ -123,7 +123,8 @@ export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalPr
               href={pdfUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl bg-white text-stage-950 font-bold hover:bg-gray-100 transition-colors no-underline"
+              className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl bg-white font-bold hover:bg-gray-100 transition-colors no-underline"
+              style={{ color: "#0d1117" }}
             >
               <IconDoc size={20} />
               Ver PDF

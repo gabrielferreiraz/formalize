@@ -313,6 +313,9 @@ export default function ConfiguracoesPage() {
 
   const isDirty = data !== null && initialData !== null &&
     JSON.stringify(data) !== JSON.stringify(initialData);
+  const [navHidden, setNavHidden] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [templates, setTemplates] = useState<{ orcamento: TemplateInfo[]; contrato: TemplateInfo[] }>({
     orcamento: [],
     contrato: [],
@@ -351,6 +354,24 @@ export default function ConfiguracoesPage() {
       .catch(() => {
         setTemplates({ orcamento: [], contrato: [] });
       });
+  }, []);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
+    const obs = new MutationObserver(() => {
+      setNavHidden(document.body.classList.contains("nav-hidden"));
+    });
+    obs.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
   }, []);
 
   const handleChange = (field: string, value: string) => {
@@ -707,40 +728,66 @@ export default function ConfiguracoesPage() {
 
       </form>
 
-      {/* ── Floating save bar ── */}
-      <div
-        id="tut-cfg-save"
-        className="sticky bottom-[72px] md:bottom-0 left-0 right-0 z-50 pt-2 pb-4 -mx-4 px-4 pointer-events-none"
-      >
-        <div className="pointer-events-auto">
+      {mounted && createPortal(
+        <div
+          id="tut-cfg-save"
+          style={{
+            position: "fixed",
+            left: 0,
+            right: 0,
+            bottom: isMobile ? (navHidden ? 16 : 80) : 24,
+            zIndex: 60,
+            padding: "0 16px",
+            opacity: isDirty ? 1 : 0,
+            transform: isDirty ? "translateY(0)" : "translateY(14px)",
+            transition: "opacity 0.25s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1), bottom 0.3s cubic-bezier(0.4,0,0.2,1)",
+            pointerEvents: isDirty ? "auto" : "none",
+          }}
+        >
           <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            marginBottom: 6, padding: "0 2px",
+            maxWidth: 720,
+            margin: "0 auto",
+            background: "rgba(10,13,20,0.88)",
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
+            borderRadius: 20,
+            border: "1px solid rgba(230,184,0,0.28)",
+            padding: "10px 12px 10px 18px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.55), 0 0 28px rgba(230,184,0,0.1)",
           }}>
-            <span style={{ fontSize: 11, color: isDirty ? "#f5c842" : "#334155", fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>
-              {isDirty ? "● Alterações não salvas" : "✓ Configurações salvas"}
+            <span style={{
+              fontSize: 12, color: "#f5c842",
+              fontFamily: "'Inter', sans-serif", fontWeight: 600, flexShrink: 0,
+            }}>
+              ● Alterações não salvas
             </span>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={doSave}
+              style={{
+                height: 44, paddingLeft: 24, paddingRight: 24,
+                borderRadius: 14, border: "none",
+                background: saving ? "#9a7a00" : "linear-gradient(180deg, #f5c842, #e6b800)",
+                color: "#1a1200",
+                fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700,
+                cursor: saving ? "not-allowed" : "pointer",
+                boxShadow: "0 4px 18px rgba(230,184,0,0.38)",
+                opacity: saving ? 0.7 : 1,
+                transition: "opacity 0.15s",
+                flexShrink: 0,
+              }}
+            >
+              {saving ? "Salvando..." : "Salvar Alterações"}
+            </button>
           </div>
-          <button
-            type="button"
-            disabled={saving || !isDirty}
-            onClick={doSave}
-            style={{
-              width: "100%", height: 54, borderRadius: 18,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              background: isDirty ? "linear-gradient(180deg, #f5c842, #e6b800)" : "#1a1f2e",
-              color: isDirty ? "#1a1200" : "#334155",
-              fontFamily: "'Inter', sans-serif", fontSize: 15, fontWeight: 700,
-              cursor: (saving || !isDirty) ? "not-allowed" : "pointer",
-              boxShadow: isDirty ? "0 6px 20px rgba(230,184,0,0.3), 0 2px 4px rgba(0,0,0,0.2)" : "none",
-              transition: "background 0.2s, box-shadow 0.2s, color 0.2s",
-              border: isDirty ? "none" : "1px solid #252d3d",
-            }}
-          >
-            {saving ? "Salvando..." : isDirty ? "Salvar Alterações" : "Sem alterações"}
-          </button>
-        </div>
-      </div>
+        </div>,
+        document.body
+      )}
 
       <PageTutorial pageKey="configuracoes" steps={CFG_TUTORIAL} />
     </div>
