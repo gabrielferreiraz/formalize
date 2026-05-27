@@ -10,6 +10,8 @@ type Request = {
   artistName: string;
   subdomain: string;
   message: string | null;
+  categoria: string | null;
+  temContrato: boolean;
   status: "PENDING" | "APPROVED" | "REJECTED";
   rejectedNote: string | null;
   createdAt: string;
@@ -149,6 +151,18 @@ function DetailModal({
               <span className="text-sm text-gray-200 break-all">{value}</span>
             </div>
           ))}
+          {req.categoria && (
+            <div className="flex gap-3">
+              <span className="text-xs text-gray-500 w-24 shrink-0 pt-0.5">Perfil</span>
+              <span className="text-sm text-gray-200">{req.categoria}</span>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <span className="text-xs text-gray-500 w-24 shrink-0 pt-0.5">Tem modelo</span>
+            <span className={`text-sm font-medium ${req.temContrato ? "text-yellow-400" : "text-gray-500"}`}>
+              {req.temContrato ? "Sim — já usa um modelo" : "Não — criará do zero"}
+            </span>
+          </div>
           {req.message && (
             <div className="flex gap-3">
               <span className="text-xs text-gray-500 w-24 shrink-0 pt-0.5">Mensagem</span>

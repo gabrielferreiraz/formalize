@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
-  let body: { name: string; email: string; whatsapp: string; artistName: string; message?: string };
+  let body: { name: string; email: string; whatsapp: string; artistName: string; message?: string; categoria?: string; temContrato?: boolean };
 
   try {
     body = await req.json();
@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  const { name, email, whatsapp, artistName, message } = body;
+  const { name, email, whatsapp, artistName, message, categoria, temContrato } = body;
 
   if (!name?.trim() || !email?.trim() || !whatsapp?.trim() || !artistName?.trim()) {
     return NextResponse.json({ error: "Preencha todos os campos obrigatórios" }, { status: 400 });
@@ -49,6 +49,8 @@ export async function POST(req: NextRequest) {
       artistName: artistName.trim(),
       subdomain,
       message: message?.trim() || null,
+      categoria: categoria?.trim() || null,
+      temContrato: temContrato === true,
     },
   });
 

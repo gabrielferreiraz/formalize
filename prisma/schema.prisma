@@ -204,7 +204,9 @@ model ArtistRequest {
   artistName String
   subdomain  String
 
-  message String?
+  message     String?
+  categoria   String?
+  temContrato Boolean @default(false)
 
   status        ArtistRequestStatus @default(PENDING)
   rejectedNote  String?
