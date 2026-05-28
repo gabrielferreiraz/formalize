@@ -1,9 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import sharp from "sharp";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadToR2, getPublicUrl } from "@/lib/r2";
 import { requestLogger, getRequestId } from "@/lib/logger";
+
+async function normalizeLogo(input: Buffer): Promise<Buffer> {
+  const MAX_W = 1200, MAX_H = 480, MIN_LONGEST = 280;
+  try {
+    const meta = await sharp(input).metadata();
+    const w = meta.width ?? 1, h = meta.height ?? 1;
+    let targetW = w, targetH = h;
+    if (w > MAX_W || h > MAX_H) {
+      const scale = Math.min(MAX_W / w, MAX_H / h);
+      targetW = Math.round(w * scale);
+      targetH = Math.round(h * scale);
+    }
+    const longest = Math.max(targetW, targetH);
+    if (longest < MIN_LONGEST) {
+      const up = Math.min(MIN_LONGEST / longest, 4);
+      targetW = Math.round(targetW * up);
+      targetH = Math.round(targetH * up);
+    }
+    const needsResize = targetW !== w || targetH !== h;
+    return needsResize
+      ? await sharp(input).resize(targetW, targetH, { kernel: sharp.kernel.lanczos3 }).png({ compressionLevel: 6 }).toBuffer()
+      : await sharp(input).png({ compressionLevel: 6 }).toBuffer();
+  } catch {
+    return input;
+  }
+}
 
 export async function POST(req: NextRequest) {
   const requestId = getRequestId(req);
@@ -60,8 +87,13 @@ export async function POST(req: NextRequest) {
   log.info({ type, key, fileSizeBytes: file.size }, "asset upload started");
 
   try {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const uploadedKey = await uploadToR2(key, buffer, file.type);
+    let buffer: Buffer = Buffer.from(await file.arrayBuffer());
+    let mimeType = file.type;
+    if (type === "logo") {
+      buffer = await normalizeLogo(buffer);
+      mimeType = "image/png";
+    }
+    const uploadedKey = await uploadToR2(key, buffer, mimeType);
     const publicUrl = getPublicUrl(uploadedKey);
 
     await prisma.artist.update({

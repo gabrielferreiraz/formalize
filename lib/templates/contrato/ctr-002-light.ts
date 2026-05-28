@@ -67,7 +67,8 @@ const templateContratoLight = `<!DOCTYPE html>
     }
 
     .logo-area img {
-      height: 44px;
+      height: {{logoHeight}}px;
+      max-width: 280px;
       object-fit: contain;
     }
 
@@ -792,6 +793,7 @@ export async function buildCtr002(
   const addr = (artist.address as any) || {};
   const bank = (artist.bankInfo as any) || {};
   const primaryColor = artist.primaryColor || "#E8A045";
+  const logoScale = Number(artist.contratoLogoScale) || 100;
   const logoMime = logo?.mime || "image/png";
   const logoBase64 = logo?.base64 || "";
 
@@ -825,6 +827,7 @@ export async function buildCtr002(
     primaryColorLight: primaryColor + "20",
     logoMime,
     logoBase64,
+    logoHeight: Math.round(72 * logoScale / 100),
     artistName: escapeHtml(artist.name),
     numero: escapeHtml(data.numero || "CTR-" + Date.now().toString().slice(-6)),
     numeroEndereco: escapeHtml(data.numero),

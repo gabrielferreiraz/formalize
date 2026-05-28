@@ -18,6 +18,8 @@ export async function buildCtr004(
   const logoMime = logo?.mime || "image/png";
   const logoBase64 = logo?.base64 || "";
   const fontScale = (artist.contratoFontScale || 100) / 71;
+  const logoScale = Number(artist.contratoLogoScale) || 100;
+  const logoH = Math.round(80 * logoScale / 100);
 
   const valorCache = (parseFloat(d.cache) || 0) / 100;
   const backlineN = d.backline === "valor" ? (parseFloat(d.backlineValor) || 0) / 100 : 0;
@@ -82,7 +84,7 @@ export async function buildCtr004(
       display: flex; align-items: center; justify-content: space-between;
     }
     .header-band-left { display: flex; align-items: center; gap: 14px; }
-    .header-logo { height: 52px; max-width: 150px; object-fit: contain; }
+    .header-logo { height: ${logoH}px; max-width: 280px; object-fit: contain; }
     .header-logo-placeholder { width: 1px; }
     .header-artist { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(18*fs)}px; color: #111; letter-spacing: 0.5px; }
     .header-cnpj { font-size: ${Math.round(13*fs)}px; color: #111; opacity: 0.65; margin-top: 2px; }

@@ -49,7 +49,8 @@ const templateOrcamentoLight = `<!DOCTYPE html>
     }
 
     .logo-area img {
-      height: 52px;
+      height: {{logoHeight}}px;
+      max-width: 280px;
       object-fit: contain;
     }
 
@@ -517,6 +518,7 @@ export async function buildOrc002(
 ): Promise<string> {
   const fontScale = (artist.orcamentoFontScale || 100) / 71;
   const primaryColor = artist.primaryColor || "#E8A045";
+  const logoScale = Number(artist.orcamentoLogoScale) || 100;
   const logoMime = logo?.mime || "image/png";
   const logoBase64 = logo?.base64 || "";
   
@@ -559,6 +561,7 @@ export async function buildOrc002(
     logoUrl: !!logo?.base64,
     logoMime,
     logoBase64,
+    logoHeight: Math.round(72 * logoScale / 100),
     numero: escapeHtml(data.numero || "ORC-" + Date.now().toString().slice(-6)),
     dataFormatada: formatData(data.data),
     contratante: escapeHtml(data.contratante),

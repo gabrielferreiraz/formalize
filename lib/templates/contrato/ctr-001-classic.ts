@@ -16,6 +16,8 @@ export async function buildCtr001(
   const bank = (artist.bankInfo as any) || {};
   const logoMime = logo?.mime || "image/png";
   const logoBase64 = logo?.base64 || "";
+  const logoScale = Number(artist.contratoLogoScale) || 100;
+  const logoH = Math.round(100 * logoScale / 100);
 
   const valorCache = (parseFloat(d.cache) || 0) / 100;
   const valorCacheFormatado = valorCache.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
@@ -76,7 +78,7 @@ export async function buildCtr001(
     .pagina { width: 100%; min-height: 100vh; position: relative; display: flex; flex-direction: column; background: #ffffff; }
     .marca-dagua { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; opacity: 0.04; z-index: 0; pointer-events: none; }
     .header { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%); padding: 32px 50px 26px; text-align: center; flex-shrink: 0; position: relative; z-index: 1; }
-    .header img { height: 100px; display: block; margin: 0 auto 12px; }
+    .header img { height: ${logoH}px; max-width: 280px; object-fit: contain; display: block; margin: 0 auto 12px; }
     .header-subtitulo { font-family: 'Montserrat', sans-serif; font-weight: 400; font-size: ${16 * fontScale}px; color: #888888; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 14px; }
     .header-linha { width: 60%; height: 2px; background: linear-gradient(to right, transparent, ${primaryColor}, transparent); margin: 0 auto; }
     .corpo { position: relative; z-index: 1; padding: 32px 55px 55px; flex: 1; }

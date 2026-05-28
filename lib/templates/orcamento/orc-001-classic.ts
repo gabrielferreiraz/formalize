@@ -13,6 +13,8 @@ export async function buildOrc001(
   const d = data;
   const primaryColor = artist.primaryColor || "#E8A045";
   const fontScale = (artist.orcamentoFontScale || 100) / 71;
+  const logoScale = Number(artist.orcamentoLogoScale) || 100;
+  const logoH = Math.round(64 * logoScale / 100);
 
   const valorCache = (parseFloat(d.cache) || 0) / 100;
   const valorCacheFormatado = valorCache.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
@@ -240,7 +242,7 @@ export async function buildOrc001(
       justify-content: space-between;
       gap: 12px;
     }
-    .ftr-logo { height: 42px; max-width: 140px; object-fit: contain; }
+    .ftr-logo { height: ${logoH}px; max-width: 280px; object-fit: contain; }
     .ftr-r { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
     .ftr-site {
       font-family: 'Montserrat', sans-serif;

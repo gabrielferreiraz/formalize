@@ -45,6 +45,8 @@ export async function buildOrc003(
   const d = data;
   const primary = artist.primaryColor || "#e6b800";
   const fontScale = (artist.orcamentoFontScale || 100) / 71;
+  const logoScale = Number(artist.orcamentoLogoScale) || 100;
+  const logoH = Math.round(72 * logoScale / 100);
   const logoMime = logo?.mime || "image/png";
   const logoBase64 = logo?.base64 || "";
 
@@ -81,7 +83,7 @@ export async function buildOrc003(
 
     /* ── Header ── */
     .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 18px; border-bottom: 2px solid ${primary}; }
-    .header-logo { height: 48px; max-width: 160px; object-fit: contain; }
+    .header-logo { height: ${logoH}px; max-width: 280px; object-fit: contain; }
     .header-right { text-align: right; }
     .header-doc { font-family: 'Montserrat', sans-serif; font-weight: 300; font-size: ${Math.round(12*fontScale)}px; letter-spacing: 4px; text-transform: uppercase; color: #aaa; margin-bottom: 3px; }
     .header-name { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: ${Math.round(17*fontScale)}px; color: #111; letter-spacing: 0.5px; }

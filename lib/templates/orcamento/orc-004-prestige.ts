@@ -42,6 +42,9 @@ export async function buildOrc004(
   const d = data;
   const primary = artist.primaryColor || "#e6b800";
   const fontScale = (artist.orcamentoFontScale || 100) / 71;
+  const logoScale = Number(artist.orcamentoLogoScale) || 100;
+  const logoH = Math.round(72 * logoScale / 100);
+  const footerLogoH = Math.round(44 * logoScale / 100);
   const logoMime = logo?.mime || "image/png";
   const logoBase64 = logo?.base64 || "";
 
@@ -73,7 +76,7 @@ export async function buildOrc004(
 
     /* ── Header ── */
     .header { background: #0c0c0c; padding: 22px 30px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e1e1e; flex-shrink: 0; }
-    .header-logo { height: 44px; max-width: 150px; object-fit: contain; }
+    .header-logo { height: ${logoH}px; max-width: 280px; object-fit: contain; }
     .header-right { text-align: right; }
     .header-doc { font-family: 'Montserrat', sans-serif; font-weight: 300; font-size: ${Math.round(12*fontScale)}px; letter-spacing: 5px; text-transform: uppercase; color: #666; margin-bottom: 3px; }
     .header-name { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(15*fontScale)}px; color: ${primary}; letter-spacing: 1px; }
@@ -130,7 +133,7 @@ export async function buildOrc004(
     .footer { background: #000; padding: 12px 30px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; border-top: 1px solid #1a1a1a; }
     .footer-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(12*fontScale)}px; color: #666; }
     .footer-web { font-family: 'Montserrat', sans-serif; font-size: ${Math.round(12*fontScale)}px; color: ${primary}; }
-    .footer-logo { height: 32px; object-fit: contain; opacity: 0.8; }
+    .footer-logo { height: ${footerLogoH}px; max-width: 220px; object-fit: contain; opacity: 0.8; }
   </style>
 </head>
 <body>

@@ -18,6 +18,8 @@ export async function buildCtr003(
   const logoMime = logo?.mime || "image/png";
   const logoBase64 = logo?.base64 || "";
   const fontScale = (artist.contratoFontScale || 100) / 71;
+  const logoScale = Number(artist.contratoLogoScale) || 100;
+  const logoH = Math.round(88 * logoScale / 100);
 
   const valorCache = (parseFloat(d.cache) || 0) / 100;
   const backlineN = d.backline === "valor" ? (parseFloat(d.backlineValor) || 0) / 100 : 0;
@@ -88,7 +90,7 @@ export async function buildCtr003(
       justify-content: space-between; border-bottom: 1px solid #eee;
     }
     .header-left {}
-    .header-logo { height: 64px; max-width: 180px; object-fit: contain; display: block; margin-bottom: 8px; }
+    .header-logo { height: ${logoH}px; max-width: 280px; object-fit: contain; display: block; margin-bottom: 8px; }
     .header-name { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(17*fs)}px; color: #111; letter-spacing: 0.5px; }
     .header-cnpj { font-size: ${Math.round(13*fs)}px; color: #aaa; margin-top: 2px; }
     .header-right { text-align: right; }
