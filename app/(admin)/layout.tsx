@@ -70,7 +70,7 @@ export default async function AdminLayout({
     if (pathname && !pathname.startsWith("/admin/onboarding")) {
       return redirect("/admin/onboarding");
     }
-    return <>{children}</>;
+    return <SessionWrapper>{children}</SessionWrapper>;
   }
 
   const initialArtist = artist

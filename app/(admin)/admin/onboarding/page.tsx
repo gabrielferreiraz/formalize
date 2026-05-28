@@ -549,6 +549,7 @@ export default function OnboardingPage() {
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [cnpjLoading, setCnpjLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   const [data, setData] = useState<OnboardingData>({
     name: "",
@@ -560,9 +561,20 @@ export default function OnboardingPage() {
   });
 
   useEffect(() => {
+    // Loop guard: mais de 3 carregamentos em 10s = loop de redirect, volta ao login
+    const LOOP_KEY = "ob_loads";
+    const loads = parseInt(sessionStorage.getItem(LOOP_KEY) || "0") + 1;
+    sessionStorage.setItem(LOOP_KEY, String(loads));
+    if (loads > 3) {
+      sessionStorage.removeItem(LOOP_KEY);
+      window.location.href = "/login";
+      return;
+    }
+    const loopTimer = setTimeout(() => sessionStorage.removeItem(LOOP_KEY), 10000);
+
     setMounted(true);
     fetch("/api/artist/me")
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error("api_error"); return r.json(); })
       .then((artist) => {
         setData((prev) => ({
           name: artist.name || prev.name,
@@ -574,7 +586,9 @@ export default function OnboardingPage() {
         }));
         if (artist.logoUrl) setLogoUrl(artist.logoUrl);
       })
-      .catch(() => {});
+      .catch(() => setFetchError(true));
+
+    return () => clearTimeout(loopTimer);
   }, []);
 
   async function patch(fields: Record<string, unknown>) {
@@ -592,6 +606,7 @@ export default function OnboardingPage() {
 
   async function finish() {
     await patch({ onboardingDone: true });
+    sessionStorage.removeItem("ob_loads");
     sessionStorage.setItem("just_onboarded", "1");
     setShowWelcome(true);
     // Hard reload garante que o server component releia onboardingDone=true do DB
@@ -631,6 +646,7 @@ export default function OnboardingPage() {
 
   async function skipAll() {
     await patch({ onboardingDone: true });
+    sessionStorage.removeItem("ob_loads");
     window.location.href = "/admin/orcamento";
   }
 
@@ -766,6 +782,32 @@ export default function OnboardingPage() {
           Pular
         </button>
       </div>
+
+      {/* Aviso se o fetch de dados falhou — formulário ainda funciona normalmente */}
+      {fetchError && (
+        <div style={{
+          margin: "0 16px 4px",
+          padding: "8px 14px",
+          borderRadius: 10,
+          background: "rgba(239,68,68,0.06)",
+          border: "1px solid rgba(239,68,68,0.2)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+        }}>
+          <span style={{ fontSize: 11, color: "#f87171", lineHeight: 1.4 }}>
+            Não conseguimos carregar seus dados — preencha normalmente, tudo será salvo.
+          </span>
+          <button
+            type="button"
+            onClick={() => { setFetchError(false); window.location.reload(); }}
+            style={{ fontSize: 11, color: "#f87171", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
 
       {/* Step content */}
       <div
