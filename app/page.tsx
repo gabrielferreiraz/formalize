@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { RequestForm } from "@/components/RequestForm";
+import { WhatsAppFloat } from "@/components/WhatsAppFloat";
 
 export default function Home() {
   return (
@@ -77,6 +78,7 @@ export default function Home() {
         }
         .marquee-track { animation: marquee 28s linear infinite; }
         .marquee-track:hover { animation-play-state: paused; }
+
 
         /* Scroll-driven — Chrome 115+, Firefox 110+, Safari 17.2+ */
         @supports (animation-timeline: view()) {
@@ -631,6 +633,8 @@ export default function Home() {
           </a>
         </div>
       </section>
+
+      <WhatsAppFloat />
 
       {/* ── Footer ── */}
       <footer className="border-t border-white/5 py-10 px-6">

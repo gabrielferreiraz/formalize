@@ -33,6 +33,14 @@ const CTR_BUILDERS: Record<string, TemplateBuilder> = {
   "ctr-004": buildCtr004,
 };
 
+const WATERMARK = `<div style="position:fixed;bottom:8px;left:0;right:0;text-align:center;font-family:Helvetica,Arial,sans-serif;font-size:7.5px;letter-spacing:0.07em;color:rgba(80,80,80,0.32);pointer-events:none;z-index:9999;user-select:none;">Criado com&nbsp;<span style="font-weight:700;letter-spacing:0.04em;">Formalize</span></div>`;
+
+function injectWatermark(html: string): string {
+  return html.includes("</body>")
+    ? html.replace("</body>", `${WATERMARK}</body>`)
+    : html + WATERMARK;
+}
+
 export async function buildTemplate(
   type: "orcamento" | "contrato",
   artist: ArtistTemplateData & Record<string, any>,
@@ -56,16 +64,16 @@ export async function buildTemplate(
   if (type === "orcamento") {
     const templateId = artist.orcamentoTemplate || "orc-001";
     const builder = ORC_BUILDERS[templateId] ?? ORC_BUILDERS["orc-001"];
-    return builder(artist, data as Record<string, any>, pageSize, logo, background);
+    return injectWatermark(await builder(artist, data as Record<string, any>, pageSize, logo, background));
   }
 
   const clausulas = data._clausulas;
   if (Array.isArray(clausulas) && clausulas.length > 0) {
     const titulo = data._clausulasTitulo as string | undefined;
-    return buildFromClausulas(artist, data as Record<string, any>, clausulas as ClausulaContrato[], pageSize, logo, titulo);
+    return injectWatermark(await buildFromClausulas(artist, data as Record<string, any>, clausulas as ClausulaContrato[], pageSize, logo, titulo));
   }
 
   const templateId = artist.contratoTemplate || "ctr-001";
   const builder = CTR_BUILDERS[templateId] ?? CTR_BUILDERS["ctr-001"];
-  return builder(artist, data as Record<string, any>, pageSize, logo, background);
+  return injectWatermark(await builder(artist, data as Record<string, any>, pageSize, logo, background));
 }

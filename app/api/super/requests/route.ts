@@ -60,6 +60,7 @@ export async function PATCH(req: NextRequest) {
           email: request.email,
           whatsapp: request.whatsapp,
           source: "LP",
+          ...(request.categoria ? { categoria: request.categoria } : {}),
         },
       });
 

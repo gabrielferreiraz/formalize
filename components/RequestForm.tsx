@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const CATEGORIAS = [
   { id: "cantor-solo",  label: "Cantor(a) solo",   icon: "🎤", desc: "Solo, sem banda fixa" },
@@ -15,8 +15,18 @@ const CATEGORIAS = [
 export function RequestForm() {
   const [form, setForm] = useState({ name: "", email: "", whatsapp: "", artistName: "" });
   const [categoria, setCategoria] = useState("");
+  const [catOpen, setCatOpen] = useState(false);
   const [outroTexto, setOutroTexto] = useState("");
   const [temContrato, setTemContrato] = useState<boolean | null>(null);
+  const catRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (catRef.current && !catRef.current.contains(e.target as Node)) setCatOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -109,41 +119,70 @@ export function RequestForm() {
 
       {/* Category selector */}
       <div>
-        <label className="block text-sm font-semibold text-gray-300 mb-1">
-          Que tipo de artista você é?
+        <label className="block text-sm font-semibold text-gray-300 mb-2">
+          Que tipo de artista você é?{" "}
+          <span className="text-gray-600 font-normal text-xs">ajuda a montar seu painel</span>
         </label>
-        <p className="text-xs text-gray-600 mb-3">Ajuda a montar seu painel do jeito certo.</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-          {CATEGORIAS.map((cat) => {
-            const selected = categoria === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setCategoria(selected ? "" : cat.id)}
-                className="relative flex flex-col items-start gap-0.5 p-3 rounded-xl border text-left transition-all"
-                style={{
-                  background: selected ? "rgba(245,200,66,0.07)" : "rgba(14,17,24,0.8)",
-                  borderColor: selected ? "rgba(245,200,66,0.5)" : "rgba(255,255,255,0.08)",
-                  boxShadow: selected ? "0 0 0 1px rgba(245,200,66,0.15)" : "none",
-                }}
-              >
-                <span className="text-base leading-none mb-1">{cat.icon}</span>
-                <span className="text-xs font-semibold text-gray-200 leading-tight">{cat.label}</span>
-                <span className="text-[10px] text-gray-600 leading-tight">{cat.desc}</span>
-                {selected && (
-                  <div
-                    className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center"
-                    style={{ background: "#f5c842" }}
+        <div ref={catRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setCatOpen((o) => !o)}
+            className="w-full px-4 py-3 rounded-xl border text-sm text-left flex items-center justify-between transition-colors"
+            style={{
+              background: "rgba(14,17,24,0.8)",
+              borderColor: catOpen ? "rgba(245,200,66,0.4)" : "rgba(255,255,255,0.10)",
+              color: categoria ? "#e2e8f0" : "#4b5563",
+            }}
+          >
+            <span className="flex items-center gap-2">
+              {categoria
+                ? <>{CATEGORIAS.find(c => c.id === categoria)?.icon}{" "}{CATEGORIAS.find(c => c.id === categoria)?.label}</>
+                : "Selecione seu perfil..."}
+            </span>
+            <svg
+              width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              style={{ color: "#4b5563", transform: catOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+
+          {catOpen && (
+            <div
+              className="absolute z-50 left-0 right-0 mt-1 rounded-xl border overflow-hidden"
+              style={{ background: "#0c101a", borderColor: "rgba(255,255,255,0.10)", boxShadow: "0 16px 40px rgba(0,0,0,0.6)" }}
+            >
+              {CATEGORIAS.map((cat, i) => {
+                const selected = categoria === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => { setCategoria(cat.id); setCatOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors"
+                    style={{
+                      background: selected ? "rgba(245,200,66,0.07)" : "transparent",
+                      borderTop: i > 0 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = selected ? "rgba(245,200,66,0.1)" : "rgba(255,255,255,0.03)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = selected ? "rgba(245,200,66,0.07)" : "transparent")}
                   >
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                )}
-              </button>
-            );
-          })}
+                    <span className="text-base w-6 text-center shrink-0">{cat.icon}</span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-medium" style={{ color: selected ? "#f5c842" : "#e2e8f0" }}>{cat.label}</span>
+                      <span className="block text-xs text-gray-600">{cat.desc}</span>
+                    </span>
+                    {selected && (
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f5c842" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
         {categoria === "outro" && (
           <input
