@@ -565,17 +565,34 @@ export default function OnboardingPage() {
     const LOOP_KEY = "ob_loads";
     const loads = parseInt(sessionStorage.getItem(LOOP_KEY) || "0") + 1;
     sessionStorage.setItem(LOOP_KEY, String(loads));
+    console.log(`[onboarding] mount — loop counter: ${loads}/3`);
     if (loads > 3) {
+      console.warn("[onboarding] loop guard triggered — mais de 3 loads em 10s, redirecionando para /login");
       sessionStorage.removeItem(LOOP_KEY);
       window.location.href = "/login";
       return;
     }
-    const loopTimer = setTimeout(() => sessionStorage.removeItem(LOOP_KEY), 10000);
+    const loopTimer = setTimeout(() => {
+      console.log("[onboarding] loop counter resetado por timeout (10s)");
+      sessionStorage.removeItem(LOOP_KEY);
+    }, 10000);
 
     setMounted(true);
+    console.log("[onboarding] iniciando fetch /api/artist/me");
     fetch("/api/artist/me")
-      .then((r) => { if (!r.ok) throw new Error("api_error"); return r.json(); })
+      .then((r) => {
+        console.log(`[onboarding] fetch /api/artist/me — status: ${r.status} ${r.statusText}`);
+        if (!r.ok) throw new Error(`api_error_${r.status}`);
+        return r.json();
+      })
       .then((artist) => {
+        console.log("[onboarding] fetch /api/artist/me — sucesso", {
+          name: artist.name,
+          hasColor: !!artist.primaryColor,
+          hasLogo: !!artist.logoUrl,
+          onboardingDone: artist.onboardingDone,
+          categoria: artist.categoria,
+        });
         setData((prev) => ({
           name: artist.name || prev.name,
           primaryColor: artist.primaryColor || prev.primaryColor,
@@ -586,26 +603,39 @@ export default function OnboardingPage() {
         }));
         if (artist.logoUrl) setLogoUrl(artist.logoUrl);
       })
-      .catch(() => setFetchError(true));
+      .catch((err) => {
+        console.error("[onboarding] fetch /api/artist/me — ERRO:", err?.message ?? err);
+        setFetchError(true);
+      });
 
     return () => clearTimeout(loopTimer);
   }, []);
 
   async function patch(fields: Record<string, unknown>) {
+    console.log("[onboarding] patch — fields:", Object.keys(fields), fields);
     setSaving(true);
     try {
-      await fetch("/api/artist/me", {
+      const res = await fetch("/api/artist/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(fields),
       });
+      console.log(`[onboarding] patch — resposta: ${res.status} ${res.statusText}`);
+      if (!res.ok) {
+        const body = await res.text().catch(() => "(sem body)");
+        console.error("[onboarding] patch — ERRO na resposta:", res.status, body);
+      }
+    } catch (err) {
+      console.error("[onboarding] patch — ERRO de rede:", err);
     } finally {
       setSaving(false);
     }
   }
 
   async function finish() {
+    console.log("[onboarding] finish — iniciando, step:", step);
     await patch({ onboardingDone: true });
+    console.log("[onboarding] finish — patch onboardingDone=true concluído, redirecionando para /admin/orcamento");
     sessionStorage.removeItem("ob_loads");
     sessionStorage.setItem("just_onboarded", "1");
     setShowWelcome(true);
@@ -614,10 +644,12 @@ export default function OnboardingPage() {
   }
 
   async function handleContinue() {
+    console.log(`[onboarding] handleContinue — step atual: ${step}`);
     if (step === 1) await patch({ name: data.name, primaryColor: data.primaryColor });
     else if (step === 2) await patch({ legalName: data.legalName, cnpj: data.cnpj });
     else if (step === 3) await patch({ whatsapp: data.whatsapp, pixKey: data.pixKey });
     if (step < TOTAL_STEPS) {
+      console.log(`[onboarding] avançando para step ${step + 1}`);
       setDirection("forward");
       setAnimKey((k) => k + 1);
       setStep((s) => s + 1);
@@ -628,6 +660,7 @@ export default function OnboardingPage() {
 
   function goBack() {
     if (step > 1) {
+      console.log(`[onboarding] voltando para step ${step - 1}`);
       setDirection("backward");
       setAnimKey((k) => k + 1);
       setStep((s) => s - 1);
@@ -635,6 +668,7 @@ export default function OnboardingPage() {
   }
 
   async function skipStep() {
+    console.log(`[onboarding] skipStep — step atual: ${step}`);
     if (step < TOTAL_STEPS) {
       setDirection("forward");
       setAnimKey((k) => k + 1);
@@ -645,7 +679,9 @@ export default function OnboardingPage() {
   }
 
   async function skipAll() {
+    console.log("[onboarding] skipAll — pulando tudo, marcando onboardingDone=true");
     await patch({ onboardingDone: true });
+    console.log("[onboarding] skipAll — redirecionando para /admin/orcamento");
     sessionStorage.removeItem("ob_loads");
     window.location.href = "/admin/orcamento";
   }

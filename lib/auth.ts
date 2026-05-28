@@ -134,6 +134,10 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account }) {
       // Login via credentials — user já vem com role e artistId
       if (user && account?.provider === "credentials") {
+        logger.info(
+          { userId: user.id, role: user.role, artistId: user.artistId, forcePasswordChange: (user as any).forcePasswordChange, action: "auth.jwt" },
+          "[DEBUG] jwt: credentials login — building token"
+        );
         token.id = user.id;
         token.role = user.role;
         token.artistId = user.artistId ?? null;
@@ -148,6 +152,10 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await prisma.user.findFirst({
           where: { email: token.email },
         });
+        logger.info(
+          { email: token.email, found: !!dbUser, userId: dbUser?.id, role: dbUser?.role, artistId: dbUser?.artistId, action: "auth.jwt" },
+          "[DEBUG] jwt: google login — db lookup"
+        );
         if (dbUser) {
           token.id = dbUser.id;
           token.role = dbUser.role;
@@ -161,13 +169,19 @@ export const authOptions: NextAuthOptions = {
       // Renovação de token — re-valida conta no banco a cada 5 minutos.
       // jwt callback tem write access ao token; session callback não.
       const validatedAt = token.validatedAt ?? 0;
-      if (token.id && Date.now() - validatedAt > 5 * 60 * 1000) {
+      const tokenAgeMs = Date.now() - validatedAt;
+      if (token.id && tokenAgeMs > 5 * 60 * 1000) {
+        logger.info(
+          { tokenId: token.id, role: token.role, artistId: token.artistId, tokenAgeMs, action: "auth.jwt" },
+          "[DEBUG] jwt: token renewal — re-validating with DB"
+        );
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.id as string },
             select: { active: true },
           });
           if (!dbUser || !dbUser.active) {
+            logger.warn({ tokenId: token.id, dbFound: !!dbUser, dbActive: dbUser?.active, action: "auth.jwt" }, "[DEBUG] jwt: renewal — user inactive/not found, revoking token");
             token.active = false;
             token.artistId = null;
             token.validatedAt = Date.now();
@@ -178,7 +192,9 @@ export const authOptions: NextAuthOptions = {
               where: { id: token.artistId as string },
               select: { status: true },
             });
+            logger.info({ artistId: token.artistId, artistStatus: artist?.status, action: "auth.jwt" }, "[DEBUG] jwt: renewal — artist status check");
             if (artist?.status !== "ACTIVE") {
+              logger.warn({ tokenId: token.id, artistId: token.artistId, artistStatus: artist?.status, action: "auth.jwt" }, "[DEBUG] jwt: renewal — artist suspended, revoking token");
               token.active = false;
               token.artistId = null;
               token.validatedAt = Date.now();
@@ -187,9 +203,16 @@ export const authOptions: NextAuthOptions = {
           }
           token.active = true;
           token.validatedAt = Date.now();
-        } catch {
+          logger.info({ tokenId: token.id, action: "auth.jwt" }, "[DEBUG] jwt: renewal — token revalidated OK");
+        } catch (err) {
+          logger.error({ err, tokenId: token.id, action: "auth.jwt" }, "[DEBUG] jwt: renewal — DB error, failing open");
           // On transient DB error, fail open — don't lock out users due to infrastructure issues
         }
+      } else {
+        logger.debug(
+          { tokenId: token.id, role: token.role, tokenAgeMs, action: "auth.jwt" },
+          "[DEBUG] jwt: pass-through — token still fresh"
+        );
       }
 
       return token;
@@ -203,6 +226,10 @@ export const authOptions: NextAuthOptions = {
         session.user.forcePasswordChange = (token.forcePasswordChange as boolean) ?? false;
         session.user.active = (token.active as boolean) ?? true;
       }
+      logger.info(
+        { userId: session.user?.id, role: session.user?.role, artistId: session.user?.artistId, forcePasswordChange: session.user?.forcePasswordChange, active: session.user?.active, action: "auth.session" },
+        "[DEBUG] session callback — session built"
+      );
       return session;
     },
   },

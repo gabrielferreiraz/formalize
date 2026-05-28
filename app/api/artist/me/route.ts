@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
+  logger.info({ hasSession: !!session, artistId: session?.user.artistId, userId: session?.user.id, action: "api.artist.me.GET" }, "[DEBUG] GET /api/artist/me — session check");
   if (!session?.user.artistId) {
+    logger.warn({ hasSession: !!session, userId: session?.user.id, action: "api.artist.me.GET" }, "[DEBUG] GET /api/artist/me — unauthorized (no artistId in session)");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -50,6 +53,7 @@ export async function GET() {
     },
   });
 
+  logger.info({ artistId: session.user.artistId, found: !!artist, onboardingDone: artist?.onboardingDone, action: "api.artist.me.GET" }, "[DEBUG] GET /api/artist/me — db result");
   if (!artist) return NextResponse.json({ error: "Artista não encontrado" }, { status: 404 });
   return NextResponse.json(artist);
 }
@@ -72,11 +76,14 @@ const ALLOWED_FIELDS = [
 
 export async function PUT(req: NextRequest) {
   const session = await getServerSession(authOptions);
+  logger.info({ hasSession: !!session, artistId: session?.user.artistId, userId: session?.user.id, action: "api.artist.me.PUT" }, "[DEBUG] PUT /api/artist/me — session check");
   if (!session?.user.artistId) {
+    logger.warn({ hasSession: !!session, userId: session?.user.id, action: "api.artist.me.PUT" }, "[DEBUG] PUT /api/artist/me — unauthorized");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await req.json();
+  logger.info({ artistId: session.user.artistId, bodyKeys: Object.keys(body), action: "api.artist.me.PUT" }, "[DEBUG] PUT /api/artist/me — body keys received");
 
   const update: Record<string, unknown> = {};
   for (const field of ALLOWED_FIELDS) {
@@ -94,8 +101,11 @@ export async function PUT(req: NextRequest) {
   }
 
   if (Object.keys(update).length === 0) {
+    logger.warn({ artistId: session.user.artistId, bodyKeys: Object.keys(body), action: "api.artist.me.PUT" }, "[DEBUG] PUT /api/artist/me — no valid fields in body");
     return NextResponse.json({ error: "Nenhum campo válido" }, { status: 400 });
   }
+
+  logger.info({ artistId: session.user.artistId, updateFields: Object.keys(update), action: "api.artist.me.PUT" }, "[DEBUG] PUT /api/artist/me — writing to DB");
 
   const artist = await prisma.artist.update({
     where: { id: session.user.artistId },
@@ -103,6 +113,7 @@ export async function PUT(req: NextRequest) {
     select: { id: true },
   });
 
+  logger.info({ artistId: session.user.artistId, id: artist.id, action: "api.artist.me.PUT" }, "[DEBUG] PUT /api/artist/me — success");
   return NextResponse.json({ ok: true, id: artist.id, artist });
 }
 
