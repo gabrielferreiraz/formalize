@@ -93,57 +93,75 @@ function Field({ delay = 0, children }: { delay?: number; children: React.ReactN
 // ── Step 0 — Intro ─────────────────────────────────────────────
 function StepIntro() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
       <Field>
-        <div style={{
-          width: 44, height: 44, borderRadius: 12,
-          background: "rgba(230,184,0,0.06)",
-          border: "1px solid rgba(230,184,0,0.12)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          marginBottom: 24,
-        }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-            stroke="#e6b800" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10 9 9 9 8 9"/>
-          </svg>
+        {/* Layered glow icon */}
+        <div style={{ position: "relative", width: 58, height: 58, marginBottom: 34 }}>
+          <div style={{
+            position: "absolute", inset: -10,
+            borderRadius: 24,
+            background: "radial-gradient(circle, rgba(var(--accent-rgb),0.07) 0%, transparent 70%)",
+          }} />
+          <div style={{
+            position: "absolute", inset: 0,
+            borderRadius: 16,
+            background: "linear-gradient(135deg, rgba(var(--accent-rgb),0.12) 0%, rgba(var(--accent-rgb),0.03) 100%)",
+            border: "1px solid rgba(var(--accent-rgb),0.22)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+              stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+            </svg>
+          </div>
         </div>
-        <div className="ob-step-n" style={{ marginBottom: 14 }}>Configuração inicial</div>
-        <h1 className="ob-headline">
-          Antes de<br />começarmos
+
+        <div style={{
+          fontSize: 10, fontWeight: 700, color: "var(--accent)",
+          letterSpacing: "0.15em", textTransform: "uppercase",
+          marginBottom: 16, opacity: 0.7,
+        }}>
+          Configuração inicial
+        </div>
+
+        <h1 style={{
+          fontSize: 42, fontWeight: 800, letterSpacing: "-0.04em",
+          lineHeight: 1.05, margin: "0 0 16px",
+          animation: "headlineReveal 0.5s cubic-bezier(0.22,1,0.36,1) 0.06s both",
+        }}>
+          <span style={{ color: "#e8edf5" }}>Antes de<br /></span>
+          <span style={{ color: "var(--accent)" }}>começarmos</span>
         </h1>
-        <p className="ob-sub" style={{ marginTop: 10 }}>
+
+        <p style={{ fontSize: 14, color: "#2a3d52", lineHeight: 1.7, margin: 0 }}>
           Precisamos de algumas informações para personalizar seus documentos com a sua identidade artística.
         </p>
       </Field>
 
-      <Field delay={80}>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          {[
-            { num: "01", label: "Nome artístico e cor da marca" },
-            { num: "02", label: "Dados jurídicos para contratos" },
-            { num: "03", label: "WhatsApp e PIX" },
-            { num: "04", label: "Logo (opcional)" },
-          ].map(({ num, label }) => (
-            <div key={num} style={{
-              display: "flex", alignItems: "center", gap: 14,
-              padding: "13px 0",
-              borderBottom: "1px solid #0c1320",
-            }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#1a2535", letterSpacing: "0.08em", minWidth: 22 }}>{num}</span>
-              <span style={{ fontSize: 13, color: "#2a3a4e" }}>{label}</span>
-            </div>
-          ))}
-        </div>
-      </Field>
+      <Field delay={120}>
+        <div style={{
+          height: 1,
+          background: "linear-gradient(to right, transparent, #0d1828 25%, #0d1828 75%, transparent)",
+          marginBottom: 22,
+        }} />
 
-      <Field delay={160}>
-        <p style={{ fontSize: 12, color: "#19273a", lineHeight: 1.6, margin: 0, textAlign: "center" }}>
-          Você pode pular essa etapa a qualquer momento.
-        </p>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 7,
+            padding: "7px 16px", borderRadius: 100,
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid #0d1828",
+          }}>
+            <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ade80", opacity: 0.85 }} />
+            <span style={{ fontSize: 11, color: "#1e2d3e", fontWeight: 500 }}>
+              Leva menos de 2 minutos
+            </span>
+          </div>
+
+          <span style={{ fontSize: 12, color: "#192435", textAlign: "center", lineHeight: 1.55 }}>
+            Você pode pular essa etapa a qualquer momento.
+          </span>
+        </div>
       </Field>
     </div>
   );
