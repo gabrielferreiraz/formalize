@@ -36,6 +36,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body>
+        {/* Captura beforeinstallprompt antes do React montar — evento dispara uma vez por sessão
+            e pode chegar antes do PwaInstallBanner registrar seu listener */}
+        <script dangerouslySetInnerHTML={{
+          __html: `window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__pwaPrompt=e;});`
+        }} />
         {process.env.NODE_ENV === "development" && (
           <script dangerouslySetInnerHTML={{
             __html: `if('serviceWorker'in navigator){navigator.serviceWorker.getRegistrations().then(r=>r.forEach(sw=>sw.unregister()))}`

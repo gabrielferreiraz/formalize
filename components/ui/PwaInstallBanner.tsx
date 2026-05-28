@@ -34,8 +34,20 @@ export function PwaInstallBanner() {
     setPlatform(plt);
 
     if (plt === "android" || plt === "other") {
+      // beforeinstallprompt dispara uma vez por sessão, muito cedo na carga da página.
+      // O root layout captura e guarda em window.__pwaPrompt antes do React montar.
+      const pre = (window as any).__pwaPrompt;
+      if (pre) {
+        (window as any).__pwaPrompt = null;
+        setDeferredPrompt(pre);
+        setVisible(true);
+        return;
+      }
+
+      // Fallback: ouve normalmente caso ainda não tenha disparado
       const handler = (e: Event) => {
         e.preventDefault();
+        (window as any).__pwaPrompt = null;
         setDeferredPrompt(e);
         setVisible(true);
       };
