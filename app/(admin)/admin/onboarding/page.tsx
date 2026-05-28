@@ -90,6 +90,65 @@ function Field({ delay = 0, children }: { delay?: number; children: React.ReactN
   );
 }
 
+// ── Step 0 — Intro ─────────────────────────────────────────────
+function StepIntro() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+      <Field>
+        <div style={{
+          width: 44, height: 44, borderRadius: 12,
+          background: "rgba(230,184,0,0.06)",
+          border: "1px solid rgba(230,184,0,0.12)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          marginBottom: 24,
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="#e6b800" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </div>
+        <div className="ob-step-n" style={{ marginBottom: 14 }}>Configuração inicial</div>
+        <h1 className="ob-headline">
+          Antes de<br />começarmos
+        </h1>
+        <p className="ob-sub" style={{ marginTop: 10 }}>
+          Precisamos de algumas informações para personalizar seus documentos com a sua identidade artística.
+        </p>
+      </Field>
+
+      <Field delay={80}>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {[
+            { num: "01", label: "Nome artístico e cor da marca" },
+            { num: "02", label: "Dados jurídicos para contratos" },
+            { num: "03", label: "WhatsApp e PIX" },
+            { num: "04", label: "Logo (opcional)" },
+          ].map(({ num, label }) => (
+            <div key={num} style={{
+              display: "flex", alignItems: "center", gap: 14,
+              padding: "13px 0",
+              borderBottom: "1px solid #0c1320",
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#1a2535", letterSpacing: "0.08em", minWidth: 22 }}>{num}</span>
+              <span style={{ fontSize: 13, color: "#2a3a4e" }}>{label}</span>
+            </div>
+          ))}
+        </div>
+      </Field>
+
+      <Field delay={160}>
+        <p style={{ fontSize: 12, color: "#19273a", lineHeight: 1.6, margin: 0, textAlign: "center" }}>
+          Você pode pular essa etapa a qualquer momento.
+        </p>
+      </Field>
+    </div>
+  );
+}
+
 // ── Step 1 — Identidade ─────────────────────────────────────────
 function Step1({
   data,
@@ -106,7 +165,7 @@ function Step1({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
       <Field>
-        <div className="ob-step-n">02</div>
+        <div className="ob-step-n">01</div>
         <h1 className="ob-headline">Seu nome<br />no palco</h1>
         <p className="ob-sub">Aparece em todos os documentos enviados.</p>
       </Field>
@@ -323,7 +382,7 @@ function Step2({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
       <Field>
-        <div className="ob-step-n">03</div>
+        <div className="ob-step-n">02</div>
         <h1 className="ob-headline">Dados<br />jurídicos</h1>
         <p className="ob-sub">Para assinar contratos com validade legal.</p>
       </Field>
@@ -377,7 +436,7 @@ function Step3({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
       <Field>
-        <div className="ob-step-n">04</div>
+        <div className="ob-step-n">03</div>
         <h1 className="ob-headline">Como<br />te encontram</h1>
         <p className="ob-sub">Aparece nos documentos enviados aos contratantes.</p>
       </Field>
@@ -419,7 +478,7 @@ function Step4({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
       <Field>
-        <div className="ob-step-n">05</div>
+        <div className="ob-step-n">04</div>
         <h1 className="ob-headline">Sua marca<br />visual</h1>
         <p className="ob-sub">Opcional. Um logo transforma o documento.</p>
       </Field>
@@ -540,7 +599,7 @@ function Step4({
 
 // ── Main ────────────────────────────────────────────────────────
 export default function OnboardingPage() {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [animKey, setAnimKey] = useState(0);
   const [mounted, setMounted] = useState(false);
@@ -659,7 +718,7 @@ export default function OnboardingPage() {
   }
 
   function goBack() {
-    if (step > 1) {
+    if (step > 0) {
       console.log(`[onboarding] voltando para step ${step - 1}`);
       setDirection("backward");
       setAnimKey((k) => k + 1);
@@ -732,7 +791,7 @@ export default function OnboardingPage() {
   }
 
   const colorRgb = hexToRgb(data.primaryColor);
-  const ctaLabel = step === TOTAL_STEPS ? "Concluir" : "Continuar";
+  const ctaLabel = step === 0 ? "Prosseguir" : step === TOTAL_STEPS ? "Concluir" : "Continuar";
 
   return (
     <div
@@ -797,22 +856,32 @@ export default function OnboardingPage() {
           zIndex: 1,
         }}
       >
-        {/* Step dots */}
+        {/* Step dots — hidden on intro (step 0) */}
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          {Array.from({ length: TOTAL_STEPS }).map((_, i) => {
-            const done = i + 1 < step;
-            const current = i + 1 === step;
-            return (
+          {step === 0 ? (
+            Array.from({ length: TOTAL_STEPS }).map((_, i) => (
               <div key={i} style={{
-                height: 5,
-                width: current ? 22 : 5,
-                borderRadius: 3,
-                background: done ? "var(--accent)" : current ? "var(--accent)" : "#1a2030",
-                opacity: done ? 0.5 : 1,
+                height: 5, width: 5, borderRadius: 3,
+                background: "#1a2030", opacity: 0.3,
                 transition: "all 0.4s cubic-bezier(0.34,1.56,0.64,1)",
               }} />
-            );
-          })}
+            ))
+          ) : (
+            Array.from({ length: TOTAL_STEPS }).map((_, i) => {
+              const done = i + 1 < step;
+              const current = i + 1 === step;
+              return (
+                <div key={i} style={{
+                  height: 5,
+                  width: current ? 22 : 5,
+                  borderRadius: 3,
+                  background: done ? "var(--accent)" : current ? "var(--accent)" : "#1a2030",
+                  opacity: done ? 0.5 : 1,
+                  transition: "all 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+                }} />
+              );
+            })
+          )}
         </div>
         <button className="ob-skip-btn" onClick={skipAll} disabled={saving}>
           Pular
@@ -858,6 +927,7 @@ export default function OnboardingPage() {
           animation: `${direction === "forward" ? "stepIn" : "stepInBack"} 0.28s ease both`,
         }}
       >
+        {step === 0 && <StepIntro />}
         {step === 1 && <Step1 data={data} onChange={setData} />}
         {step === 2 && (
           <Step2
@@ -894,10 +964,10 @@ export default function OnboardingPage() {
       >
         <button
           className="ob-back-btn"
-          onClick={step > 1 ? goBack : skipStep}
+          onClick={step === 0 ? skipAll : step > 1 ? goBack : skipStep}
           disabled={saving}
         >
-          {step > 1 ? "Voltar" : "Pular"}
+          {step === 0 ? "Pular" : step > 1 ? "Voltar" : "Pular"}
         </button>
         <button
           className="ob-cta-btn"
