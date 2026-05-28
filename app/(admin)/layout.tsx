@@ -7,6 +7,7 @@ import { AdminHeader } from "./admin/components/AdminHeader";
 import { FormProvider } from "@/context/FormContext";
 import { PwaInstallBanner } from "@/components/ui/PwaInstallBanner";
 import { SessionWrapper } from "./SessionWrapper";
+import { ForceRedirect } from "./ForceRedirect";
 import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -74,8 +75,11 @@ export default async function AdminLayout({
     // Only redirect if we HAVE a pathname and we KNOW it's not the right page.
     // This prevents infinite loops if the header is missing or delayed.
     if (pathname && !pathname.startsWith("/admin/trocar-senha")) {
-      logger.info({ userId: session.user.id, pathname, action: "admin.layout" }, "[DEBUG] admin layout — forcePasswordChange: redirecting to /admin/trocar-senha");
-      return redirect("/admin/trocar-senha");
+      logger.info({ userId: session.user.id, pathname, action: "admin.layout" }, "[DEBUG] admin layout — forcePasswordChange: ForceRedirect to /admin/trocar-senha");
+      // ForceRedirect uses window.location.replace (hard navigation) to bypass Next.js router
+      // soft-navigation redirect loop — redirect() from Server Component causes router to loop
+      // on history.replaceState without ever mounting the target page.
+      return <ForceRedirect to="/admin/trocar-senha" />;
     }
     logger.info({ userId: session.user.id, pathname, action: "admin.layout" }, "[DEBUG] admin layout — forcePasswordChange: rendering trocar-senha (or already on it)");
     return <SessionWrapper>{children}</SessionWrapper>;
@@ -84,8 +88,11 @@ export default async function AdminLayout({
   // First-time onboarding — full-screen takeover, no chrome needed
   if (artist && !artist.onboardingDone) {
     if (pathname && !pathname.startsWith("/admin/onboarding")) {
-      logger.info({ userId: session.user.id, artistId: session.user.artistId, pathname, onboardingDone: artist.onboardingDone, action: "admin.layout" }, "[DEBUG] admin layout — onboarding not done: redirecting to /admin/onboarding");
-      return redirect("/admin/onboarding");
+      logger.info({ userId: session.user.id, artistId: session.user.artistId, pathname, onboardingDone: artist.onboardingDone, action: "admin.layout" }, "[DEBUG] admin layout — onboarding not done: ForceRedirect to /admin/onboarding");
+      // ForceRedirect uses window.location.replace (hard navigation) to bypass Next.js router
+      // soft-navigation redirect loop — redirect() from Server Component causes router to loop
+      // on history.replaceState without ever mounting the target page.
+      return <ForceRedirect to="/admin/onboarding" />;
     }
     logger.info({ userId: session.user.id, artistId: session.user.artistId, pathname, action: "admin.layout" }, "[DEBUG] admin layout — onboarding not done: rendering onboarding page");
     return <SessionWrapper>{children}</SessionWrapper>;
