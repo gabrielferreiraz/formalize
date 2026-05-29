@@ -3,10 +3,13 @@ import { buildOrc001 } from "./orcamento/orc-001-classic";
 import { buildOrc002 } from "./orcamento/orc-002-light";
 import { buildOrc003 } from "./orcamento/orc-003-executive";
 import { buildOrc004 } from "./orcamento/orc-004-prestige";
+import { buildOrc005 } from "./orcamento/orc-005-dark";
 import { buildCtr001 } from "./contrato/ctr-001-classic";
 import { buildCtr002 } from "./contrato/ctr-002-light";
 import { buildCtr003 } from "./contrato/ctr-003-premium";
 import { buildCtr004 } from "./contrato/ctr-004-formal";
+import { buildCtr005 } from "./contrato/ctr-005-dark-gold";
+import { buildCtr006 } from "./contrato/ctr-006-dark-modern";
 import { buildFromClausulas } from "./contrato/build-from-clausulas";
 import type { AssetResult, ArtistTemplateData } from "./types";
 import type { ClausulaContrato } from "@/lib/contrato-clausulas";
@@ -24,6 +27,7 @@ const ORC_BUILDERS: Record<string, TemplateBuilder> = {
   "orc-002": buildOrc002 as TemplateBuilder,
   "orc-003": buildOrc003,
   "orc-004": buildOrc004,
+  "orc-005": buildOrc005,
 };
 
 const CTR_BUILDERS: Record<string, TemplateBuilder> = {
@@ -31,13 +35,11 @@ const CTR_BUILDERS: Record<string, TemplateBuilder> = {
   "ctr-002": buildCtr002 as TemplateBuilder,
   "ctr-003": buildCtr003,
   "ctr-004": buildCtr004,
+  "ctr-005": buildCtr005,
+  "ctr-006": buildCtr006,
 };
 
-const WATERMARK = `
-<div style="position:fixed;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:9997;user-select:none;overflow:hidden;">
-  <div style="transform:rotate(-38deg);font-family:Helvetica,Arial,sans-serif;font-size:86px;font-weight:900;letter-spacing:0.12em;color:rgba(0,0,0,0.055);white-space:nowrap;">FORMALIZE</div>
-</div>
-<div style="position:fixed;bottom:0;left:0;right:0;padding:5px 0 6px;border-top:1px solid rgba(0,0,0,0.08);text-align:center;font-family:Helvetica,Arial,sans-serif;font-size:8.5px;letter-spacing:0.09em;color:rgba(40,40,40,0.52);pointer-events:none;z-index:9999;user-select:none;background:rgba(255,255,255,0.6);">Criado com&nbsp;<span style="font-weight:800;letter-spacing:0.05em;">Formalize</span></div>`;
+const WATERMARK = `<div style="position:fixed;bottom:0;left:0;right:0;padding:3px 0 4px;border-top:1px solid rgba(0,0,0,0.07);text-align:center;font-family:Helvetica,Arial,sans-serif;font-size:7px;letter-spacing:0.08em;color:rgba(60,60,60,0.38);pointer-events:none;z-index:9999;user-select:none;background:rgba(255,255,255,0.55);">Criado com&nbsp;<span style="font-weight:800;letter-spacing:0.04em;">Formalize</span></div>`;
 
 function injectWatermark(html: string): string {
   return html.includes("</body>")

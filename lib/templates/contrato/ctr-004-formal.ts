@@ -108,7 +108,7 @@ export async function buildCtr004(
     /* ── Body ── */
     .corpo { padding: 24px 44px 36px; flex: 1; }
 
-    .intro { font-size: ${Math.round(14*fs)}px; color: #333; line-height: 1.9; margin-bottom: 14px; text-align: justify; }
+    .intro { font-size: ${Math.round(16*fs)}px; color: #333; line-height: 1.9; margin-bottom: 14px; text-align: justify; }
     .intro strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111; }
 
     /* ── Section ── */
@@ -125,22 +125,22 @@ export async function buildCtr004(
     }
     .sec-title {
       font-family: 'Montserrat', sans-serif; font-weight: 700;
-      font-size: ${Math.round(14*fs)}px; color: #111; letter-spacing: 1px;
+      font-size: ${Math.round(16*fs)}px; color: #111; letter-spacing: 1px;
       text-transform: uppercase;
     }
     .sec-body {
-      font-size: ${Math.round(14*fs)}px; color: #444;
+      font-size: ${Math.round(16*fs)}px; color: #444;
       line-height: 1.8; text-align: justify; padding-left: 28px;
       break-before: avoid; break-inside: avoid;
     }
     .sec-body strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111; }
     .paragrafo {
-      font-size: ${Math.round(13*fs)}px; color: #555;
+      font-size: ${Math.round(15*fs)}px; color: #555;
       line-height: 1.8; margin-top: 4px; padding-left: 42px; text-align: justify;
     }
 
     .obs {
-      font-size: ${Math.round(14*fs)}px; color: #444; line-height: 1.8;
+      font-size: ${Math.round(16*fs)}px; color: #444; line-height: 1.8;
       margin: 8px 0; padding: 8px 14px;
       background: #fffdf7; border-left: 3px solid ${primary};
       break-inside: avoid;
@@ -160,8 +160,8 @@ export async function buildCtr004(
     }
     .financial-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; }
     .financial-row:last-child { border-bottom: none; }
-    .financial-key { font-size: ${Math.round(13*fs)}px; color: #777; }
-    .financial-val { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(14*fs)}px; color: #111; }
+    .financial-key { font-size: ${Math.round(15*fs)}px; color: #777; }
+    .financial-val { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(16*fs)}px; color: #111; }
     .financial-total-row {
       display: flex; justify-content: space-between; align-items: center;
       margin-top: 8px; padding-top: 8px; border-top: 2px solid #111;
@@ -184,7 +184,7 @@ export async function buildCtr004(
       font-size: ${Math.round(12*fs)}px; color: #888;
       letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px;
     }
-    .banco-linha { font-size: ${Math.round(14*fs)}px; color: #444; line-height: 1.9; }
+    .banco-linha { font-size: ${Math.round(16*fs)}px; color: #444; line-height: 1.9; }
     .banco-linha strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111; }
 
     /* ── Signatures ── */
@@ -199,10 +199,10 @@ export async function buildCtr004(
     .test-num { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(13*fs)}px; color: #111; white-space: nowrap; }
     .test-linha { flex: 1; border-top: 1px solid #333; }
 
-    .ass-dig-bloco { margin-top: 4px; padding: 4px 7px; border: 1px solid ${primary}44; border-radius: 4px; background: #fffdf5; text-align: center; }
-    .ass-dig-titulo { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(7.5*fs)}px; color: ${primary}; letter-spacing: 2px; margin-bottom: 2px; }
-    .ass-dig-info { font-size: ${Math.round(8.5*fs)}px; color: #555; line-height: 1.5; }
-    .ass-dig-codigo { font-family: 'Montserrat', sans-serif; font-size: ${Math.round(7*fs)}px; color: #aaa; margin-top: 2px; letter-spacing: 1px; word-break: break-all; }
+    .ass-dig-bloco { margin: 0 auto 5px; padding: 6px 8px; border: 1.5px solid ${primary}; border-radius: 5px; background: #fffdf5; text-align: center; max-width: 180px; }
+    .ass-dig-titulo { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: ${Math.round(7.5*fs)}px; color: ${primary}; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; border-bottom: 1px solid ${primary}33; padding-bottom: 3px; }
+    .ass-dig-info { font-size: ${Math.round(8.5*fs)}px; color: #555; line-height: 1.55; }
+    .ass-dig-codigo { font-family: 'Courier New', monospace; font-size: ${Math.round(7*fs)}px; color: #aaa; margin-top: 4px; letter-spacing: 1px; }
 
     /* ── Footer ── */
     .rodape {
@@ -322,11 +322,11 @@ export async function buildCtr004(
           <div class="assinatura-bloco">
             ${d.assinarDigitalmente !== false ? `
             <div class="ass-dig-bloco">
-              <div class="ass-dig-titulo">Assinado Digitalmente</div>
+              <div class="ass-dig-titulo">Certificado de Assinatura</div>
               <div class="ass-dig-info"><strong>${escapeHtml(artist.legalName || artist.name)}</strong></div>
               <div class="ass-dig-info">CNPJ: ${escapeHtml(artist.cnpj || "")}</div>
               <div class="ass-dig-info">${escapeHtml(dataAssinatura)}</div>
-              <div class="ass-dig-codigo">Cód: ${hashContrato}</div>
+              <div class="ass-dig-codigo">${hashContrato}</div>
             </div>` : ""}
             <div class="assinatura-linha"></div>
             <div class="assinatura-label">Contratado</div>

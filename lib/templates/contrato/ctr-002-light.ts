@@ -414,33 +414,37 @@ const templateContratoLight = `<!DOCTYPE html>
 
     /* ── Assinatura digital ── */
     .ass-dig {
-      border: 1px solid {{primaryColor}};
+      border: 1.5px solid {{primaryColor}};
       border-radius: 5px;
-      padding: 4px 8px;
-      margin-bottom: 6px;
+      padding: 6px 8px;
+      margin: 0 auto 6px;
       background: white;
+      text-align: center;
+      max-width: 180px;
     }
 
     .ass-dig-titulo {
       font-size: 7px;
-      font-weight: 700;
-      letter-spacing: 2px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
       color: {{primaryColor}};
-      margin-bottom: 2px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid {{primaryColor}}33;
+      padding-bottom: 3px;
     }
 
     .ass-dig-info {
       font-size: 8.5px;
       color: #555;
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
     .ass-dig-codigo {
-      font-size: 7.5px;
-      color: #aaa;
-      margin-top: 2px;
-      font-family: monospace;
+      font-size: 7px;
+      color: #bbb;
+      margin-top: 4px;
+      font-family: 'Courier New', monospace;
       letter-spacing: 1px;
     }
 
@@ -731,11 +735,11 @@ const templateContratoLight = `<!DOCTYPE html>
           <div class="assinatura-bloco">
             {{#if assinarDigitalmente}}
             <div class="ass-dig">
-              <div class="ass-dig-titulo">Assinado Digitalmente</div>
+              <div class="ass-dig-titulo">Certificado de Assinatura</div>
               <div class="ass-dig-info"><strong>{{artistLegalName}}</strong></div>
               <div class="ass-dig-info">CNPJ: {{artistCnpj}}</div>
               <div class="ass-dig-info">{{dataAssinaturaCompleta}}</div>
-              <div class="ass-dig-codigo">Cód: {{hashContrato}}</div>
+              <div class="ass-dig-codigo">{{hashContrato}}</div>
             </div>
             {{/if}}
             <div class="assinatura-linha"></div>

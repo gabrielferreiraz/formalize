@@ -4,7 +4,7 @@ import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
 
 type ArtistData = ArtistTemplateData & Record<string, any>;
 
-export async function buildCtr003(
+export async function buildCtr005(
   artist: ArtistData,
   data: Record<string, any>,
   _pageSize?: { width: string; height: string },
@@ -12,14 +12,15 @@ export async function buildCtr003(
   _background?: AssetResult | null,
 ): Promise<string> {
   const d = data;
-  const primary = artist.primaryColor || "#e6b800";
+  const primary = artist.primaryColor || "#c9a227";
   const addr = (artist.address as any) || {};
   const bank = (artist.bankInfo as any) || {};
   const logoMime = logo?.mime || "image/png";
   const logoBase64 = logo?.base64 || "";
   const fontScale = (artist.contratoFontScale || 100) / 71;
   const logoScale = Number(artist.contratoLogoScale) || 100;
-  const logoH = Math.round(88 * logoScale / 100);
+  const logoH = Math.round(80 * logoScale / 100);
+  const fs = fontScale;
 
   const valorCache = (parseFloat(d.cache) || 0) / 100;
   const backlineN = d.backline === "valor" ? (parseFloat(d.backlineValor) || 0) / 100 : 0;
@@ -55,123 +56,119 @@ export async function buildCtr003(
   const dataEventoBr = formatData(d.data);
   const dataAssinaturaBr = d.dataAssinatura ? formatData(d.dataAssinatura) : dataEventoBr;
   const dataAssinatura = new Date().toLocaleString("pt-BR", { timeZone: "America/Campo_Grande" });
-  const nomeSlug = (d.contratanteNome || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+  const nomeSlug = (d.contratanteNome || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().trim();
   const hashContrato = crypto.createHash("sha256")
     .update(nomeSlug + dataEventoBr + totalFmt + Date.now().toString())
     .digest("hex").substring(0, 16).toUpperCase();
-
-  const fs = fontScale;
 
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
   <style>
     @page { margin: 1mm; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; background: #fff; font-family: 'Open Sans', sans-serif; }
+    html, body { width: 100%; background: #0d0d0d; font-family: 'Open Sans', sans-serif; }
 
-    .pagina {
-      width: 100%; min-height: 100vh; display: flex; flex-direction: row;
-      position: relative; background: #fff;
-    }
+    .pagina { width: 100%; min-height: 100vh; display: flex; flex-direction: row; background: #0d0d0d; }
 
-    /* ── Left accent bar ── */
-    .sidebar {
-      width: 6px; background: ${primary}; flex-shrink: 0; min-height: 100%;
-    }
+    .sidebar { width: 6px; background: linear-gradient(to bottom, ${primary}, ${primary}99, ${primary}33); flex-shrink: 0; }
 
-    /* ── Main content ── */
     .main { flex: 1; display: flex; flex-direction: column; }
 
     .header {
-      padding: 26px 40px 20px; display: flex; align-items: center;
-      justify-content: space-between; border-bottom: 1px solid #eee;
+      padding: 28px 40px 22px; display: flex; align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(135deg, #111 0%, #1a1a1a 100%);
     }
-    .header-left {}
-    .header-logo { height: ${logoH}px; max-width: 280px; object-fit: contain; display: block; margin-bottom: 8px; }
-    .header-name { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(17*fs)}px; color: #111; letter-spacing: 0.5px; }
-    .header-cnpj { font-size: ${Math.round(13*fs)}px; color: #aaa; margin-top: 2px; }
+    .header-logo { height: ${logoH}px; max-width: 280px; object-fit: contain; display: block; margin-bottom: 8px; filter: brightness(1.1); }
+    .header-name { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(17*fs)}px; color: #f0f0f0; letter-spacing: 0.5px; }
+    .header-cnpj { font-size: ${Math.round(13*fs)}px; color: #666; margin-top: 2px; }
     .header-right { text-align: right; }
-    .header-doc-label { font-family: 'Montserrat', sans-serif; font-weight: 300; font-size: ${Math.round(12*fs)}px; letter-spacing: 4px; text-transform: uppercase; color: #bbb; margin-bottom: 4px; }
+    .header-doc-label { font-family: 'Montserrat', sans-serif; font-weight: 300; font-size: ${Math.round(11*fs)}px; letter-spacing: 4px; text-transform: uppercase; color: #555; margin-bottom: 6px; }
     .header-badge {
-      display: inline-block; padding: 4px 14px;
-      border: 1px solid ${primary}; border-radius: 4px;
+      display: inline-block; padding: 5px 16px;
+      background: transparent; border: 1px solid ${primary};
+      border-radius: 3px;
       font-family: 'Montserrat', sans-serif; font-weight: 700;
-      font-size: ${Math.round(13*fs)}px; color: ${primary}; letter-spacing: 2px;
+      font-size: ${Math.round(12*fs)}px; color: ${primary}; letter-spacing: 3px;
       text-transform: uppercase;
     }
 
-    .corpo { padding: 22px 40px 32px; flex: 1; }
+    .corpo { padding: 24px 40px 36px; flex: 1; }
 
     .titulo {
       font-family: 'Montserrat', sans-serif; font-weight: 900;
-      font-size: ${Math.round(20*fs)}px; color: #111;
-      text-align: center; letter-spacing: 4px; text-transform: uppercase;
-      margin-bottom: 18px; padding-bottom: 12px;
-      border-bottom: 2px solid ${primary};
+      font-size: ${Math.round(20*fs)}px; color: #f0f0f0;
+      text-align: center; letter-spacing: 5px; text-transform: uppercase;
+      margin-bottom: 20px; padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: relative;
+    }
+    .titulo::after {
+      content: ''; position: absolute; bottom: -1px; left: 50%;
+      transform: translateX(-50%); width: 80px; height: 2px;
+      background: ${primary};
     }
 
-    .intro { font-size: ${Math.round(16*fs)}px; color: #333; line-height: 1.9; margin-bottom: 14px; text-align: justify; }
-    .intro strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111; }
+    .intro { font-size: ${Math.round(16*fs)}px; color: #bbb; line-height: 1.9; margin-bottom: 14px; text-align: justify; }
+    .intro strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #e8e8e8; }
 
-    .clausula { margin-bottom: 12px; break-inside: avoid; }
+    .clausula { margin-bottom: 14px; break-inside: avoid; }
     .clausula-titulo {
       font-family: 'Montserrat', sans-serif; font-weight: 700;
-      font-size: ${Math.round(16*fs)}px; color: #111; margin-bottom: 4px;
-      display: flex; align-items: center; gap: 8px;
+      font-size: ${Math.round(16*fs)}px; color: ${primary}; margin-bottom: 5px;
+      display: flex; align-items: center; gap: 10px;
     }
-    .clausula-titulo::before {
-      content: ''; display: block; width: 14px; height: 2px;
-      background: ${primary}; flex-shrink: 0;
-    }
-    .clausula-texto { font-size: ${Math.round(16*fs)}px; color: #444; line-height: 1.8; text-align: justify; padding-left: 22px; }
-    .clausula-texto strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111; }
-    .paragrafo { font-size: ${Math.round(15*fs)}px; color: #555; line-height: 1.8; margin-top: 4px; padding-left: 36px; text-align: justify; }
+    .clausula-titulo::before { content: ''; display: block; width: 16px; height: 1px; background: ${primary}; flex-shrink: 0; }
+    .clausula-texto { font-size: ${Math.round(16*fs)}px; color: #bbb; line-height: 1.85; text-align: justify; padding-left: 26px; }
+    .clausula-texto strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #e0e0e0; }
+    .paragrafo { font-size: ${Math.round(15*fs)}px; color: #999; line-height: 1.8; margin-top: 4px; padding-left: 40px; text-align: justify; }
 
     .obs {
-      font-size: ${Math.round(16*fs)}px; color: #444; line-height: 1.8;
+      font-size: ${Math.round(15*fs)}px; color: #aaa; line-height: 1.8;
       margin-bottom: 10px; text-align: justify;
-      padding: 8px 12px; background: #fafafa;
-      border-left: 3px solid ${primary}; border-radius: 0 4px 4px 0;
+      padding: 10px 14px; background: #161616;
+      border-left: 2px solid ${primary}88; border-radius: 0 4px 4px 0;
       break-inside: avoid;
     }
-    .obs strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111; }
+    .obs strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: ${primary}; }
 
     .secao-bancaria {
-      background: #f8f8f8; border-radius: 6px; border: 1px solid #eee;
+      background: #161616; border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.07);
       padding: 14px 18px; margin: 14px 0; break-inside: avoid;
     }
     .banco-titulo {
       font-family: 'Montserrat', sans-serif; font-weight: 700;
-      font-size: ${Math.round(12*fs)}px; color: #888; letter-spacing: 3px;
+      font-size: ${Math.round(11*fs)}px; color: ${primary}; letter-spacing: 3px;
       text-transform: uppercase; margin-bottom: 8px;
     }
-    .banco-linha { font-size: ${Math.round(16*fs)}px; color: #444; line-height: 1.9; }
-    .banco-linha strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111; }
+    .banco-linha { font-size: ${Math.round(16*fs)}px; color: #aaa; line-height: 1.9; }
+    .banco-linha strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #e0e0e0; }
 
-    .assinaturas { margin-top: 26px; padding-top: 18px; border-top: 1px solid #eee; break-inside: avoid; }
-    .local-data { font-size: ${Math.round(13*fs)}px; color: #555; margin-bottom: 26px; text-align: center; font-style: italic; }
-
+    .assinaturas { margin-top: 28px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); break-inside: avoid; }
+    .local-data { font-size: ${Math.round(13*fs)}px; color: #666; margin-bottom: 28px; text-align: center; font-style: italic; }
     .linha-assinatura { display: flex; justify-content: space-between; gap: 50px; margin-bottom: 26px; align-items: flex-end; }
     .assinatura-bloco { flex: 1; text-align: center; }
-    .assinatura-linha { border-top: 1px solid #333; margin-bottom: 6px; }
-    .assinatura-label { font-size: ${Math.round(12*fs)}px; color: #888; text-transform: uppercase; letter-spacing: 2px; }
+    .assinatura-linha { border-top: 1px solid #444; margin-bottom: 6px; }
+    .assinatura-label { font-size: ${Math.round(11*fs)}px; color: #555; text-transform: uppercase; letter-spacing: 2px; }
 
-    .testemunhas-titulo { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: ${Math.round(12*fs)}px; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 2px; }
+    .testemunhas-titulo { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: ${Math.round(11*fs)}px; color: #444; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 2px; }
     .testemunhas-linha { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
-    .test-num { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(13*fs)}px; color: #111; white-space: nowrap; }
+    .test-num { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(13*fs)}px; color: #555; white-space: nowrap; }
     .test-linha { flex: 1; border-top: 1px solid #333; }
 
-    .rodape { padding: 14px 40px; border-top: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
-    .rodape-frase { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(12*fs)}px; color: ${primary}; letter-spacing: 2px; font-style: italic; }
-    .rodape-hash { font-size: ${Math.round(11*fs)}px; color: #ccc; }
-
-    .ass-dig-bloco { margin: 0 auto 5px; padding: 6px 8px; border: 1.5px solid ${primary}; border-radius: 5px; background: #fffdf5; text-align: center; max-width: 180px; }
+    .ass-dig-bloco { margin: 0 auto 5px; padding: 6px 8px; border: 1.5px solid ${primary}66; border-radius: 5px; background: #1a1600; text-align: center; max-width: 180px; }
     .ass-dig-titulo { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: ${Math.round(7.5*fs)}px; color: ${primary}; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; border-bottom: 1px solid ${primary}33; padding-bottom: 3px; }
-    .ass-dig-info { font-size: ${Math.round(8.5*fs)}px; color: #555; line-height: 1.55; }
-    .ass-dig-codigo { font-family: 'Courier New', monospace; font-size: ${Math.round(7*fs)}px; color: #aaa; margin-top: 4px; letter-spacing: 1px; }
+    .ass-dig-info { font-size: ${Math.round(8.5*fs)}px; color: #888; line-height: 1.55; }
+    .ass-dig-codigo { font-family: 'Courier New', monospace; font-size: ${Math.round(7*fs)}px; color: #555; margin-top: 4px; letter-spacing: 1px; }
+
+    .rodape { padding: 14px 40px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; background: #111; }
+    .rodape-frase { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(11*fs)}px; color: ${primary}88; letter-spacing: 2px; font-style: italic; }
+    .rodape-hash { font-size: ${Math.round(10*fs)}px; color: #333; font-family: 'Courier New', monospace; }
   </style>
 </head>
 <body>
@@ -179,8 +176,8 @@ export async function buildCtr003(
     <div class="sidebar"></div>
     <div class="main">
       <div class="header">
-        <div class="header-left">
-          ${logo ? `<img class="header-logo" src="data:${logoMime};base64,${logoBase64}" />` : ""}
+        <div>
+          ${logoBase64 ? `<img class="header-logo" src="data:${logoMime};base64,${logoBase64}" />` : ""}
           <div class="header-name">${escapeHtml(artist.name)}</div>
           ${artist.cnpj ? `<div class="header-cnpj">CNPJ ${escapeHtml(artist.cnpj)}</div>` : ""}
         </div>
@@ -191,7 +188,7 @@ export async function buildCtr003(
       </div>
 
       <div class="corpo">
-        <div class="titulo">Nota Contratual</div>
+        <div class="titulo">Contrato de Prestação de Serviços</div>
 
         <div class="intro">
           Pelo presente instrumento, de um lado denominado <strong>CONTRATANTE</strong>,
@@ -309,7 +306,7 @@ export async function buildCtr003(
 
       <div class="rodape">
         <div class="rodape-frase">${escapeHtml(d.fraseRodape || "Depois do Sim, é hora do Show")}</div>
-        <div class="rodape-hash">Cód: ${hashContrato}</div>
+        <div class="rodape-hash">${hashContrato}</div>
       </div>
     </div>
   </div>

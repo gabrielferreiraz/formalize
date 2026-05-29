@@ -111,10 +111,10 @@ export async function buildCtr001(
     .rodape { padding: 20px 40px; text-align: center; position: relative; z-index: 1; }
     .rodape-linha { width: 60%; height: 2px; background: linear-gradient(to right, transparent, ${primaryColor}, transparent); margin: 0 auto 14px; }
     .rodape-frase { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${17 * fontScale}px; color: ${primaryColor}; letter-spacing: 3px; font-style: italic; }
-    .ass-dig-bloco { margin-top: 5px; padding: 4px 8px; border: 1px solid ${primaryColor}; border-radius: 4px; background: #fffbf5; text-align: center; }
-    .ass-dig-titulo { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${8 * fontScale}px; color: ${primaryColor}; letter-spacing: 2px; margin-bottom: 2px; }
-    .ass-dig-info { font-size: ${8.5 * fontScale}px; color: #444444; line-height: 1.5; }
-    .ass-dig-codigo { font-family: 'Montserrat', sans-serif; font-size: ${7.5 * fontScale}px; color: #888888; margin-top: 2px; letter-spacing: 1px; word-break: break-all; }
+    .ass-dig-bloco { margin: 0 auto 5px; padding: 6px 8px; border: 1.5px solid ${primaryColor}; border-radius: 5px; background: #fffbf5; text-align: center; max-width: 180px; }
+    .ass-dig-titulo { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: ${8 * fontScale}px; color: ${primaryColor}; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; border-bottom: 1px solid ${primaryColor}33; padding-bottom: 3px; }
+    .ass-dig-info { font-size: ${8.5 * fontScale}px; color: #444444; line-height: 1.55; }
+    .ass-dig-codigo { font-family: 'Courier New', monospace; font-size: ${7 * fontScale}px; color: #aaaaaa; margin-top: 4px; letter-spacing: 1px; }
   </style>
 </head>
 <body>
@@ -224,11 +224,11 @@ export async function buildCtr001(
           <div class="assinatura-bloco">
             ${d.assinarDigitalmente !== false ? `
             <div class="ass-dig-bloco">
-              <div class="ass-dig-titulo">Assinado Digitalmente</div>
+              <div class="ass-dig-titulo">Certificado de Assinatura</div>
               <div class="ass-dig-info"><strong>${escapeHtml(artist.legalName || artist.name)}</strong></div>
               <div class="ass-dig-info">CNPJ: ${escapeHtml(artist.cnpj || "")}</div>
               <div class="ass-dig-info">${escapeHtml(dataAssinatura)}</div>
-              <div class="ass-dig-codigo">Cód: ${hashContrato}</div>
+              <div class="ass-dig-codigo">${hashContrato}</div>
             </div>` : ""}
             <div class="assinatura-linha"></div>
             <div class="assinatura-label">Contratado</div>

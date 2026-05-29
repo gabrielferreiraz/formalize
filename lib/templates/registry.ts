@@ -45,6 +45,15 @@ export const ORCAMENTO_TEMPLATES: TemplateInfo[] = [
     previewBg: "#0c0c0c",
     previewAccent: "#E8A045",
   },
+  {
+    id: "orc-005",
+    type: "orcamento",
+    name: "Dark Gold",
+    description: "Fundo quase preto com cards escuros e total em ouro — sofisticado",
+    style: "dark",
+    previewBg: "#0e0e12",
+    previewAccent: "#c9a227",
+  },
 ];
 
 export const CONTRATO_TEMPLATES: TemplateInfo[] = [
@@ -83,5 +92,23 @@ export const CONTRATO_TEMPLATES: TemplateInfo[] = [
     style: "light",
     previewBg: "#ffffff",
     previewAccent: "#E8A045",
+  },
+  {
+    id: "ctr-005",
+    type: "contrato",
+    name: "Dark Gold",
+    description: "Fundo preto profundo com barra lateral e texto dourado — premium escuro",
+    style: "dark",
+    previewBg: "#0d0d0d",
+    previewAccent: "#c9a227",
+  },
+  {
+    id: "ctr-006",
+    type: "contrato",
+    name: "Dark Modern",
+    description: "Azul escuro com cláusulas numeradas e tipografia Inter — moderno e limpo",
+    style: "dark",
+    previewBg: "#0f1117",
+    previewAccent: "#818cf8",
   },
 ];

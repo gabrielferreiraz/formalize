@@ -125,9 +125,10 @@ export async function buildFromClausulas(
       : "";
 
   const assinaturaDigital = data.assinarDigitalmente
-    ? `<div style="margin-top:8px;padding:4px 10px;background:#f8f8f8;border-radius:5px;border:1px solid #e0e0e0;font-size:${8 * fontScale}px;color:#999;">
-        <strong style="color:#555;font-size:${7.5 * fontScale}px;">CARIMBO DE ASSINATURA DIGITAL</strong><br>
-        Hash: ${hashContrato} | Assinado em: ${escapeHtml(dataAssinatura)}
+    ? `<div style="margin:0 auto 6px;padding:6px 8px;background:#f9f9f9;border-radius:5px;border:1.5px solid ${primaryColor};max-width:180px;text-align:center;">
+        <div style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:${7.5 * fontScale}px;color:${primaryColor};letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;border-bottom:1px solid ${primaryColor}33;padding-bottom:3px;">Certificado de Assinatura</div>
+        <div style="font-size:${8.5 * fontScale}px;color:#555;line-height:1.55;">${escapeHtml(dataAssinatura)}</div>
+        <div style="font-family:'Courier New',monospace;font-size:${7 * fontScale}px;color:#aaa;margin-top:4px;letter-spacing:1px;">${hashContrato}</div>
        </div>`
     : "";
 
