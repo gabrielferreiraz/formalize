@@ -98,9 +98,9 @@ export async function buildCtr001(
     .banco-titulo { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${19 * fontScale}px; color: #111111; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
     .banco-linha { font-size: ${19 * fontScale}px; color: #333333; line-height: 1.9; }
     .banco-linha strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111111; }
-    .assinaturas { margin-top: 36px; padding-top: 24px; border-top: 1px solid #eeeeee; break-inside: avoid; }
-    .local-data { font-size: ${17 * fontScale}px; color: #444444; margin-bottom: 34px; text-align: center; font-style: italic; }
-    .linha-assinatura { display: flex; justify-content: space-between; gap: 60px; margin-bottom: 34px; break-inside: avoid; align-items: flex-end; }
+    .assinaturas { margin-top: 24px; padding-top: 14px; border-top: 1px solid #eeeeee; break-inside: avoid; }
+    .local-data { font-size: ${17 * fontScale}px; color: #444444; margin-bottom: 18px; text-align: center; font-style: italic; }
+    .linha-assinatura { display: flex; justify-content: space-between; gap: 60px; margin-bottom: 18px; break-inside: avoid; align-items: flex-end; }
     .assinatura-bloco { flex: 1; text-align: center; }
     .assinatura-linha { border-top: 1.5px solid #333333; margin-bottom: 8px; }
     .assinatura-label { font-size: ${16 * fontScale}px; color: #777777; margin-top: 5px; text-transform: uppercase; letter-spacing: 2px; }
@@ -111,10 +111,10 @@ export async function buildCtr001(
     .rodape { padding: 20px 40px; text-align: center; position: relative; z-index: 1; }
     .rodape-linha { width: 60%; height: 2px; background: linear-gradient(to right, transparent, ${primaryColor}, transparent); margin: 0 auto 14px; }
     .rodape-frase { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${17 * fontScale}px; color: ${primaryColor}; letter-spacing: 3px; font-style: italic; }
-    .ass-dig-bloco { margin-top: 8px; padding: 8px 10px; border: 1px solid ${primaryColor}; border-radius: 4px; background: #fffbf5; text-align: center; }
-    .ass-dig-titulo { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${12 * fontScale}px; color: ${primaryColor}; letter-spacing: 2px; margin-bottom: 4px; }
-    .ass-dig-info { font-size: ${12 * fontScale}px; color: #444444; line-height: 1.6; }
-    .ass-dig-codigo { font-family: 'Montserrat', sans-serif; font-size: ${11 * fontScale}px; color: #888888; margin-top: 4px; letter-spacing: 1px; word-break: break-all; }
+    .ass-dig-bloco { margin-top: 5px; padding: 4px 8px; border: 1px solid ${primaryColor}; border-radius: 4px; background: #fffbf5; text-align: center; }
+    .ass-dig-titulo { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${8 * fontScale}px; color: ${primaryColor}; letter-spacing: 2px; margin-bottom: 2px; }
+    .ass-dig-info { font-size: ${8.5 * fontScale}px; color: #444444; line-height: 1.5; }
+    .ass-dig-codigo { font-family: 'Montserrat', sans-serif; font-size: ${7.5 * fontScale}px; color: #888888; margin-top: 2px; letter-spacing: 1px; word-break: break-all; }
   </style>
 </head>
 <body>

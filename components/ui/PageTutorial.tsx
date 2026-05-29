@@ -135,7 +135,9 @@ export function PageTutorial({ pageKey, steps, accentColor = "#e6b800" }: Props)
       const style = window.getComputedStyle(el);
       if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0") return false;
       elevateEl(el);
-      el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      const elOffset = el.getBoundingClientRect().top + window.scrollY;
+      const halfPage = document.documentElement.scrollHeight / 2;
+      window.scrollTo({ top: elOffset < halfPage ? 0 : document.documentElement.scrollHeight, behavior: "smooth" });
       const start = performance.now();
       const poll = (now: number) => {
         setRect(el.getBoundingClientRect());

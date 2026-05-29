@@ -49,8 +49,16 @@ const CALENDAR_CARD: Record<string, string> = {
   GENERIC_EVENT: "border-emerald-800/70 bg-emerald-950/70 text-emerald-100",
 };
 
+function parseLocalDate(iso: string): Date {
+  if (iso.length <= 10) {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
+  return new Date(iso);
+}
+
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", {
+  return parseLocalDate(iso).toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -64,7 +72,10 @@ function monthBounds(date: Date) {
 }
 
 function dayKey(date: Date) {
-  return date.toISOString().slice(0, 10);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 function parseDataName(doc: Doc): string {
@@ -91,6 +102,9 @@ function parseEventLocal(doc: Doc): string {
 }
 
 function docNegotiationKey(doc: Doc): string {
+  if (doc.type === "GENERIC_EVENT") {
+    return ["GENERIC_EVENT", doc.title || "", String((doc.data?.data as string) || "")].join("|");
+  }
   const d = doc.data ?? {};
   const contratante = String((d.contratanteNome as string) || (d.contratante as string) || "").trim().toLowerCase();
   const evento = String((d.evento as string) || "").trim().toLowerCase();
@@ -124,7 +138,7 @@ function getDocMonthAndDay(doc: Doc) {
   const d = doc.data ?? {};
   const iso = (d.data as string) || doc.createdAt;
   if (!iso) return { month: "—", day: "—", date: new Date() };
-  const date = new Date(iso);
+  const date = parseLocalDate(iso);
   const monthNames = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
   return { 
     month: monthNames[date.getMonth()], 
@@ -211,10 +225,12 @@ export default function DocumentosPage() {
   const [newEventTitle, setNewEventTitle] = useState("");
   const [newEventTime, setNewEventTime] = useState("");
   const [isSavingEvent, setIsSavingEvent] = useState(false);
+  const [eventError, setEventError] = useState("");
 
   async function handleCreateGenericEvent() {
     if (!dayModal || !newEventTitle.trim() || isSavingEvent) return;
     setIsSavingEvent(true);
+    setEventError("");
     try {
       const res = await fetch("/api/documents/generic", {
         method: "POST",
@@ -230,7 +246,12 @@ export default function DocumentosPage() {
         setNewEventTime("");
         mutateDocs();
         setDayModal(null);
+      } else {
+        const json = await res.json().catch(() => ({}));
+        setEventError((json.error as string) || "Erro ao salvar evento");
       }
+    } catch {
+      setEventError("Erro ao salvar evento");
     } finally {
       setIsSavingEvent(false);
     }
@@ -896,6 +917,9 @@ export default function DocumentosPage() {
                     {isSavingEvent ? "Salvando..." : "Salvar"}
                   </button>
                 </div>
+                {eventError && (
+                  <p style={{ margin: "8px 0 0", fontSize: 12, color: "#f87171" }}>{eventError}</p>
+                )}
               </div>
 
               {/* Lista de documentos existentes */}

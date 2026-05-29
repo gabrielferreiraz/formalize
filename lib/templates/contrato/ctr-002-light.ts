@@ -284,16 +284,16 @@ const templateContratoLight = `<!DOCTYPE html>
     .clausula-corpo {}
 
     .clausula-titulo {
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 700;
       color: #111;
       margin-bottom: 3px;
     }
 
     .clausula-texto {
-      font-size: 11px;
+      font-size: 13px;
       color: #555;
-      line-height: 1.7;
+      line-height: 1.75;
       text-align: justify;
     }
 
@@ -415,31 +415,31 @@ const templateContratoLight = `<!DOCTYPE html>
     /* ── Assinatura digital ── */
     .ass-dig {
       border: 1px solid {{primaryColor}};
-      border-radius: 6px;
-      padding: 10px 14px;
-      margin-bottom: 8px;
+      border-radius: 5px;
+      padding: 4px 8px;
+      margin-bottom: 6px;
       background: white;
     }
 
     .ass-dig-titulo {
-      font-size: 8px;
+      font-size: 7px;
       font-weight: 700;
       letter-spacing: 2px;
       text-transform: uppercase;
       color: {{primaryColor}};
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     .ass-dig-info {
-      font-size: 10px;
+      font-size: 8.5px;
       color: #555;
-      line-height: 1.6;
+      line-height: 1.5;
     }
 
     .ass-dig-codigo {
-      font-size: 9px;
+      font-size: 7.5px;
       color: #aaa;
-      margin-top: 3px;
+      margin-top: 2px;
       font-family: monospace;
       letter-spacing: 1px;
     }

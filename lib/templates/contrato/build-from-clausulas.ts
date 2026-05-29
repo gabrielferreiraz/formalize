@@ -125,8 +125,8 @@ export async function buildFromClausulas(
       : "";
 
   const assinaturaDigital = data.assinarDigitalmente
-    ? `<div style="margin-top:12px;padding:10px 16px;background:#f8f8f8;border-radius:6px;border:1px solid #e0e0e0;font-size:${11 * fontScale}px;color:#999;">
-        <strong style="color:#555;">CARIMBO DE ASSINATURA DIGITAL</strong><br>
+    ? `<div style="margin-top:8px;padding:4px 10px;background:#f8f8f8;border-radius:5px;border:1px solid #e0e0e0;font-size:${8 * fontScale}px;color:#999;">
+        <strong style="color:#555;font-size:${7.5 * fontScale}px;">CARIMBO DE ASSINATURA DIGITAL</strong><br>
         Hash: ${hashContrato} | Assinado em: ${escapeHtml(dataAssinatura)}
        </div>`
     : "";

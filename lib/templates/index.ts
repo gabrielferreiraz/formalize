@@ -33,7 +33,11 @@ const CTR_BUILDERS: Record<string, TemplateBuilder> = {
   "ctr-004": buildCtr004,
 };
 
-const WATERMARK = `<div style="position:fixed;bottom:8px;left:0;right:0;text-align:center;font-family:Helvetica,Arial,sans-serif;font-size:7.5px;letter-spacing:0.07em;color:rgba(80,80,80,0.32);pointer-events:none;z-index:9999;user-select:none;">Criado com&nbsp;<span style="font-weight:700;letter-spacing:0.04em;">Formalize</span></div>`;
+const WATERMARK = `
+<div style="position:fixed;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:9997;user-select:none;overflow:hidden;">
+  <div style="transform:rotate(-38deg);font-family:Helvetica,Arial,sans-serif;font-size:86px;font-weight:900;letter-spacing:0.12em;color:rgba(0,0,0,0.055);white-space:nowrap;">FORMALIZE</div>
+</div>
+<div style="position:fixed;bottom:0;left:0;right:0;padding:5px 0 6px;border-top:1px solid rgba(0,0,0,0.08);text-align:center;font-family:Helvetica,Arial,sans-serif;font-size:8.5px;letter-spacing:0.09em;color:rgba(40,40,40,0.52);pointer-events:none;z-index:9999;user-select:none;background:rgba(255,255,255,0.6);">Criado com&nbsp;<span style="font-weight:800;letter-spacing:0.05em;">Formalize</span></div>`;
 
 function injectWatermark(html: string): string {
   return html.includes("</body>")

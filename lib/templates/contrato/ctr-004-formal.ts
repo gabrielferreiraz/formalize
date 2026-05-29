@@ -197,10 +197,10 @@ export async function buildCtr004(
     .test-num { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(13*fs)}px; color: #111; white-space: nowrap; }
     .test-linha { flex: 1; border-top: 1px solid #333; }
 
-    .ass-dig-bloco { margin-top: 6px; padding: 6px 10px; border: 1px solid ${primary}44; border-radius: 4px; background: #fffdf5; text-align: center; }
-    .ass-dig-titulo { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(11*fs)}px; color: ${primary}; letter-spacing: 2px; margin-bottom: 3px; }
-    .ass-dig-info { font-size: ${Math.round(12*fs)}px; color: #555; line-height: 1.6; }
-    .ass-dig-codigo { font-family: 'Montserrat', sans-serif; font-size: ${Math.round(11*fs)}px; color: #aaa; margin-top: 3px; letter-spacing: 1px; word-break: break-all; }
+    .ass-dig-bloco { margin-top: 4px; padding: 4px 7px; border: 1px solid ${primary}44; border-radius: 4px; background: #fffdf5; text-align: center; }
+    .ass-dig-titulo { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(7.5*fs)}px; color: ${primary}; letter-spacing: 2px; margin-bottom: 2px; }
+    .ass-dig-info { font-size: ${Math.round(8.5*fs)}px; color: #555; line-height: 1.5; }
+    .ass-dig-codigo { font-family: 'Montserrat', sans-serif; font-size: ${Math.round(7*fs)}px; color: #aaa; margin-top: 2px; letter-spacing: 1px; word-break: break-all; }
 
     /* ── Footer ── */
     .rodape {

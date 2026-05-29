@@ -93,6 +93,7 @@ function OrcamentoContent() {
   function orcamentoToContrato(d: Record<string, unknown>) {
     setContrato((prev: any) => ({
       ...prev,
+      contratanteNome: (d.contratante as string) || prev.contratanteNome,
       evento: d.evento || prev.evento,
       local: d.local || prev.local,
       cidadeEvento: d.cidade || prev.cidadeEvento,
