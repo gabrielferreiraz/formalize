@@ -115,6 +115,7 @@ export async function buildCtr004(
     .sec-header {
       display: flex; align-items: center; gap: 10px;
       margin-bottom: 6px; margin-top: 12px;
+      break-after: avoid;
     }
     .sec-num {
       font-family: 'Montserrat', sans-serif; font-weight: 900;
@@ -130,6 +131,7 @@ export async function buildCtr004(
     .sec-body {
       font-size: ${Math.round(14*fs)}px; color: #444;
       line-height: 1.8; text-align: justify; padding-left: 28px;
+      break-before: avoid; break-inside: avoid;
     }
     .sec-body strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111; }
     .paragrafo {

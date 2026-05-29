@@ -218,14 +218,28 @@ export function PageTutorial({ pageKey, steps, accentColor = "#e6b800" }: Props)
   const { cardTop, cardLeft, cw, above, path } = computeLayout(rect, vw, vh);
   const slideFrom = above ? "-14px" : "14px";
 
+  const spotX = rect.left - PAD;
+  const spotY = rect.top - PAD;
+  const spotRight = rect.right + PAD;
+  const spotBottom = rect.bottom + PAD;
+  // SVG path: outer rect (CW) + inner rect (CCW) = hole where spotlight is
+  const blurClipPath = `path('M 0 0 L ${vw} 0 L ${vw} ${vh} L 0 ${vh} Z M ${spotX} ${spotY} L ${spotX} ${spotBottom} L ${spotRight} ${spotBottom} L ${spotRight} ${spotY} Z')`;
+
   return createPortal(
     <>
-      {/* Overlay */}
+      {/* Blur layer — covers everything EXCEPT the spotlight cutout */}
+      <div style={{
+        position: "fixed", inset: 0, zIndex: 9199,
+        backdropFilter: "blur(4px)",
+        WebkitBackdropFilter: "blur(4px)",
+        clipPath: blurClipPath,
+        pointerEvents: "none",
+      }} />
+
+      {/* Dark overlay — dims outside, no blur */}
       <div onClick={dismiss} style={{
         position: "fixed", inset: 0, zIndex: 9200,
         background: "rgba(4,8,18,0.72)",
-        backdropFilter: "blur(1px)",
-        WebkitBackdropFilter: "blur(1px)",
       }} />
 
       {/* Expanding pulse ring */}
