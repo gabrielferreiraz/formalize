@@ -115,6 +115,7 @@ export function RecentDocs({ type, onLoad, onToContrato }: Props) {
               )}
 
               <button
+                type="button"
                 onClick={() => onLoad(doc.data)}
                 className="px-2.5 py-1 text-xs rounded-lg border border-stage-500 text-gray-400 hover:border-gold-600 hover:text-gold-400 transition-colors"
                 title="Carregar no formulário"
@@ -124,6 +125,7 @@ export function RecentDocs({ type, onLoad, onToContrato }: Props) {
 
               {onToContrato && (
                 <button
+                  type="button"
                   onClick={() => onToContrato(doc.data)}
                   className="px-2.5 py-1 text-xs rounded-lg border border-gold-600/50 text-gold-500 hover:bg-gold-500/10 transition-colors"
                   title="Usar como base para contrato"

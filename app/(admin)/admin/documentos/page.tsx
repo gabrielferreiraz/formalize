@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useMemo, useEffect } from "react";
+import { useCallback, useState, useMemo, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
@@ -210,9 +210,10 @@ export default function DocumentosPage() {
     if (view === "list") {
       return `/api/documents?type=${filter}&page=${page}&includeData=1`;
     }
-    const { start, end } = monthBounds(monthCursor);
-    return `/api/documents?type=${filter}&calendar=1&includeData=1&from=${dayKey(start)}&to=${dayKey(end)}`;
-  }, [view, filter, page, monthCursor]);
+    // Calendar mode: fetch all docs without date filter — month navigation is client-side
+    // so events created in month A for shows in month B stay visible when navigating to B
+    return `/api/documents?type=${filter}&calendar=1&includeData=1`;
+  }, [view, filter, page]);
 
   const { data: docsData, isLoading: loading, mutate: mutateDocs } = useSWR(docsUrl, fetcher, {
     keepPreviousData: true,
@@ -226,6 +227,25 @@ export default function DocumentosPage() {
   const [newEventTime, setNewEventTime] = useState("");
   const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [eventError, setEventError] = useState("");
+
+  const swipeRef = useRef<{ x: number; y: number } | null>(null);
+
+  function handleSwipeStart(e: React.TouchEvent) {
+    swipeRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }
+
+  function handleSwipeEnd(e: React.TouchEvent) {
+    if (!swipeRef.current) return;
+    const dx = e.changedTouches[0].clientX - swipeRef.current.x;
+    const dy = e.changedTouches[0].clientY - swipeRef.current.y;
+    swipeRef.current = null;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+    setMonthCursor(prev => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() + (dx < 0 ? 1 : -1));
+      return d;
+    });
+  }
 
   async function handleCreateGenericEvent() {
     if (!dayModal || !newEventTitle.trim() || isSavingEvent) return;
@@ -333,7 +353,9 @@ export default function DocumentosPage() {
     const map = new Map<string, Doc[]>();
     for (const doc of latestCalendarDocs) {
       let key = "";
-      if (doc.type === "GENERIC_EVENT" && doc.data?.data) {
+      // Always prefer the event date stored in data.data (contracts, budgets, generic events)
+      // Fall back to createdAt only when no event date is set
+      if (doc.data?.data) {
         key = String(doc.data.data);
       } else {
         key = dayKey(new Date(doc.createdAt));
@@ -497,7 +519,11 @@ export default function DocumentosPage() {
           <p className="text-sm text-gray-500 font-medium">Carregando documentos...</p>
         </div>
       ) : view === "calendar" ? (
-        <div className="w-full">
+        <div
+          className="w-full"
+          onTouchStart={handleSwipeStart}
+          onTouchEnd={handleSwipeEnd}
+        >
           {/* ── Compact calendar header ── */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -654,6 +680,8 @@ export default function DocumentosPage() {
       {isFullscreen && createPortal(
         <div
           style={{ position: "fixed", inset: 0, zIndex: 9990, background: "#0e1118", display: "flex", flexDirection: "column", height: "100dvh", overflow: "hidden", width: "100%" }}
+          onTouchStart={handleSwipeStart}
+          onTouchEnd={handleSwipeEnd}
         >
           {/* Header */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid #252d3d", flexShrink: 0 }}>
