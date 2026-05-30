@@ -34,22 +34,28 @@ export default function TemplatesPage() {
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [successModal, setSuccessModal] = useState<{ tab: Tab } | null>(null);
   const [customTemplates, setCustomTemplates] = useState<{
     orcamento: { id: string; name: string; pageCount: number } | null;
     contrato: { id: string; name: string; pageCount: number } | null;
   }>({ orcamento: null, contrato: null });
 
   useEffect(() => {
+    const safe = (p: Promise<Response>) => p.then((r) => r.json()).catch(() => null);
     Promise.all([
-      fetch("/api/templates").then((r) => r.json()),
-      fetch("/api/artist/me").then((r) => r.json()),
-      fetch("/api/artist/pdf-templates").then((r) => r.json()),
+      safe(fetch("/api/templates")),
+      safe(fetch("/api/artist/me")),
+      safe(fetch("/api/artist/pdf-templates")),
     ]).then(([tpl, artist, custom]) => {
-      setTemplates({ orcamento: tpl?.orcamento || [], contrato: tpl?.contrato || [] });
-      setSelectedOrc(artist?.orcamentoTemplate || "orc-001");
-      setSelectedCtr(artist?.contratoTemplate || "ctr-001");
-      setPrimaryColor(artist?.primaryColor || "#e6b800");
-      setCustomTemplates({ orcamento: custom?.orcamento ?? null, contrato: custom?.contrato ?? null });
+      if (tpl) setTemplates({ orcamento: tpl?.orcamento || [], contrato: tpl?.contrato || [] });
+      if (artist && !artist.error) {
+        setSelectedOrc(artist.orcamentoTemplate || "orc-001");
+        setSelectedCtr(artist.contratoTemplate || "ctr-001");
+        setPrimaryColor(artist.primaryColor || "#e6b800");
+      }
+      if (custom && !custom.error) {
+        setCustomTemplates({ orcamento: custom.orcamento ?? null, contrato: custom.contrato ?? null });
+      }
     });
   }, []);
 
@@ -68,7 +74,7 @@ export default function TemplatesPage() {
         body: JSON.stringify({ orcamentoTemplate: selectedOrc, contratoTemplate: selectedCtr }),
       });
       if (res.ok) {
-        setMessage({ text: "Templates salvos com sucesso!", type: "success" });
+        setSuccessModal({ tab });
       } else {
         const err = await res.json();
         setMessage({ text: err.error || "Erro ao salvar", type: "error" });
@@ -506,6 +512,85 @@ export default function TemplatesPage() {
           {saving ? "Salvando..." : "Salvar Templates"}
         </button>
       </div>
+
+      {/* ── Success modal ── */}
+      {successModal && (
+        <div
+          onClick={() => setSuccessModal(null)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 24,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#141824", borderRadius: 20,
+              border: "1px solid #252d3d",
+              padding: "32px 28px", width: "100%", maxWidth: 380,
+              boxShadow: "0 24px 80px rgba(0,0,0,0.5)",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 0,
+            }}
+          >
+            {/* Icon */}
+            <div style={{
+              width: 56, height: 56, borderRadius: "50%",
+              background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.25)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              marginBottom: 18,
+            }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <div style={{
+              fontFamily: "'Inter', sans-serif", fontWeight: 700,
+              fontSize: 18, color: "#f1f5f9", marginBottom: 8, textAlign: "center",
+            }}>
+              Template salvo!
+            </div>
+            <div style={{
+              fontFamily: "'Inter', sans-serif", fontSize: 13,
+              color: "#6b7280", textAlign: "center", lineHeight: 1.6, marginBottom: 28,
+            }}>
+              O template de {successModal.tab === "orcamento" ? "orçamento" : "contrato"} foi atualizado.<br />
+              Deseja gerar um agora para testar?
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
+              <button
+                onClick={() => {
+                  setSuccessModal(null);
+                  router.push(successModal.tab === "orcamento" ? "/admin/orcamento" : "/admin/contrato");
+                }}
+                style={{
+                  width: "100%", height: 48, borderRadius: 12, border: "none",
+                  background: "linear-gradient(180deg, #f5c842 0%, #e6b800 100%)",
+                  color: "#1a1200",
+                  fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700,
+                  cursor: "pointer",
+                  boxShadow: "0 4px 14px rgba(230,184,0,0.25)",
+                }}
+              >
+                Testar agora →
+              </button>
+              <button
+                onClick={() => setSuccessModal(null)}
+                style={{
+                  width: "100%", height: 42, borderRadius: 12,
+                  border: "1px solid #252d3d", background: "transparent",
+                  color: "#6b7280",
+                  fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 500,
+                  cursor: "pointer",
+                }}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
