@@ -81,6 +81,11 @@ export default function TemplatesPage() {
   };
 
   const handlePreview = async (templateId: string) => {
+    if (templateId.startsWith("pdf:")) {
+      const mappingId = templateId.slice(4);
+      window.open(`/api/artist/pdf-templates/${mappingId}/preview`, "_blank");
+      return;
+    }
     setPreviewing(templateId);
     try {
       const url = `/api/templates/preview?id=${templateId}&type=${tab}`;
@@ -92,7 +97,6 @@ export default function TemplatesPage() {
       const blob = await res.blob();
       const blobUrl = URL.createObjectURL(blob);
       window.open(blobUrl, "_blank");
-      // Clean up after a short delay
       setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
     } catch {
       setMessage({ text: "Erro ao gerar preview", type: "error" });
@@ -169,43 +173,114 @@ export default function TemplatesPage() {
         })}
       </div>
 
-      {/* ── Custom PDF template banner ── */}
-      {activeCustom && (
-        <div style={{
-          marginBottom: 20, padding: "16px 20px", borderRadius: 14,
-          background: "linear-gradient(135deg, rgba(230,184,0,0.08) 0%, rgba(230,184,0,0.03) 100%)",
-          border: "1px solid rgba(230,184,0,0.35)",
-          display: "flex", alignItems: "center", gap: 16,
-        }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-            background: "rgba(230,184,0,0.12)", border: "1px solid rgba(230,184,0,0.3)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e6b800" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="9" y1="13" x2="15" y2="13" />
-              <line x1="9" y1="17" x2="13" y2="17" />
-            </svg>
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 700, color: "#e6b800", marginBottom: 2 }}>
-              Template PDF Personalizado — Ativo
+      {/* ── Custom PDF template card ── */}
+      {activeCustom && (() => {
+        const customId = `pdf:${activeCustom.id}`;
+        const isCustomSelected = currentSelected === customId;
+        return (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{
+              fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 600,
+              color: "#4b5563", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10,
+            }}>
+              Template Personalizado
             </div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#6b7280" }}>
-              {activeCustom.name} · {activeCustom.pageCount} pág. — Este template será usado automaticamente na geração de documentos.
+            <div
+              style={{
+                background: "#141824",
+                border: `1px solid ${isCustomSelected ? primaryColor : "rgba(230,184,0,0.35)"}`,
+                borderRadius: 14, overflow: "hidden",
+                boxShadow: isCustomSelected ? `0 0 0 1px ${primaryColor}30` : "none",
+                transition: "all 0.2s",
+                maxWidth: 340,
+              }}
+            >
+              {/* Thumbnail */}
+              <div style={{ height: 160, background: "linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%)", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                  <div style={{
+                    width: 52, height: 64, borderRadius: 6,
+                    background: "#1e1e30", border: "1px solid rgba(230,184,0,0.3)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+                  }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e6b800" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="9" y1="13" x2="15" y2="13" />
+                      <line x1="9" y1="17" x2="13" y2="17" />
+                    </svg>
+                  </div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, fontWeight: 600, color: "rgba(230,184,0,0.6)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    PDF Customizado
+                  </div>
+                </div>
+                {isCustomSelected && (
+                  <div style={{
+                    position: "absolute", top: 10, right: 10,
+                    width: 22, height: 22, borderRadius: "50%",
+                    background: primaryColor, color: "#111",
+                    fontSize: 12, fontWeight: 700,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>✓</div>
+                )}
+              </div>
+              {/* Card body */}
+              <div style={{ padding: "14px 16px 16px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: 14, color: "#f1f5f9" }}>
+                    {activeCustom.name}
+                  </div>
+                  <div style={{
+                    fontFamily: "'Inter', sans-serif", fontSize: 10, fontWeight: 600,
+                    padding: "2px 8px", borderRadius: 6,
+                    background: "rgba(230,184,0,0.08)", color: "#e6b800", letterSpacing: "0.05em",
+                  }}>
+                    Personalizado
+                  </div>
+                </div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#4b5563", lineHeight: 1.5, marginBottom: 14 }}>
+                  {activeCustom.pageCount} {activeCustom.pageCount === 1 ? "página" : "páginas"} · Seu PDF com campos posicionados pelo super admin
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => handlePreview(customId)}
+                    style={{
+                      flex: 1, height: 36, borderRadius: 8,
+                      border: "1px solid #252d3d", background: "#0e1118",
+                      color: "#94a3b8",
+                      fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 600,
+                      cursor: "pointer", transition: "all 0.15s",
+                    }}
+                  >
+                    Ver PDF
+                  </button>
+                  <button
+                    onClick={() => setSelected(customId)}
+                    style={{
+                      flex: 1, height: 36, borderRadius: 8,
+                      border: isCustomSelected ? `1px solid ${primaryColor}` : "1px solid #252d3d",
+                      background: isCustomSelected ? `${primaryColor}15` : "#141824",
+                      color: isCustomSelected ? primaryColor : "#94a3b8",
+                      fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 700,
+                      cursor: "pointer", transition: "all 0.15s",
+                    }}
+                  >
+                    {isCustomSelected ? "Selecionado" : "Selecionar"}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div style={{ borderBottom: "1px solid #1a2035", margin: "20px 0 16px" }} />
+            <div style={{
+              fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 600,
+              color: "#4b5563", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10,
+            }}>
+              Templates Padrão
             </div>
           </div>
-          <div style={{
-            flexShrink: 0, padding: "4px 10px", borderRadius: 8,
-            background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.25)",
-            fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 600, color: "#4ade80",
-          }}>
-            Ativo
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Template grid ── */}
       {items.length === 0 ? (

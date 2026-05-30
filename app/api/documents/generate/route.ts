@@ -89,11 +89,16 @@ export async function POST(req: NextRequest) {
 
   log.info({ type, template }, "pdf generation started");
 
-  // Check for active custom PDF template mapping (overlay flow)
-  const pdfMapping = await prisma.pdfTemplateMapping.findFirst({
-    where: { artistId, type, isActive: true },
-    select: { pdfUrl: true, fields: true, pageCount: true },
-  });
+  // Check if artist selected a custom PDF template (overlay flow)
+  let pdfMapping: { pdfUrl: string; fields: unknown; pageCount: number } | null = null;
+  if (template.startsWith("pdf:")) {
+    const mappingId = template.slice(4);
+    const found = await prisma.pdfTemplateMapping.findFirst({
+      where: { id: mappingId, artistId },
+      select: { pdfUrl: true, fields: true, pageCount: true, isActive: true },
+    });
+    if (found?.isActive) pdfMapping = found;
+  }
 
   try {
     const basePdfUrl = isContrato ? artist.baseContractPdfUrl : artist.basePdfUrl;
