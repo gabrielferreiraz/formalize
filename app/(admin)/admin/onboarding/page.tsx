@@ -818,12 +818,7 @@ export default function OnboardingPage() {
           "--accent": data.primaryColor,
           "--accent-rgb": colorRgb,
           position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: "100%",
-          height: "100dvh",
+          inset: 0,
           zIndex: 9999,
           background: "#07090e",
           fontFamily: "'Inter', system-ui, sans-serif",
@@ -937,11 +932,13 @@ export default function OnboardingPage() {
         key={animKey}
         style={{
           flex: 1,
+          minHeight: 0,
           overflowY: "auto",
           overflowX: "hidden",
           padding: "16px 28px 8px",
           position: "relative",
           zIndex: 1,
+          WebkitOverflowScrolling: "touch",
           animation: `${direction === "forward" ? "stepIn" : "stepInBack"} 0.28s ease both`,
         }}
       >
