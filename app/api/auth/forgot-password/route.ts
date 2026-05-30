@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requestLogger, getRequestId } from "@/lib/logger";
+import { sendWhatsAppTextMessage, formatWhatsAppNumber } from "@/lib/whatsapp";
 
 const TOKEN_TTL_HOURS = 2;
 
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
   // Always return success to avoid user enumeration
   const user = await prisma.user.findFirst({
     where: { email: email.toLowerCase().trim() },
-    select: { id: true },
+    select: { id: true, artistId: true },
   });
 
   if (user) {
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
         where: { email: email.toLowerCase().trim(), usedAt: null },
       });
 
-      await prisma.passwordResetToken.create({
+      const resetToken = await prisma.passwordResetToken.create({
         data: {
           email: email.toLowerCase().trim(),
           expiresAt: new Date(Date.now() + TOKEN_TTL_HOURS * 60 * 60 * 1000),
@@ -66,8 +67,29 @@ export async function POST(req: NextRequest) {
 
       // Log without email to avoid PII in logs
       log.info({ userId: user.id }, "password reset token created");
+
+      // Busca o artista para obter o WhatsApp
+      if (user.artistId) {
+        const artist = await prisma.artist.findUnique({
+          where: { id: user.artistId },
+          select: { whatsapp: true, name: true },
+        });
+
+        if (artist?.whatsapp) {
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL;
+          const resetLink = `${appUrl}/reset-password?token=${resetToken.token}`;
+
+          const message = `Olá! Você solicitou a redefinição de senha no Formalize.\n\nClique no link abaixo para definir uma nova senha:\n${resetLink}\n\nEste link é válido por ${TOKEN_TTL_HOURS} horas.`;
+
+          const formattedNumber = formatWhatsAppNumber(artist.whatsapp);
+          await sendWhatsAppTextMessage({
+            number: formattedNumber,
+            message,
+          });
+        }
+      }
     } catch (err) {
-      log.error({ err }, "failed to create password reset token");
+      log.error({ err }, "failed to create password reset token or send WhatsApp message");
       // Still return success to avoid enumeration
     }
   } else {
