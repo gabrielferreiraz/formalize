@@ -77,11 +77,11 @@ export async function buildCtr001(
     html, body { width: 100%; background: #ffffff; font-family: 'Open Sans', sans-serif; }
     .pagina { width: 100%; min-height: 100vh; position: relative; display: flex; flex-direction: column; background: #ffffff; }
     .marca-dagua { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; opacity: 0.04; z-index: 0; pointer-events: none; }
-    .header { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%); padding: 20px 10px 16px; text-align: center; flex-shrink: 0; position: relative; z-index: 1; }
+    .header { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%); padding: 20px 20px 16px; text-align: center; flex-shrink: 0; position: relative; z-index: 1; }
     .header img { height: ${logoH}px; max-width: 280px; object-fit: contain; display: block; margin: 0 auto 12px; }
     .header-subtitulo { font-family: 'Montserrat', sans-serif; font-weight: 400; font-size: ${16 * fontScale}px; color: #888888; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 14px; }
     .header-linha { width: 60%; height: 2px; background: linear-gradient(to right, transparent, ${primaryColor}, transparent); margin: 0 auto; }
-    .corpo { position: relative; z-index: 1; padding: 20px 10px 30px; flex: 1; }
+    .corpo { position: relative; z-index: 1; padding: 20px 20px 30px; flex: 1; }
     .titulo { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${34 * fontScale}px; color: #111111; text-align: center; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 26px; padding-bottom: 16px; position: relative; }
     .titulo::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 140px; height: 3px; background: linear-gradient(to right, transparent, ${primaryColor}, transparent); }
     .intro { font-size: ${19 * fontScale}px; color: #222222; line-height: 1.8; margin-bottom: 20px; text-align: justify; }
@@ -108,7 +108,7 @@ export async function buildCtr001(
     .testemunhas-linha { display: flex; align-items: center; gap: 12px; margin-top: 10px; break-inside: avoid; }
     .test-num { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${17 * fontScale}px; color: #111111; white-space: nowrap; }
     .test-linha { flex: 1; border-top: 1.5px solid #333333; }
-    .rodape { padding: 14px 10px; text-align: center; position: relative; z-index: 1; }
+    .rodape { padding: 14px 20px; text-align: center; position: relative; z-index: 1; }
     .rodape-linha { width: 60%; height: 2px; background: linear-gradient(to right, transparent, ${primaryColor}, transparent); margin: 0 auto 14px; }
     .rodape-frase { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${17 * fontScale}px; color: ${primaryColor}; letter-spacing: 3px; font-style: italic; }
     .ass-dig-bloco { margin: 0 auto 5px; padding: 6px 8px; border: 1.5px solid ${primaryColor}; border-radius: 5px; background: #fffbf5; text-align: center; max-width: 180px; }

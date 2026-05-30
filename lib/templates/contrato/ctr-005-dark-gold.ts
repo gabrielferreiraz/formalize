@@ -78,7 +78,7 @@ export async function buildCtr005(
     .main { flex: 1; display: flex; flex-direction: column; }
 
     .header {
-      padding: 20px 10px 16px; display: flex; align-items: center;
+      padding: 20px 44px 16px; display: flex; align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid rgba(255,255,255,0.08);
       background: linear-gradient(135deg, #111 0%, #1a1a1a 100%);
@@ -97,7 +97,7 @@ export async function buildCtr005(
       text-transform: uppercase;
     }
 
-    .corpo { padding: 16px 10px 24px; flex: 1; }
+    .corpo { padding: 16px 44px 24px; flex: 1; }
 
     .titulo {
       font-family: 'Montserrat', sans-serif; font-weight: 900;
@@ -166,7 +166,7 @@ export async function buildCtr005(
     .ass-dig-info { font-size: ${Math.round(8.5*fs)}px; color: #888; line-height: 1.55; }
     .ass-dig-codigo { font-family: 'Courier New', monospace; font-size: ${Math.round(7*fs)}px; color: #555; margin-top: 4px; letter-spacing: 1px; }
 
-    .rodape { padding: 14px 10px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; background: #111; }
+    .rodape { padding: 14px 44px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; background: #111; }
     .rodape-frase { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(11*fs)}px; color: ${primary}88; letter-spacing: 2px; font-style: italic; }
     .rodape-hash { font-size: ${Math.round(10*fs)}px; color: #333; font-family: 'Courier New', monospace; }
   </style>

@@ -51,7 +51,7 @@ const templateContratoLight = `<!DOCTYPE html>
 
     /* ── Header ── */
     .header {
-      padding: 28px 10px 20px 10px;
+      padding: 28px 20px 20px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -124,7 +124,7 @@ const templateContratoLight = `<!DOCTYPE html>
     /* ── Corpo ── */
     .corpo {
       flex: 1;
-      padding: 20px 10px 28px 10px;
+      padding: 20px 20px 28px 20px;
       position: relative;
       z-index: 1;
     }
