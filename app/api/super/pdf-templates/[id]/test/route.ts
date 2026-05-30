@@ -72,7 +72,7 @@ export async function GET(
     (mapping.fields as unknown as FieldPlacement[]) ?? []
   );
 
-  return new NextResponse(pdfBytes, {
+  return new NextResponse(Buffer.from(pdfBytes), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `inline; filename="teste-${mapping.id}.pdf"`,
