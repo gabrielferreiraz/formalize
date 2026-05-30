@@ -68,6 +68,9 @@ export async function POST(req: NextRequest) {
       // Log without email to avoid PII in logs
       log.info({ userId: user.id }, "password reset token created");
 
+      // Helper function to add delays
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      
       // Busca o artista para obter o WhatsApp
       if (user.artistId) {
         const artist = await prisma.artist.findUnique({
@@ -79,13 +82,41 @@ export async function POST(req: NextRequest) {
           const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL;
           const resetLink = `${appUrl}/reset-password?token=${resetToken.token}`;
 
-          const message = `Olá! Você solicitou a redefinição de senha no Formalize.\n\nClique no link abaixo para definir uma nova senha:\n${resetLink}\n\nEste link é válido por ${TOKEN_TTL_HOURS} horas.`;
+          // Mensagem 1: Aviso inicial
+          const waMsg1 = `Olá! Você solicitou a redefinição de senha no Formalize.`;
+          
+          // Mensagem 2: Link de redefinição
+          const waMsg2 = `Link para redefinir senha:\n${resetLink}`;
+          
+          // Mensagem 3: Aviso de validade
+          const waMsg3 = `Este link é válido por ${TOKEN_TTL_HOURS} horas.`;
 
           const formattedNumber = formatWhatsAppNumber(artist.whatsapp);
-          await sendWhatsAppTextMessage({
-            number: formattedNumber,
-            message,
-          });
+          
+          try {
+            // Envia primeira mensagem
+            await sendWhatsAppTextMessage({
+              number: formattedNumber,
+              message: waMsg1,
+            });
+            
+            await delay(1500);
+            
+            await sendWhatsAppTextMessage({
+              number: formattedNumber,
+              message: waMsg2,
+            });
+            
+            await delay(1500);
+            
+            await sendWhatsAppTextMessage({
+              number: formattedNumber,
+              message: waMsg3,
+            });
+            
+          } catch (err) {
+            log.error({ err }, "Error sending WhatsApp messages for password reset");
+          }
         }
       }
     } catch (err) {
