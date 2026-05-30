@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { assertSuperAdmin } from "@/lib/super-auth";
 import { prisma } from "@/lib/prisma";
 import { hash } from "bcryptjs";
+import { sendWhatsAppTextMessage, formatWhatsAppNumber } from "@/lib/whatsapp";
 
 type Ctx = { params: Promise<{ id: string; uid: string }> };
 
@@ -42,7 +43,47 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     select: USER_SELECT,
   });
 
-  return NextResponse.json(updated);
+  // If password was updated, send WhatsApp message
+  let whatsappStatus: { sent: boolean; message?: string } = { sent: false };
+  if (body.password) {
+    const artist = await prisma.artist.findUnique({
+      where: { id: artistId },
+      select: { whatsapp: true },
+    });
+
+    if (!artist?.whatsapp) {
+      whatsappStatus = { sent: false, message: "WhatsApp do artista não cadastrado" };
+    } else {
+      const appUrl = process.env.NEXT_PUBLIC_ROOT_DOMAIN
+        ? `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`
+        : process.env.NEXTAUTH_URL || "http://localhost:3000";
+
+      const waMsg1 = `Olá! Sua senha no *Formalize* foi redefinida.\n\nAcesse pelo link:\n${appUrl}/login\n\nSeu e-mail de login: *${user.email}*\n\nVou enviar sua nova senha temporária na próxima mensagem.`;
+      const waMsg2 = `🔑 Sua nova senha temporária:\n\n*${body.password}*\n\nNo próximo login você será solicitado a criar uma senha nova.`;
+
+      const formattedNumber = formatWhatsAppNumber(artist.whatsapp);
+
+      // Send first message
+      await sendWhatsAppTextMessage({
+        number: formattedNumber,
+        message: waMsg1,
+      });
+
+      // Send second message with password
+      const result = await sendWhatsAppTextMessage({
+        number: formattedNumber,
+        message: waMsg2,
+      });
+
+      if (result) {
+        whatsappStatus = { sent: true };
+      } else {
+        whatsappStatus = { sent: false, message: "Falha ao enviar mensagem WhatsApp" };
+      }
+    }
+  }
+
+  return NextResponse.json({ ...updated, whatsappStatus });
 }
 
 export async function DELETE(_: NextRequest, { params }: Ctx) {
