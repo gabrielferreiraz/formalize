@@ -80,7 +80,7 @@ export async function buildOrc005(
     html { width: 21cm; }
     body { width: 21cm; min-height: 29.7cm; background: #0e0e12; font-family: 'Open Sans', sans-serif; display: flex; flex-direction: column; }
 
-    .wrap { flex: 1; padding: 28px 30px 20px; display: flex; flex-direction: column; gap: 12px; }
+    .wrap { flex: 1; padding: 24px 50px 16px; display: flex; flex-direction: column; gap: 12px; }
 
     .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.08); }
     .header-logo { height: ${logoH}px; max-width: 280px; object-fit: contain; filter: brightness(1.1); }
@@ -127,7 +127,7 @@ export async function buildOrc005(
     .obs-label { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(11*fs)}px; letter-spacing: 3px; text-transform: uppercase; color: ${primary}66; margin-bottom: 6px; }
     .obs-text { font-size: ${Math.round(13*fs)}px; color: #555; line-height: 1.8; }
 
-    .footer { background: #0a0a0d; border-top: 1px solid rgba(255,255,255,0.05); padding: 14px 30px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .footer { background: #0a0a0d; border-top: 1px solid rgba(255,255,255,0.05); padding: 14px 50px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
     .footer-left { display: flex; flex-direction: column; gap: 2px; }
     .footer-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(13*fs)}px; color: #444; }
     .footer-web { font-family: 'Montserrat', sans-serif; font-size: ${Math.round(11*fs)}px; color: ${primary}66; margin-top: 1px; }

@@ -34,22 +34,29 @@ export default function TemplatesPage() {
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [customTemplates, setCustomTemplates] = useState<{
+    orcamento: { id: string; name: string; pageCount: number } | null;
+    contrato: { id: string; name: string; pageCount: number } | null;
+  }>({ orcamento: null, contrato: null });
 
   useEffect(() => {
     Promise.all([
       fetch("/api/templates").then((r) => r.json()),
       fetch("/api/artist/me").then((r) => r.json()),
-    ]).then(([tpl, artist]) => {
+      fetch("/api/artist/pdf-templates").then((r) => r.json()),
+    ]).then(([tpl, artist, custom]) => {
       setTemplates({ orcamento: tpl?.orcamento || [], contrato: tpl?.contrato || [] });
       setSelectedOrc(artist?.orcamentoTemplate || "orc-001");
       setSelectedCtr(artist?.contratoTemplate || "ctr-001");
       setPrimaryColor(artist?.primaryColor || "#e6b800");
+      setCustomTemplates({ orcamento: custom?.orcamento ?? null, contrato: custom?.contrato ?? null });
     });
   }, []);
 
   const currentSelected = tab === "orcamento" ? selectedOrc : selectedCtr;
   const setSelected = tab === "orcamento" ? setSelectedOrc : setSelectedCtr;
   const items = templates[tab];
+  const activeCustom = customTemplates[tab];
 
   const handleSave = async () => {
     setSaving(true);
@@ -161,6 +168,44 @@ export default function TemplatesPage() {
           );
         })}
       </div>
+
+      {/* ── Custom PDF template banner ── */}
+      {activeCustom && (
+        <div style={{
+          marginBottom: 20, padding: "16px 20px", borderRadius: 14,
+          background: "linear-gradient(135deg, rgba(230,184,0,0.08) 0%, rgba(230,184,0,0.03) 100%)",
+          border: "1px solid rgba(230,184,0,0.35)",
+          display: "flex", alignItems: "center", gap: 16,
+        }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+            background: "rgba(230,184,0,0.12)", border: "1px solid rgba(230,184,0,0.3)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e6b800" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="9" y1="13" x2="15" y2="13" />
+              <line x1="9" y1="17" x2="13" y2="17" />
+            </svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 700, color: "#e6b800", marginBottom: 2 }}>
+              Template PDF Personalizado — Ativo
+            </div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "#6b7280" }}>
+              {activeCustom.name} · {activeCustom.pageCount} pág. — Este template será usado automaticamente na geração de documentos.
+            </div>
+          </div>
+          <div style={{
+            flexShrink: 0, padding: "4px 10px", borderRadius: 8,
+            background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.25)",
+            fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 600, color: "#4ade80",
+          }}>
+            Ativo
+          </div>
+        </div>
+      )}
 
       {/* ── Template grid ── */}
       {items.length === 0 ? (

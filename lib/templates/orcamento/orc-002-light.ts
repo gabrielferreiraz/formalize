@@ -35,7 +35,7 @@ const templateOrcamentoLight = `<!DOCTYPE html>
 
     /* ── Header ── */
     .header {
-      padding: 48px 52px 36px 60px;
+      padding: 36px 50px 28px 50px;
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
@@ -99,7 +99,7 @@ const templateOrcamentoLight = `<!DOCTYPE html>
     /* ── Corpo ── */
     .body {
       flex: 1;
-      padding: 36px 52px 36px 60px;
+      padding: 28px 50px 28px 50px;
       display: flex;
       flex-direction: column;
       gap: 24px;
@@ -289,7 +289,7 @@ const templateOrcamentoLight = `<!DOCTYPE html>
 
     /* ── Footer ── */
     .footer {
-      padding: 24px 52px 28px 60px;
+      padding: 16px 50px 20px 50px;
       border-top: 1px solid #e8e8e4;
       display: flex;
       align-items: center;

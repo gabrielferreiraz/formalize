@@ -72,7 +72,7 @@ export async function buildCtr004(
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    @page { margin: 1mm; }
+    @page { margin: 25mm; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; background: #fff; font-family: 'Open Sans', sans-serif; }
 
@@ -80,7 +80,7 @@ export async function buildCtr004(
 
     /* ── Header band ── */
     .header-band {
-      background: ${primary}; padding: 20px 44px 16px;
+      background: ${primary}; padding: 14px 10px 12px;
       display: flex; align-items: center; justify-content: space-between;
     }
     .header-band-left { display: flex; align-items: center; gap: 14px; }
@@ -96,7 +96,7 @@ export async function buildCtr004(
 
     /* ── Sub-header ── */
     .sub-header {
-      background: #111; padding: 10px 44px;
+      background: #111; padding: 10px;
       display: flex; align-items: center; justify-content: center;
     }
     .sub-header-title {
@@ -106,7 +106,7 @@ export async function buildCtr004(
     }
 
     /* ── Body ── */
-    .corpo { padding: 24px 44px 36px; flex: 1; }
+    .corpo { padding: 16px 10px 24px; flex: 1; }
 
     .intro { font-size: ${Math.round(16*fs)}px; color: #333; line-height: 1.9; margin-bottom: 14px; text-align: justify; }
     .intro strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111; }
@@ -206,7 +206,7 @@ export async function buildCtr004(
 
     /* ── Footer ── */
     .rodape {
-      padding: 12px 44px; background: #f9f9f9; border-top: 1px solid #eee;
+      padding: 12px 10px; background: #f9f9f9; border-top: 1px solid #eee;
       display: flex; align-items: center; justify-content: space-between;
     }
     .rodape-frase {

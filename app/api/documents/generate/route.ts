@@ -8,6 +8,7 @@ import { buildTemplate } from "@/lib/templates";
 import { getPresetClausulas } from "@/lib/contrato-clausulas";
 import { fetchWithCache } from "@/lib/cache";
 import { requestLogger, getRequestId } from "@/lib/logger";
+import { applyFieldsToBasePdf, buildOverlayVars, type FieldPlacement } from "@/lib/pdf-overlay";
 
 export async function POST(req: NextRequest) {
   const requestId = getRequestId(req);
@@ -88,6 +89,12 @@ export async function POST(req: NextRequest) {
 
   log.info({ type, template }, "pdf generation started");
 
+  // Check for active custom PDF template mapping (overlay flow)
+  const pdfMapping = await prisma.pdfTemplateMapping.findFirst({
+    where: { artistId, type, isActive: true },
+    select: { pdfUrl: true, fields: true, pageCount: true },
+  });
+
   try {
     const basePdfUrl = isContrato ? artist.baseContractPdfUrl : artist.basePdfUrl;
     const effectivePaperWidth = isContrato
@@ -137,37 +144,52 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    log.debug({ template }, "building HTML template");
-    const html = await buildTemplate(type, artistWithOverride, buildData, pageSize, preloaded);
-
-    const tGotenberg = Date.now();
-    log.debug({ paperWidth: effectivePaperWidth, paperHeight: effectivePaperHeight }, "sending to Gotenberg");
-
-    let dynamicPdf: Buffer;
-    try {
-      dynamicPdf = await sendToGotenberg(html, {
-        paperWidth: effectivePaperWidth,
-        paperHeight: effectivePaperHeight,
-      });
-    } catch (err) {
-      log.error({ err, durationMs: Date.now() - tGotenberg }, "Gotenberg conversion failed");
-      throw err;
-    }
-
-    log.info({ durationMs: Date.now() - tGotenberg }, "Gotenberg conversion completed");
-
-    // Mescla com PDF base se houver permissão e arquivo
     let pdfBuffer: Buffer;
-    const usarBase = type === "orcamento" ? artist.usarBasePdfOrcamento : artist.usarBasePdfContrato;
 
-    if (usarBase && basePdfResult) {
-      log.debug("merging with base PDF");
-      const A4 = { width: 595.28, height: 841.89 };
-      pdfBuffer = isContrato
-        ? await mergePdfs([dynamicPdf, basePdfResult.buffer], A4)
-        : await mergePdfs([basePdfResult.buffer, dynamicPdf]);
+    if (pdfMapping) {
+      // ── Overlay flow: stamp text onto artist's custom PDF ──
+      log.info("using custom PDF template mapping (overlay flow)");
+      const vars = buildOverlayVars(artistWithOverride as any, buildData as Record<string, any>);
+      const baseRes = await fetch(pdfMapping.pdfUrl);
+      if (!baseRes.ok) throw new Error("Falha ao baixar PDF base do template");
+      const baseBuffer = Buffer.from(await baseRes.arrayBuffer());
+      const overlaid = await applyFieldsToBasePdf(
+        baseBuffer,
+        vars,
+        (pdfMapping.fields as unknown as FieldPlacement[]) ?? []
+      );
+      pdfBuffer = Buffer.from(overlaid);
     } else {
-      pdfBuffer = dynamicPdf;
+      // ── Standard flow: HTML → Gotenberg → optional base PDF merge ──
+      log.debug({ template }, "building HTML template");
+      const html = await buildTemplate(type, artistWithOverride, buildData, pageSize, preloaded);
+
+      const tGotenberg = Date.now();
+      log.debug({ paperWidth: effectivePaperWidth, paperHeight: effectivePaperHeight }, "sending to Gotenberg");
+
+      let dynamicPdf: Buffer;
+      try {
+        dynamicPdf = await sendToGotenberg(html, {
+          paperWidth: effectivePaperWidth,
+          paperHeight: effectivePaperHeight,
+        });
+      } catch (err) {
+        log.error({ err, durationMs: Date.now() - tGotenberg }, "Gotenberg conversion failed");
+        throw err;
+      }
+
+      log.info({ durationMs: Date.now() - tGotenberg }, "Gotenberg conversion completed");
+
+      const usarBase = type === "orcamento" ? artist.usarBasePdfOrcamento : artist.usarBasePdfContrato;
+      if (usarBase && basePdfResult) {
+        log.debug("merging with base PDF");
+        const A4 = { width: 595.28, height: 841.89 };
+        pdfBuffer = isContrato
+          ? await mergePdfs([dynamicPdf, basePdfResult.buffer], A4)
+          : await mergePdfs([basePdfResult.buffer, dynamicPdf]);
+      } else {
+        pdfBuffer = dynamicPdf;
+      }
     }
 
     const d = data as Record<string, string>;

@@ -75,14 +75,14 @@ export async function buildOrc004(
     .cap { height: 6px; background: ${primary}; flex-shrink: 0; }
 
     /* ── Header ── */
-    .header { background: #0c0c0c; padding: 22px 30px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e1e1e; flex-shrink: 0; }
+    .header { background: #0c0c0c; padding: 18px 50px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e1e1e; flex-shrink: 0; }
     .header-logo { height: ${logoH}px; max-width: 280px; object-fit: contain; }
     .header-right { text-align: right; }
     .header-doc { font-family: 'Montserrat', sans-serif; font-weight: 300; font-size: ${Math.round(12*fontScale)}px; letter-spacing: 5px; text-transform: uppercase; color: #666; margin-bottom: 3px; }
     .header-name { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(15*fontScale)}px; color: ${primary}; letter-spacing: 1px; }
 
     /* ── Content ── */
-    .content { flex: 1; padding: 22px 30px; display: flex; flex-direction: column; gap: 14px; }
+    .content { flex: 1; padding: 18px 50px; display: flex; flex-direction: column; gap: 14px; }
 
     /* ── Section title ── */
     .section-title { font-family: 'Montserrat', sans-serif; font-weight: 300; font-size: ${Math.round(12*fontScale)}px; letter-spacing: 5px; text-transform: uppercase; color: #555; padding-bottom: 8px; border-bottom: 1px solid #1e1e1e; margin-bottom: 2px; }
@@ -130,7 +130,7 @@ export async function buildOrc004(
     .obs-text { font-family: 'Open Sans', sans-serif; font-size: ${Math.round(13*fontScale)}px; color: #666; line-height: 1.8; }
 
     /* ── Footer ── */
-    .footer { background: #000; padding: 12px 30px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; border-top: 1px solid #1a1a1a; }
+    .footer { background: #000; padding: 12px 50px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; border-top: 1px solid #1a1a1a; }
     .footer-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(12*fontScale)}px; color: #666; }
     .footer-web { font-family: 'Montserrat', sans-serif; font-size: ${Math.round(12*fontScale)}px; color: ${primary}; }
     .footer-logo { height: ${footerLogoH}px; max-width: 220px; object-fit: contain; opacity: 0.8; }

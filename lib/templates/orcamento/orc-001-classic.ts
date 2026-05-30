@@ -109,7 +109,7 @@ export async function buildOrc001(
     /* ── Header ── */
     .hdr {
       text-align: center;
-      padding: 20px 20px 14px;
+      padding: 20px 50px 14px;
       flex-shrink: 0;
     }
     .hdr-title {
@@ -126,8 +126,8 @@ export async function buildOrc001(
     .card {
       background: rgba(255,255,255,0.97);
       border-radius: 12px;
-      margin: 0 14px;
-      padding: 16px 20px 12px;
+      margin: 0;
+      padding: 16px 50px 12px;
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -236,7 +236,7 @@ export async function buildOrc001(
     .ftr {
       flex-shrink: 0;
       background: #000;
-      padding: 10px 18px 12px;
+      padding: 10px 50px 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;

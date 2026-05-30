@@ -81,14 +81,14 @@ export async function buildCtr006(
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    @page { margin: 1mm; }
+    @page { margin: 25mm; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; background: #0f1117; font-family: 'Inter', sans-serif; }
 
     .pagina { width: 100%; min-height: 100vh; display: flex; flex-direction: column; background: #0f1117; }
 
     .header {
-      padding: 0 44px; background: #0f1117;
+      padding: 0 10px; background: #0f1117;
       border-bottom: 1px solid rgba(255,255,255,0.06);
     }
     .header-top {
@@ -108,7 +108,7 @@ export async function buildCtr006(
     .header-tag-dot { width: 6px; height: 6px; border-radius: 50%; background: ${primary}; }
     .header-bar { height: 2px; background: linear-gradient(to right, ${primary}, ${primary}44, transparent); }
 
-    .titulo-wrap { padding: 28px 44px 0; }
+    .titulo-wrap { padding: 28px 10px 0; }
     .titulo {
       font-family: 'Space Grotesk', sans-serif; font-weight: 700;
       font-size: ${Math.round(26*fs)}px; color: #f1f5f9;
@@ -116,7 +116,7 @@ export async function buildCtr006(
     }
     .subtitulo { font-size: ${Math.round(14*fs)}px; color: #475569; letter-spacing: 0.5px; }
 
-    .corpo { padding: 24px 44px 44px; flex: 1; }
+    .corpo { padding: 16px 10px 30px; flex: 1; }
 
     .intro-box {
       background: #171b26; border: 1px solid rgba(255,255,255,0.07);
@@ -187,7 +187,7 @@ export async function buildCtr006(
     .ass-dig-info { font-size: ${Math.round(8.5*fs)}px; color: #64748b; line-height: 1.55; }
     .ass-dig-codigo { font-family: 'Courier New', monospace; font-size: ${Math.round(7*fs)}px; color: #334155; margin-top: 4px; letter-spacing: 1px; }
 
-    .rodape { padding: 14px 44px; border-top: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: space-between; }
+    .rodape { padding: 14px 10px; border-top: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: space-between; }
     .rodape-frase { font-size: ${Math.round(11*fs)}px; color: #1e293b; font-style: italic; letter-spacing: 1px; }
     .rodape-hash { font-family: 'Courier New', monospace; font-size: ${Math.round(10*fs)}px; color: #1e293b; }
   </style>

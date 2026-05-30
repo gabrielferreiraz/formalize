@@ -79,7 +79,7 @@ export async function buildOrc003(
     html { width: 21cm; }
     body { width: 21cm; min-height: 29.7cm; background: #f2f2ee; font-family: 'Open Sans', sans-serif; display: flex; flex-direction: column; }
 
-    .wrap { flex: 1; padding: 28px 30px 20px; display: flex; flex-direction: column; gap: 12px; }
+    .wrap { flex: 1; padding: 24px 50px 16px; display: flex; flex-direction: column; gap: 12px; }
 
     /* ── Header ── */
     .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 18px; border-bottom: 2px solid ${primary}; }
@@ -113,7 +113,7 @@ export async function buildOrc003(
     .obs-text { font-size: ${Math.round(13*fontScale)}px; color: #666; line-height: 1.8; }
 
     /* ── Footer ── */
-    .footer { background: #111; padding: 14px 30px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .footer { background: #111; padding: 14px 50px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
     .footer-left { display: flex; flex-direction: column; gap: 2px; }
     .footer-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(13*fontScale)}px; color: #fff; }
     .footer-web { font-family: 'Montserrat', sans-serif; font-size: ${Math.round(12*fontScale)}px; color: ${primary}; margin-top: 1px; }

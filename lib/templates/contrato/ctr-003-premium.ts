@@ -86,7 +86,7 @@ export async function buildCtr003(
     .main { flex: 1; display: flex; flex-direction: column; }
 
     .header {
-      padding: 26px 40px 20px; display: flex; align-items: center;
+      padding: 20px 10px 16px; display: flex; align-items: center;
       justify-content: space-between; border-bottom: 1px solid #eee;
     }
     .header-left {}
@@ -103,7 +103,7 @@ export async function buildCtr003(
       text-transform: uppercase;
     }
 
-    .corpo { padding: 22px 40px 32px; flex: 1; }
+    .corpo { padding: 16px 10px 24px; flex: 1; }
 
     .titulo {
       font-family: 'Montserrat', sans-serif; font-weight: 900;
@@ -164,7 +164,7 @@ export async function buildCtr003(
     .test-num { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(13*fs)}px; color: #111; white-space: nowrap; }
     .test-linha { flex: 1; border-top: 1px solid #333; }
 
-    .rodape { padding: 14px 40px; border-top: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
+    .rodape { padding: 14px 10px; border-top: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
     .rodape-frase { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(12*fs)}px; color: ${primary}; letter-spacing: 2px; font-style: italic; }
     .rodape-hash { font-size: ${Math.round(11*fs)}px; color: #ccc; }
 

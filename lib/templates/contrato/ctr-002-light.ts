@@ -10,7 +10,7 @@ const templateContratoLight = `<!DOCTYPE html>
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    @page { margin: 1mm; }
+    @page { margin: 25mm; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; background: #f8f8f6; font-family: 'Inter', sans-serif; }
 
@@ -51,7 +51,7 @@ const templateContratoLight = `<!DOCTYPE html>
 
     /* ── Header ── */
     .header {
-      padding: 40px 52px 32px 60px;
+      padding: 28px 10px 20px 10px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -124,7 +124,7 @@ const templateContratoLight = `<!DOCTYPE html>
     /* ── Corpo ── */
     .corpo {
       flex: 1;
-      padding: 32px 52px 40px 60px;
+      padding: 20px 10px 28px 10px;
       position: relative;
       z-index: 1;
     }

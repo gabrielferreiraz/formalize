@@ -101,10 +101,11 @@ model Artist {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users               User[]
-  documents           Document[]
-  templates           Template[]
-  contratoTemplates   ContratoTemplate[]
+  users                User[]
+  documents            Document[]
+  templates            Template[]
+  contratoTemplates    ContratoTemplate[]
+  pdfTemplateMappings  PdfTemplateMapping[]
 }
 
 model User {
@@ -187,6 +188,24 @@ model ContratoTemplate {
   titulo    String   @default("Contrato de Prestação de Serviços")
   clausulas Json     // ClausulaContrato[]
   isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@index([artistId])
+}
+
+/// Templates PDF customizados por artista (canvas editor)
+model PdfTemplateMapping {
+  id        String   @id @default(cuid())
+  artistId  String
+  type      String   // "orcamento" | "contrato"
+  name      String
+  pdfUrl    String
+  pageCount Int      @default(1)
+  fields    Json     @default("[]")
+  isActive  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
