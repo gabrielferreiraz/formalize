@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState, useReducer, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  DndContext, DragEndEvent, useDraggable, useDroppable,
-  PointerSensor, useSensor, useSensors,
+  DndContext, DragEndEvent, DragStartEvent, DragOverlay,
+  useDraggable, useDroppable,
+  PointerSensor, TouchSensor, useSensor, useSensors,
 } from "@dnd-kit/core";
 import type { FieldPlacement } from "@/lib/pdf-overlay";
 
@@ -214,7 +215,7 @@ function SidebarField({
       {...listeners}
       {...attributes}
       title={`Arraste ou clique para adicionar`}
-      style={{ opacity: isDragging ? 0.35 : 1 }}
+      style={{ opacity: isDragging ? 0.15 : 1, transition: "opacity 0.15s, transform 0.15s", transform: isDragging ? "scale(0.95)" : "scale(1)" }}
       onClick={(e) => { e.stopPropagation(); onAdd(); }}
       className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg bg-stage-700 border border-stage-600 text-gray-300 cursor-grab active:cursor-grabbing hover:border-gold-500/40 hover:bg-stage-600/60 hover:text-white transition-all select-none"
     >
@@ -271,18 +272,24 @@ function FieldToken({
         fontFamily: font.fontFamily,
         fontWeight: font.fontWeight,
         fontStyle: font.fontStyle ?? "normal",
-        opacity: isDragging ? 0.45 : 1,
+        opacity: isDragging ? 0 : 1,
         zIndex: isSelected ? 20 : 10,
         cursor: isDragging ? "grabbing" : "grab",
         userSelect: "none",
         whiteSpace: "nowrap",
-        padding: "1px 2px",
-        borderRadius: 2,
+        padding: "2px 4px",
+        borderRadius: 3,
+        transition: "opacity 0.1s, box-shadow 0.15s",
         ...(isSelected
-          ? { outline: "1.5px solid #e6b800", outlineOffset: "2px", background: "rgba(230,184,0,0.07)" }
-          : { outline: "1px solid transparent" }),
+          ? {
+              outline: "1.5px solid #e6b800",
+              outlineOffset: "3px",
+              background: "rgba(230,184,0,0.08)",
+              boxShadow: "0 2px 14px rgba(230,184,0,0.25)",
+            }
+          : { outline: "1px dashed transparent" }),
       }}
-      className={isSelected ? "" : "hover:outline-blue-400/40 hover:outline hover:outline-1"}
+      className={isSelected ? "" : "hover:outline hover:outline-1 hover:outline-blue-400/50 hover:bg-white/5"}
     >
       {exampleValue || `[${placement.label}]`}
     </div>
@@ -311,7 +318,7 @@ function PdfCanvas({
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
   const [renderError, setRenderError] = useState<string | null>(null);
   const [rendering, setRendering] = useState(false);
-  const { setNodeRef: setDropRef } = useDroppable({ id: "pdf-canvas-drop" });
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: "pdf-canvas-drop" });
 
   // Track actual rendered container size — fixes intrinsic vs CSS-size mismatch
   useEffect(() => {
@@ -374,8 +381,14 @@ function PdfCanvas({
         containerRef.current = el;
       }}
       data-canvas-container
-      className="relative bg-white rounded-xl shadow-2xl overflow-hidden select-none"
-      style={{ minHeight: 200 }}
+      className="relative bg-white rounded-xl overflow-hidden select-none"
+      style={{
+        minHeight: 200,
+        boxShadow: isOver
+          ? "0 0 0 2px rgba(230,184,0,0.8), 0 20px 60px rgba(230,184,0,0.18), 0 8px 32px rgba(0,0,0,0.4)"
+          : "0 20px 60px rgba(0,0,0,0.35), 0 4px 16px rgba(0,0,0,0.2)",
+        transition: "box-shadow 0.2s ease",
+      }}
       onClick={() => onSelectField(null)}
     >
       {rendering && (
@@ -405,6 +418,67 @@ function PdfCanvas({
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Drag overlay preview ─────────────────────────────────────────────────────
+
+function FieldDragPreview({
+  sourceType,
+  label,
+  placement,
+  exampleValues,
+}: {
+  sourceType: "chip" | "token";
+  label: string;
+  placement?: FieldPlacement;
+  exampleValues: Record<string, string>;
+}) {
+  if (sourceType === "chip") {
+    return (
+      <div style={{
+        padding: "7px 14px",
+        borderRadius: 10,
+        background: "linear-gradient(135deg, #e6b800 0%, #f5c842 100%)",
+        color: "#0e1118",
+        fontWeight: 700,
+        fontSize: 13,
+        lineHeight: 1,
+        whiteSpace: "nowrap",
+        userSelect: "none",
+        cursor: "grabbing",
+        boxShadow: "0 16px 40px rgba(230,184,0,0.5), 0 4px 16px rgba(0,0,0,0.35)",
+        transform: "rotate(-2deg) scale(1.06)",
+        transformOrigin: "center",
+      }}>
+        {label}
+      </div>
+    );
+  }
+  if (!placement) return null;
+  const font = cssFontProps(placement.fontFamily);
+  const value = exampleValues[placement.key] ?? `[${label}]`;
+  return (
+    <div style={{
+      padding: "3px 6px",
+      borderRadius: 4,
+      background: "rgba(14,17,24,0.9)",
+      border: "1.5px solid #e6b800",
+      color: placement.color,
+      fontSize: `${placement.fontSize}px`,
+      fontFamily: font.fontFamily,
+      fontWeight: font.fontWeight,
+      fontStyle: font.fontStyle ?? "normal",
+      lineHeight: 1.3,
+      whiteSpace: "nowrap",
+      userSelect: "none",
+      cursor: "grabbing",
+      boxShadow: "0 10px 28px rgba(0,0,0,0.7), 0 0 0 3px rgba(230,184,0,0.18)",
+      transform: "rotate(-1.5deg) scale(1.1)",
+      transformOrigin: "center",
+    }}>
+      {value}
     </div>
   );
 }
@@ -440,7 +514,31 @@ export default function PdfTemplateEditor() {
   const [lastSaved, setLastSaved] = useState<string>("[]");
   const hasUnsaved = JSON.stringify(placements) !== lastSaved && !saving;
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<null | "fields" | "properties">(null);
+  const [activeDrag, setActiveDrag] = useState<{
+    sourceType: "chip" | "token";
+    label: string;
+    placement?: FieldPlacement;
+  } | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+  );
+
+  // Mobile detection
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // Auto-open properties panel when a field is selected on mobile
+  useEffect(() => {
+    if (isMobile && selectedId) setMobilePanel("properties");
+  }, [selectedId, isMobile]);
 
   // Load Google Fonts for canvas preview
   useEffect(() => {
@@ -521,8 +619,20 @@ export default function PdfTemplateEditor() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Drag start — capture active item for DragOverlay
+  function handleDragStart(event: DragStartEvent) {
+    const data = event.active.data.current as { type: string; field?: FieldDef; placementId?: string };
+    if (data.type === "new-field" && data.field) {
+      setActiveDrag({ sourceType: "chip", label: data.field.label });
+    } else if (data.type === "token" && data.placementId) {
+      const p = placementsRef.current.find((x) => x.id === data.placementId);
+      if (p) setActiveDrag({ sourceType: "token", label: p.label, placement: p });
+    }
+  }
+
   // Drag end handler
   function handleDragEnd(event: DragEndEvent) {
+    setActiveDrag(null);
     const { active, over, delta } = event;
     if (!over || over.id !== "pdf-canvas-drop") return;
 
@@ -737,7 +847,26 @@ export default function PdfTemplateEditor() {
   );
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveDrag(null)}
+    >
+      <DragOverlay
+        dropAnimation={{ duration: 180, easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)" }}
+        style={{ cursor: "grabbing" }}
+      >
+        {activeDrag ? (
+          <FieldDragPreview
+            sourceType={activeDrag.sourceType}
+            label={activeDrag.label}
+            placement={activeDrag.placement}
+            exampleValues={exampleValues}
+          />
+        ) : null}
+      </DragOverlay>
+
       {savedModal}
 
       <div className="flex flex-col h-[calc(100vh-64px)]">
@@ -792,7 +921,7 @@ export default function PdfTemplateEditor() {
 
           <button
             onClick={() => window.open(`/api/super/pdf-templates/${mapping.id}/test`, "_blank")}
-            className="px-3 py-1.5 rounded-xl border border-stage-500 text-gray-400 text-xs hover:text-white hover:border-stage-400 transition-colors shrink-0"
+            className="hidden md:inline-flex px-3 py-1.5 rounded-xl border border-stage-500 text-gray-400 text-xs hover:text-white hover:border-stage-400 transition-colors shrink-0"
           >
             Testar PDF
           </button>
@@ -820,7 +949,7 @@ export default function PdfTemplateEditor() {
         <div className="flex flex-1 overflow-hidden">
 
           {/* Left sidebar */}
-          <div className="w-48 shrink-0 border-r border-stage-600 bg-stage-800 overflow-y-auto flex flex-col">
+          <div className="hidden md:flex w-48 shrink-0 border-r border-stage-600 bg-stage-800 overflow-y-auto flex-col">
             <div className="p-3 space-y-4 flex-1">
               {FIELD_CATEGORIES.map((cat) => (
                 <div key={cat.category}>
@@ -897,7 +1026,7 @@ export default function PdfTemplateEditor() {
             </div>
 
             {/* Canvas scroll area */}
-            <div className="flex-1 overflow-auto p-6">
+            <div className="flex-1 overflow-auto p-4 md:p-6">
               <div
                 style={{ width: `${Math.round(zoom * 672)}px`, margin: "0 auto" }}
               >
@@ -911,10 +1040,34 @@ export default function PdfTemplateEditor() {
                 />
               </div>
             </div>
+
+            {/* Mobile action bar */}
+            <div className="flex md:hidden items-center gap-2 px-3 py-2 border-t border-stage-700 bg-stage-800 shrink-0">
+              <button
+                onClick={() => { setSelectedId(null); setMobilePanel("fields"); }}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-stage-700 border border-stage-600 text-white text-sm font-semibold"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Campo
+              </button>
+              {selectedPlacement && (
+                <button
+                  onClick={() => setMobilePanel("properties")}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gold-500/10 border border-gold-500/30 text-gold-400 text-sm font-semibold"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                  </svg>
+                  Editar
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Right — properties panel */}
-          <div className="w-52 shrink-0 border-l border-stage-600 bg-stage-800 overflow-y-auto">
+          <div className="hidden md:block w-52 shrink-0 border-l border-stage-600 bg-stage-800 overflow-y-auto">
             {selectedPlacement ? (
               <div className="p-3 space-y-3">
                 <div className="flex items-center justify-between">
@@ -1102,6 +1255,230 @@ export default function PdfTemplateEditor() {
           </div>
         </div>
       </div>
+
+      {/* ── Animations ───────────────────────────────────────────────────────── */}
+      <style>{`
+        @keyframes _sheet-up {
+          from { transform: translateY(100%); }
+          to   { transform: translateY(0);    }
+        }
+        @keyframes _backdrop-in {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+      `}</style>
+
+      {/* ── Mobile fields bottom sheet ─────────────────────────────────────── */}
+      {isMobile && mobilePanel === "fields" && (
+        <div
+          className="fixed inset-0 z-[200] flex flex-col justify-end"
+          style={{ background: "rgba(0,0,0,0.5)", animation: "_backdrop-in 0.2s ease-out both" }}
+          onClick={() => setMobilePanel(null)}
+        >
+          <div
+            className="bg-stage-800 border-t border-stage-600 rounded-t-2xl max-h-[72vh] flex flex-col"
+            style={{ animation: "_sheet-up 0.32s cubic-bezier(0.25, 1, 0.5, 1) both" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-center py-2 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-stage-600" />
+            </div>
+            <div className="flex items-center justify-between px-4 pb-3 shrink-0">
+              <p className="text-sm font-bold text-gray-200">Adicionar Campo</p>
+              <button onClick={() => setMobilePanel(null)} className="text-gray-500 p-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div className="overflow-y-auto px-4 pb-8 space-y-4">
+              {FIELD_CATEGORIES.map((cat) => (
+                <div key={cat.category}>
+                  <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-widest mb-2">{cat.category}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {cat.fields.map((f) => (
+                      <button
+                        key={f.key}
+                        onClick={() => { addFieldAtCenter(f); setMobilePanel(null); }}
+                        className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl bg-stage-700 border border-stage-600 text-gray-300 active:bg-stage-600 active:text-white transition-colors"
+                      >
+                        {f.label}
+                        {(placedCounts[f.key] ?? 0) > 0 && (
+                          <span className="min-w-[18px] text-center px-1 rounded-full bg-gold-500/25 text-gold-400 text-[10px] font-bold leading-[18px]">
+                            {placedCounts[f.key]}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Mobile properties bottom sheet ────────────────────────────────── */}
+      {isMobile && mobilePanel === "properties" && selectedPlacement && (
+        <div
+          className="fixed inset-0 z-[200] flex flex-col justify-end"
+          style={{ background: "rgba(0,0,0,0.5)", animation: "_backdrop-in 0.2s ease-out both" }}
+          onClick={() => setMobilePanel(null)}
+        >
+          <div
+            className="bg-stage-800 border-t border-stage-600 rounded-t-2xl max-h-[78vh] flex flex-col"
+            style={{ animation: "_sheet-up 0.32s cubic-bezier(0.25, 1, 0.5, 1) both" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-center py-2 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-stage-600" />
+            </div>
+            <div className="flex items-center justify-between px-4 pb-3 shrink-0">
+              <div>
+                <p className="text-sm font-bold text-gray-200">{selectedPlacement.label}</p>
+                <p className="text-[10px] text-gray-600 font-mono">{selectedPlacement.key}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { removePlacement(selectedPlacement.id); setMobilePanel(null); }}
+                  className="p-2 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                </button>
+                <button onClick={() => setMobilePanel(null)} className="text-gray-500 p-1">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="overflow-y-auto px-4 pb-10 space-y-4">
+              {/* Font size */}
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5 block">Tamanho</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range" min={5} max={48} step={0.5}
+                    value={selectedPlacement.fontSize}
+                    onChange={(e) => updatePlacement(selectedPlacement.id, { fontSize: Number(e.target.value) })}
+                    className="flex-1 accent-gold-500"
+                    style={{ height: "8px" }}
+                  />
+                  <input
+                    type="number" min={5} max={48} step={0.5}
+                    value={selectedPlacement.fontSize}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value);
+                      if (!isNaN(v)) updatePlacement(selectedPlacement.id, { fontSize: Math.max(5, Math.min(48, v)) });
+                    }}
+                    className="input-field w-16 text-sm text-center py-2"
+                  />
+                </div>
+              </div>
+              {/* Font family */}
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5 block">Fonte</label>
+                <select
+                  className="input-field text-sm w-full py-2.5"
+                  value={selectedPlacement.fontFamily}
+                  onChange={(e) => updatePlacement(selectedPlacement.id, { fontFamily: e.target.value })}
+                >
+                  <optgroup label="Helvetica">
+                    <option value="Helvetica">Regular</option>
+                    <option value="Helvetica-Bold">Bold</option>
+                    <option value="Helvetica-Oblique">Itálico</option>
+                    <option value="Helvetica-BoldOblique">Bold Itálico</option>
+                  </optgroup>
+                  <optgroup label="Times">
+                    <option value="Times-Roman">Regular</option>
+                    <option value="Times-Bold">Bold</option>
+                    <option value="Times-Italic">Itálico</option>
+                    <option value="Times-BoldItalic">Bold Itálico</option>
+                  </optgroup>
+                  <optgroup label="Courier">
+                    <option value="Courier">Regular</option>
+                    <option value="Courier-Bold">Bold</option>
+                    <option value="Courier-Oblique">Itálico</option>
+                    <option value="Courier-BoldOblique">Bold Itálico</option>
+                  </optgroup>
+                  <optgroup label="Google Fonts">
+                    <option value="Roboto">Roboto</option>
+                    <option value="Roboto-Bold">Roboto Bold</option>
+                    <option value="Roboto-Italic">Roboto Itálico</option>
+                    <option value="OpenSans">Open Sans</option>
+                    <option value="OpenSans-Bold">Open Sans Bold</option>
+                    <option value="Montserrat">Montserrat</option>
+                    <option value="Montserrat-Bold">Montserrat Bold</option>
+                    <option value="Lato">Lato</option>
+                    <option value="Lato-Bold">Lato Bold</option>
+                    <option value="Inter">Inter</option>
+                    <option value="Inter-Bold">Inter Bold</option>
+                    <option value="Raleway">Raleway</option>
+                    <option value="Raleway-Bold">Raleway Bold</option>
+                    <option value="Playfair">Playfair Display</option>
+                    <option value="Playfair-Bold">Playfair Display Bold</option>
+                    <option value="Merriweather">Merriweather</option>
+                    <option value="Merriweather-Bold">Merriweather Bold</option>
+                    <option value="PTSans">PT Sans</option>
+                    <option value="PTSans-Bold">PT Sans Bold</option>
+                    <option value="SourceSans">Source Sans 3</option>
+                    <option value="SourceSans-Bold">Source Sans 3 Bold</option>
+                  </optgroup>
+                </select>
+              </div>
+              {/* Color */}
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5 block">Cor</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={selectedPlacement.color}
+                    onChange={(e) => updatePlacement(selectedPlacement.id, { color: e.target.value })}
+                    className="w-10 h-10 rounded-xl border border-stage-500 bg-stage-700 cursor-pointer p-0.5 shrink-0"
+                  />
+                  <input
+                    className="input-field font-mono uppercase text-sm flex-1 py-2.5"
+                    value={selectedPlacement.color}
+                    maxLength={7}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (/^#[0-9a-fA-F]{0,6}$/.test(v)) updatePlacement(selectedPlacement.id, { color: v });
+                    }}
+                  />
+                </div>
+              </div>
+              {/* Page selector (only if multiple pages) */}
+              {mapping.pageCount > 1 && (
+                <div>
+                  <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5 block">Página</label>
+                  <select
+                    className="input-field text-sm w-full py-2.5"
+                    value={selectedPlacement.page}
+                    onChange={(e) => updatePlacement(selectedPlacement.id, { page: Number(e.target.value) })}
+                  >
+                    {Array.from({ length: mapping.pageCount }, (_, i) => (
+                      <option key={i} value={i}>Página {i + 1}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {/* Duplicate */}
+              <button
+                onClick={() => { duplicatePlacement(selectedPlacement.id); setMobilePanel("properties"); }}
+                className="w-full py-3 rounded-xl border border-stage-500 text-gray-400 text-sm font-semibold active:text-white flex items-center justify-center gap-2 transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                Duplicar campo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </DndContext>
   );
 }

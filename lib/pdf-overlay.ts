@@ -1,6 +1,8 @@
 import { PDFDocument, StandardFonts, rgb, PDFFont } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
 import { buildVars } from "@/lib/templates/contrato/build-from-clausulas";
 import { formatData, valorPorExtenso } from "@/lib/templates/utils";
+import { logger } from "@/lib/logger";
 
 export type FieldPlacement = {
   id: string;
@@ -62,32 +64,54 @@ const GOOGLE_FONT_SPECS: Record<string, { family: string; weight: number; italic
 // Module-level cache: survives across requests in the same Node.js process
 const googleFontBytesCache = new Map<string, Buffer>();
 
+// Google Fonts v1 API uses legacy family names for some fonts
+const V1_FAMILY_ALIASES: Record<string, string> = {
+  "Source Sans 3": "Source Sans Pro",
+};
+
 async function fetchGoogleFontTTF(key: string): Promise<Buffer | null> {
   if (googleFontBytesCache.has(key)) return googleFontBytesCache.get(key)!;
 
   const spec = GOOGLE_FONT_SPECS[key];
   if (!spec) return null;
 
-  try {
-    const italic = spec.italic ? "1," : "0,";
-    const cssUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(spec.family)}:ital,wght@${italic}${spec.weight}&display=swap`;
+  const UA = "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)";
 
-    // Old IE user-agent → Google Fonts returns TTF format instead of WOFF2
-    const cssRes = await fetch(cssUrl, {
-      headers: { "User-Agent": "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)" },
-    });
-    const css = await cssRes.text();
+  // Try v1 API first — IE6 UA reliably returns TTF format from v1
+  // v2 (/css2) ignores the UA and always returns WOFF2
+  const v1Family = V1_FAMILY_ALIASES[spec.family] ?? spec.family;
+  const v1Weight = spec.italic ? `${spec.weight}italic` : `${spec.weight}`;
 
-    const match = css.match(/src:\s*url\(([^)]+\.ttf)\)/i) ?? css.match(/url\(([^)]+\.ttf)\)/i);
-    if (!match) return null;
+  const cssUrls = [
+    `https://fonts.googleapis.com/css?family=${encodeURIComponent(v1Family)}:${v1Weight}`,
+    `https://fonts.googleapis.com/css2?family=${encodeURIComponent(spec.family)}:ital,wght@${spec.italic ? "1," : "0,"}${spec.weight}&display=swap`,
+  ];
 
-    const fontRes = await fetch(match[1]);
-    const bytes = Buffer.from(await fontRes.arrayBuffer());
-    googleFontBytesCache.set(key, bytes);
-    return bytes;
-  } catch {
-    return null;
+  for (const cssUrl of cssUrls) {
+    try {
+      const cssRes = await fetch(cssUrl, {
+        headers: { "User-Agent": UA },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!cssRes.ok) continue;
+      const css = await cssRes.text();
+
+      const match = css.match(/src:\s*url\(([^)]+\.ttf)\)/i) ?? css.match(/url\(([^)]+\.ttf)\)/i);
+      if (!match) continue;
+
+      const fontRes = await fetch(match[1], { signal: AbortSignal.timeout(8000) });
+      if (!fontRes.ok) continue;
+
+      const bytes = Buffer.from(await fontRes.arrayBuffer());
+      googleFontBytesCache.set(key, bytes);
+      return bytes;
+    } catch {
+      continue;
+    }
   }
+
+  logger.warn({ fontKey: key }, "pdf-overlay: font download failed, falling back to Helvetica");
+  return null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -148,6 +172,7 @@ export async function applyFieldsToBasePdf(
   placements: FieldPlacement[]
 ): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.load(basePdfBuffer);
+  pdfDoc.registerFontkit(fontkit);
   const pages = pdfDoc.getPages();
 
   const byPage = new Map<number, FieldPlacement[]>();
@@ -169,7 +194,7 @@ export async function applyFieldsToBasePdf(
         if (bytes) {
           fontCache.set(fam, await pdfDoc.embedFont(bytes));
         } else {
-          // Fallback to Helvetica if font unavailable
+          logger.warn({ fontFamily: fam }, "pdf-overlay: using Helvetica fallback — font unavailable");
           fontCache.set(fam, await pdfDoc.embedFont(StandardFonts.Helvetica));
         }
       }
