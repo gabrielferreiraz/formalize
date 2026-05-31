@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import Image from "next/image";
 import NavLink from "./super-admin/components/NavLink";
 import SignOutButton from "./super-admin/components/SignOutButton";
+import SuperBottomNav from "./super-admin/components/SuperBottomNav";
 
 export default async function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -21,7 +22,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
               height={32}
               style={{ width: 32, height: 32, borderRadius: 8 }}
             />
-            <nav className="flex items-center gap-1">
+            <nav className="hidden md:flex items-center gap-1">
               <NavLink href="/super-admin">Dashboard</NavLink>
               <NavLink href="/super-admin/artistas">Artistas</NavLink>
               <NavLink href="/super-admin/solicitacoes">Solicitações</NavLink>
@@ -36,7 +37,8 @@ export default async function SuperAdminLayout({ children }: { children: React.R
           </div>
         </div>
       </header>
-      <main className="max-w-6xl mx-auto px-4 py-8">{children}</main>
+      <main className="max-w-6xl mx-auto px-4 py-8 pb-24 md:pb-8">{children}</main>
+      <SuperBottomNav />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(document);
   } catch (error) {
-    console.error("[generic-event-create] Error:", error);
+    logger.error({ err: error, artistId: session.user.artistId, action: "generic-event.create" }, "failed to create generic event");
     return NextResponse.json({ error: "Erro ao criar evento" }, { status: 500 });
   }
 }

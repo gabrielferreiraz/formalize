@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import bcrypt from "bcryptjs";
 
 export async function GET(req: NextRequest) {
@@ -53,7 +54,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(artist);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    logger.error({ err: error, action: "super.artist.create" }, "failed to create artist");
+    return NextResponse.json({ error: "Erro interno ao criar artista" }, { status: 500 });
   }
 }

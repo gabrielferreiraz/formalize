@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { deleteFromR2, getKeyFromUrl } from "@/lib/r2";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -86,9 +87,9 @@ export async function DELETE(req: NextRequest) {
   await Promise.all([
     prisma.document.delete({ where: { id } }),
     doc.pdfUrl
-      ? deleteFromR2(getKeyFromUrl(doc.pdfUrl)).catch((err) =>
-          console.error("[doc-delete] R2 delete failed:", doc.pdfUrl, err)
-        )
+      ? deleteFromR2(getKeyFromUrl(doc.pdfUrl)).catch((err) => {
+          logger.warn({ err, docId: doc.id, action: "doc.delete" }, "R2 delete failed — storage object orphaned");
+        })
       : Promise.resolve(),
   ]);
 

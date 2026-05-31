@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendWhatsAppTextMessage } from "@/lib/whatsapp";
 
 export async function POST(req: NextRequest) {
   let body: { name: string; email: string; whatsapp: string; artistName: string; message?: string; categoria?: string; temContrato?: boolean };
@@ -52,6 +53,33 @@ export async function POST(req: NextRequest) {
       categoria: categoria?.trim() || null,
       temContrato: temContrato === true,
     },
+  });
+
+  // Notify owner — fire and forget, never blocks the response
+  const appUrl = process.env.NEXT_PUBLIC_ROOT_DOMAIN
+    ? `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`
+    : "https://app.formalize.com.br";
+
+  const lines = [
+    "🎵 *Nova solicitação no Formalize!*",
+    "",
+    `*Nome:* ${name.trim()}`,
+    `*Artista:* ${artistName.trim()}`,
+    ...(categoria?.trim() ? [`*Categoria:* ${categoria.trim()}`] : []),
+    `*WhatsApp:* ${whatsapp.trim()}`,
+    `*E-mail:* ${email.trim()}`,
+    `*Tem contrato próprio:* ${temContrato ? "Sim ✅" : "Não"}`,
+    ...(message?.trim() ? ["", `*Mensagem:* "${message.trim()}"`] : []),
+    "",
+    `👉 ${appUrl}/super-admin/solicitacoes`,
+  ];
+
+  sendWhatsAppTextMessage({
+    number: process.env.ADMIN_NOTIFY_WHATSAPP ?? "5567981783902",
+    message: lines.join("\n"),
+  }).catch((err: unknown) => {
+    const { logger } = require("@/lib/logger");
+    logger.warn({ err, action: "notify.new-request" }, "WhatsApp admin notification failed");
   });
 
   return NextResponse.json({ ok: true });

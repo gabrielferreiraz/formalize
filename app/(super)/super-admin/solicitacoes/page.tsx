@@ -381,7 +381,7 @@ export default function SolicitacoesPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="flex gap-1">
+        <div className="flex gap-1 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
           {(["ALL", "PENDING", "APPROVED", "REJECTED"] as const).map((s) => (
             <button
               key={s}

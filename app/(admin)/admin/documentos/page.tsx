@@ -165,6 +165,33 @@ function getDocNumber(doc: Doc): string {
   return doc.id ? String(doc.id).split('-')[0].toUpperCase() : "DOC";
 }
 
+function buildGCalLink(doc: Doc): string {
+  const d = doc.data ?? {};
+  const dateStr = (d.data as string) || dayKey(new Date(doc.createdAt));
+  const [y, m, dy] = dateStr.split("-");
+  const horario = (d.horario as string) || "";
+  const tm = horario.match(/(\d{1,2})[:h](\d{0,2})/);
+  let datePart: string;
+  if (tm) {
+    const h = String(parseInt(tm[1], 10)).padStart(2, "0");
+    const mi = String(parseInt(tm[2] || "0", 10)).padStart(2, "0");
+    const eh = String((parseInt(tm[1], 10) + 2) % 24).padStart(2, "0");
+    datePart = `${y}${m}${dy}T${h}${mi}00/${y}${m}${dy}T${eh}${mi}00`;
+  } else {
+    const nd = new Date(parseInt(y), parseInt(m) - 1, parseInt(dy) + 1);
+    datePart = `${y}${m}${dy}/${nd.getFullYear()}${String(nd.getMonth() + 1).padStart(2, "0")}${String(nd.getDate()).padStart(2, "0")}`;
+  }
+  const title = encodeURIComponent(
+    doc.type === "GENERIC_EVENT"
+      ? doc.title
+      : parseEventName(doc) + ((d.evento as string) ? ` — ${d.evento}` : "")
+  );
+  const loc = parseEventLocal(doc);
+  let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${datePart}`;
+  if (loc && loc !== "Local não informado") url += `&location=${encodeURIComponent(loc)}`;
+  return url;
+}
+
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 export default function DocumentosPage() {
@@ -800,80 +827,120 @@ export default function DocumentosPage() {
           onClick={() => setSelectedDoc(null)}
         >
           <div
-            className="bg-stage-800 border border-stage-600 rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl animate-scale-in"
+            className="bg-stage-800 border border-stage-600 rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <span className={`inline-block text-[9px] font-bold px-2 py-0.5 rounded-[4px] border uppercase tracking-wider mb-2 ${selectedDoc.type === "CONTRACT" ? "bg-blue-500/10 border-blue-500/30 text-blue-400" : "bg-gold-500/10 border-gold-500/30 text-gold-400"}`}>
-                  {TYPE_LABEL[selectedDoc.type]}
-                </span>
-                <h3 className="text-lg font-bold text-gray-100">{parseDataName(selectedDoc)}</h3>
-                <p className="text-xs text-gray-400 mt-1">{parseEventLocal(selectedDoc)}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedDoc(null)}
-                className="text-gray-500 hover:text-gray-200"
-              >
-                ✕
-              </button>
-            </div>
+            {/* Faixa colorida no topo por tipo */}
+            <div className={`h-1 w-full ${selectedDoc.type === "CONTRACT" ? "bg-blue-500" : selectedDoc.type === "BUDGET" ? "bg-gold-500" : "bg-emerald-500"}`} />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <div className="rounded-xl border border-stage-600 bg-stage-900/50 px-3 py-2">
-                <p className="text-[10px] uppercase font-bold tracking-wider text-gray-500 mb-0.5">Data do evento</p>
-                <p className="text-gray-200 font-medium text-sm">{eventDateLabel(selectedDoc)}</p>
+            <div className="p-6 space-y-5">
+              {/* Cabeçalho */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <span className={`inline-block text-[9px] font-bold px-2 py-0.5 rounded-[4px] border uppercase tracking-wider mb-2 ${selectedDoc.type === "CONTRACT" ? "bg-blue-500/10 border-blue-500/30 text-blue-400" : selectedDoc.type === "BUDGET" ? "bg-gold-500/10 border-gold-500/30 text-gold-400" : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"}`}>
+                    {TYPE_LABEL[selectedDoc.type]}
+                  </span>
+                  <h3 className="text-lg font-bold text-gray-100 leading-snug">
+                    {selectedDoc.type === "GENERIC_EVENT" ? selectedDoc.title : parseDataName(selectedDoc)}
+                  </h3>
+                  {selectedDoc.type !== "GENERIC_EVENT" && (
+                    <p className="text-xs text-gray-500 mt-1 truncate">{parseEventLocal(selectedDoc)}</p>
+                  )}
+                </div>
+                <button type="button" onClick={() => setSelectedDoc(null)} className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-200 hover:bg-stage-700 transition-colors text-sm">✕</button>
               </div>
-              <div className="rounded-xl border border-stage-600 bg-stage-900/50 px-3 py-2">
-                <p className="text-[10px] uppercase font-bold tracking-wider text-gray-500 mb-0.5">Cache</p>
-                <p className="text-gold-400 font-bold font-mono text-sm">{formatMoneyFromCache(selectedDoc.data?.cache)}</p>
-              </div>
-              <div className="rounded-xl border border-stage-600 bg-stage-900/50 px-3 py-2">
-                <p className="text-[10px] uppercase font-bold tracking-wider text-gray-500 mb-0.5">Gerado em</p>
-                <p className="text-gray-200 font-medium text-sm">{formatDate(selectedDoc.createdAt)}</p>
-              </div>
-              <div className="rounded-xl border border-stage-600 bg-stage-900/50 px-3 py-2">
-                <p className="text-[10px] uppercase font-bold tracking-wider text-gray-500 mb-0.5">Assinado em</p>
-                <p className="text-gray-200 font-medium text-sm">
-                  {selectedDoc.type === "CONTRACT" && selectedDoc.sentAt ? formatDate(selectedDoc.sentAt) : "—"}
+
+              {/* Detalhes — conteúdo diferente por tipo */}
+              {selectedDoc.type === "GENERIC_EVENT" ? (
+                <div className="space-y-2">
+                  <div className="rounded-xl border border-stage-600 bg-stage-900/50 px-3 py-2.5">
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-gray-500 mb-0.5">Data &amp; Hora</p>
+                    <p className="text-gray-200 font-medium text-sm">{eventDateLabel(selectedDoc)}</p>
+                  </div>
+                  {!!selectedDoc.data?.notes && (
+                    <div className="rounded-xl border border-stage-600 bg-stage-900/50 px-3 py-2.5">
+                      <p className="text-[10px] uppercase font-bold tracking-wider text-gray-500 mb-0.5">Anotações</p>
+                      <p className="text-gray-300 text-sm leading-relaxed">{String(selectedDoc.data.notes)}</p>
+                    </div>
+                  )}
+                  <div className="rounded-xl border border-stage-600 bg-stage-900/50 px-3 py-2.5">
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-gray-500 mb-0.5">Criado em</p>
+                    <p className="text-gray-400 text-sm">{formatDate(selectedDoc.createdAt)}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl border border-stage-600 bg-stage-900/50 px-3 py-2.5">
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-gray-500 mb-0.5">Data do evento</p>
+                    <p className="text-gray-200 font-medium text-sm">{eventDateLabel(selectedDoc)}</p>
+                  </div>
+                  <div className="rounded-xl border border-stage-600 bg-stage-900/50 px-3 py-2.5">
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-gray-500 mb-0.5">Cachê</p>
+                    <p className="text-gold-400 font-bold font-mono text-sm">{formatMoneyFromCache(selectedDoc.data?.cache)}</p>
+                  </div>
+                  <div className="rounded-xl border border-stage-600 bg-stage-900/50 px-3 py-2.5">
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-gray-500 mb-0.5">Gerado em</p>
+                    <p className="text-gray-400 text-sm">{formatDate(selectedDoc.createdAt)}</p>
+                  </div>
+                  <div className="rounded-xl border border-stage-600 bg-stage-900/50 px-3 py-2.5">
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-gray-500 mb-0.5">Assinado em</p>
+                    <p className="text-gray-400 text-sm">
+                      {selectedDoc.type === "CONTRACT" && selectedDoc.sentAt ? formatDate(selectedDoc.sentAt) : "—"}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {!selectedDoc.pdfUrl && selectedDoc.type !== "GENERIC_EVENT" && (
+                <p className="text-[11px] text-amber-300/80 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2.5 leading-relaxed">
+                  O PDF foi removido automaticamente. Os dados estão preservados — clique em <strong>Gerar PDF</strong> para recriar.
                 </p>
-              </div>
-            </div>
+              )}
 
-            {!selectedDoc.pdfUrl && selectedDoc.type !== "GENERIC_EVENT" && (
-              <p className="text-[11px] text-amber-300/80 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2.5 leading-relaxed">
-                O PDF foi removido automaticamente pela política de armazenamento do plano. Os dados estão preservados — clique em <strong>Gerar PDF</strong> para recriar.
-              </p>
-            )}
-
-            <div className="flex justify-between gap-2 pt-2 border-t border-stage-700">
-              <button
-                onClick={() => {
-                  setPendingDelete({ id: selectedDoc.id, title: selectedDoc.title || "este documento" });
-                  setSelectedDoc(null);
-                }}
-                disabled={deleting === selectedDoc.id}
-                className="px-4 py-2 text-xs font-semibold rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+              {/* Google Agenda */}
+              <a
+                href={buildGCalLink(selectedDoc)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-stage-600 text-gray-400 hover:border-blue-500/40 hover:text-blue-300 text-xs font-medium transition-colors"
               >
-                Excluir
-              </button>
-              <div className="flex gap-2">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                Adicionar ao Google Agenda
+              </a>
+
+              {/* Rodapé */}
+              <div className="flex justify-between gap-2 pt-2 border-t border-stage-700">
                 <button
-                  type="button"
-                  onClick={() => setSelectedDoc(null)}
-                  className="px-4 py-2 text-xs font-medium rounded-xl border border-stage-500 text-gray-400 hover:text-gray-200 hover:border-stage-400 transition-colors"
+                  onClick={() => {
+                    setPendingDelete({ id: selectedDoc.id, title: selectedDoc.title || "este documento" });
+                    setSelectedDoc(null);
+                  }}
+                  disabled={deleting === selectedDoc.id}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
                 >
-                  Fechar
+                  Excluir
                 </button>
-                <button
-                  type="button"
-                  onClick={() => void openOrGenerate(selectedDoc)}
-                  disabled={regenerating}
-                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-gold-500 hover:bg-gold-400 text-stage-900 transition-colors disabled:opacity-40 shadow-md"
-                >
-                  {selectedDoc.pdfUrl ? "Abrir PDF" : regenerating ? "Gerando..." : "Gerar PDF"}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDoc(null)}
+                    className="px-4 py-2 text-xs font-medium rounded-xl border border-stage-500 text-gray-400 hover:text-gray-200 hover:border-stage-400 transition-colors"
+                  >
+                    Fechar
+                  </button>
+                  {selectedDoc.type !== "GENERIC_EVENT" && (
+                    <button
+                      type="button"
+                      onClick={() => void openOrGenerate(selectedDoc)}
+                      disabled={regenerating}
+                      className="px-4 py-2 text-xs font-semibold rounded-xl bg-gold-500 hover:bg-gold-400 text-stage-900 transition-colors disabled:opacity-40 shadow-md"
+                    >
+                      {selectedDoc.pdfUrl ? "Abrir PDF" : regenerating ? "Gerando..." : "Gerar PDF"}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -917,8 +984,7 @@ export default function DocumentosPage() {
             <div className="flex-1 overflow-y-auto pr-1 space-y-6">
               {/* Quick Add Form - Estilo Google Agenda */}
               <div className="bg-stage-900/40 border border-stage-700/50 rounded-2xl p-5 space-y-4 shadow-inner">
-                <input 
-                  autoFocus
+                <input
                   placeholder="Adicionar título (ex: Show Particular, Viagem)"
                   className="w-full bg-transparent border-b border-stage-700 py-2 text-lg font-bold text-gray-100 outline-none focus:border-emerald-500 transition-colors placeholder-gray-700"
                   value={newEventTitle}
@@ -975,9 +1041,23 @@ export default function DocumentosPage() {
                       >
                         <div className="flex items-center justify-between gap-2 min-w-0">
                           <span className="font-bold text-sm truncate min-w-0">{parseDataName(doc)}</span>
-                          <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-black/20 tracking-tighter shrink-0 opacity-60">
-                            {TYPE_LABEL[doc.type]}
-                          </span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <a
+                              href={buildGCalLink(doc)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={e => e.stopPropagation()}
+                              className="p-1 rounded opacity-50 hover:opacity-100 transition-opacity"
+                              title="Adicionar ao Google Agenda"
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                              </svg>
+                            </a>
+                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-black/20 tracking-tighter opacity-60">
+                              {TYPE_LABEL[doc.type]}
+                            </span>
+                          </div>
                         </div>
                         <div className="flex items-center justify-between gap-2 mt-0.5 min-w-0">
                           <div className="flex items-center gap-1.5 text-[11px] opacity-60 min-w-0 overflow-hidden">

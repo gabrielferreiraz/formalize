@@ -6,10 +6,8 @@ export async function fetchWithCache(
 ): Promise<{ buffer: Buffer; mime: string }> {
   const cached = cache.get(url);
   if (cached && Date.now() - cached.cachedAt < TTL) {
-    console.log("cache HIT:", url);
     return { buffer: cached.buffer, mime: cached.mime };
   }
-  console.log("cache MISS:", url);
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Fetch failed: ${url} (${res.status})`);
   const mime = res.headers.get("content-type") || "application/octet-stream";

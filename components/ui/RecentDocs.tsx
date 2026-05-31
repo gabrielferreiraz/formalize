@@ -33,6 +33,31 @@ function extractSubtitle(doc: Doc): string {
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
+function buildGCalLink(doc: Doc): string {
+  const d = doc.data;
+  const dateStr = (d.data as string) || new Date(doc.createdAt).toISOString().slice(0, 10);
+  const [y, m, dy] = dateStr.split("-");
+  const horario = (d.horario as string) || "";
+  const tm = horario.match(/(\d{1,2})[:h](\d{0,2})/);
+  let datePart: string;
+  if (tm) {
+    const h = String(parseInt(tm[1], 10)).padStart(2, "0");
+    const mi = String(parseInt(tm[2] || "0", 10)).padStart(2, "0");
+    const eh = String((parseInt(tm[1], 10) + 2) % 24).padStart(2, "0");
+    datePart = `${y}${m}${dy}T${h}${mi}00/${y}${m}${dy}T${eh}${mi}00`;
+  } else {
+    const nd = new Date(parseInt(y), parseInt(m) - 1, parseInt(dy) + 1);
+    datePart = `${y}${m}${dy}/${nd.getFullYear()}${String(nd.getMonth() + 1).padStart(2, "0")}${String(nd.getDate()).padStart(2, "0")}`;
+  }
+  const contratante = (d.contratanteNome as string) || (d.contratante as string) || "";
+  const evento = (d.evento as string) || "";
+  const title = encodeURIComponent(contratante ? `${contratante}${evento ? ` — ${evento}` : ""}` : doc.title);
+  const local = (d.local as string) || (d.cidade as string) || "";
+  let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${datePart}`;
+  if (local) url += `&location=${encodeURIComponent(local)}`;
+  return url;
+}
+
 const EXEMPLOS = {
   BUDGET: [
     { contratante: "João da Silva", evento: "Aniversário 30 Anos", data: "15/06/26" },
@@ -98,6 +123,17 @@ export function RecentDocs({ type, onLoad, onToContrato }: Props) {
             </div>
 
             <div className="flex items-center gap-1.5 shrink-0">
+              <a
+                href={buildGCalLink(doc)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 text-gray-600 hover:text-blue-400 transition-colors"
+                title="Adicionar ao Google Agenda"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+              </a>
               {doc.pdfUrl && (
                 <a
                   href={doc.pdfUrl}

@@ -134,9 +134,9 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account }) {
       // Login via credentials — user já vem com role e artistId
       if (user && account?.provider === "credentials") {
-        logger.info(
-          { userId: user.id, role: user.role, artistId: user.artistId, forcePasswordChange: (user as any).forcePasswordChange, action: "auth.jwt" },
-          "[DEBUG] jwt: credentials login — building token"
+        logger.debug(
+          { userId: user.id, role: user.role, artistId: user.artistId, action: "auth.jwt" },
+          "jwt: credentials login — building token"
         );
         token.id = user.id;
         token.role = user.role;
@@ -152,9 +152,9 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await prisma.user.findFirst({
           where: { email: token.email },
         });
-        logger.info(
-          { email: token.email, found: !!dbUser, userId: dbUser?.id, role: dbUser?.role, artistId: dbUser?.artistId, action: "auth.jwt" },
-          "[DEBUG] jwt: google login — db lookup"
+        logger.debug(
+          { found: !!dbUser, userId: dbUser?.id, role: dbUser?.role, action: "auth.jwt" },
+          "jwt: google login — db lookup"
         );
         if (dbUser) {
           token.id = dbUser.id;
@@ -171,9 +171,9 @@ export const authOptions: NextAuthOptions = {
       const validatedAt = token.validatedAt ?? 0;
       const tokenAgeMs = Date.now() - validatedAt;
       if (token.id && tokenAgeMs > 5 * 60 * 1000) {
-        logger.info(
-          { tokenId: token.id, role: token.role, artistId: token.artistId, tokenAgeMs, action: "auth.jwt" },
-          "[DEBUG] jwt: token renewal — re-validating with DB"
+        logger.debug(
+          { tokenAgeMs, action: "auth.jwt" },
+          "jwt: token renewal — re-validating with DB"
         );
         try {
           const dbUser = await prisma.user.findUnique({
@@ -181,7 +181,7 @@ export const authOptions: NextAuthOptions = {
             select: { active: true },
           });
           if (!dbUser || !dbUser.active) {
-            logger.warn({ tokenId: token.id, dbFound: !!dbUser, dbActive: dbUser?.active, action: "auth.jwt" }, "[DEBUG] jwt: renewal — user inactive/not found, revoking token");
+            logger.warn({ dbFound: !!dbUser, dbActive: dbUser?.active, action: "auth.jwt" }, "jwt: renewal — user inactive/not found, revoking token");
             token.active = false;
             token.artistId = null;
             token.validatedAt = Date.now();
@@ -192,9 +192,9 @@ export const authOptions: NextAuthOptions = {
               where: { id: token.artistId as string },
               select: { status: true },
             });
-            logger.info({ artistId: token.artistId, artistStatus: artist?.status, action: "auth.jwt" }, "[DEBUG] jwt: renewal — artist status check");
+            logger.debug({ artistStatus: artist?.status, action: "auth.jwt" }, "jwt: renewal — artist status check");
             if (artist?.status !== "ACTIVE") {
-              logger.warn({ tokenId: token.id, artistId: token.artistId, artistStatus: artist?.status, action: "auth.jwt" }, "[DEBUG] jwt: renewal — artist suspended, revoking token");
+              logger.warn({ artistStatus: artist?.status, action: "auth.jwt" }, "jwt: renewal — artist suspended, revoking token");
               token.active = false;
               token.artistId = null;
               token.validatedAt = Date.now();
@@ -203,15 +203,15 @@ export const authOptions: NextAuthOptions = {
           }
           token.active = true;
           token.validatedAt = Date.now();
-          logger.info({ tokenId: token.id, action: "auth.jwt" }, "[DEBUG] jwt: renewal — token revalidated OK");
+          logger.debug({ action: "auth.jwt" }, "jwt: renewal — token revalidated OK");
         } catch (err) {
-          logger.error({ err, tokenId: token.id, action: "auth.jwt" }, "[DEBUG] jwt: renewal — DB error, failing open");
+          logger.error({ err, action: "auth.jwt" }, "jwt: renewal — DB error, failing open");
           // On transient DB error, fail open — don't lock out users due to infrastructure issues
         }
       } else {
         logger.debug(
-          { tokenId: token.id, role: token.role, tokenAgeMs, action: "auth.jwt" },
-          "[DEBUG] jwt: pass-through — token still fresh"
+          { action: "auth.jwt" },
+          "jwt: pass-through — token still fresh"
         );
       }
 
@@ -226,9 +226,9 @@ export const authOptions: NextAuthOptions = {
         session.user.forcePasswordChange = (token.forcePasswordChange as boolean) ?? false;
         session.user.active = (token.active as boolean) ?? true;
       }
-      logger.info(
-        { userId: session.user?.id, role: session.user?.role, artistId: session.user?.artistId, forcePasswordChange: session.user?.forcePasswordChange, active: session.user?.active, action: "auth.session" },
-        "[DEBUG] session callback — session built"
+      logger.debug(
+        { userId: session.user?.id, role: session.user?.role, action: "auth.session" },
+        "session callback — session built"
       );
       return session;
     },

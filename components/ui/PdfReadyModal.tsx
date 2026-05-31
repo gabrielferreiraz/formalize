@@ -46,8 +46,7 @@ export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalPr
         await navigator.clipboard.writeText(pdfUrl);
         alert("Link copiado para a área de transferência!");
       }
-    } catch (err) {
-      console.error("Erro ao compartilhar", err);
+    } catch {
       // Fallback para link se der erro no download
       if (navigator.share) {
         navigator.share({ url: pdfUrl });
@@ -75,8 +74,7 @@ export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalPr
         const text = encodeURIComponent(`${label} gerado pelo Formalize:\n${pdfUrl}`);
         window.open(`https://wa.me/?text=${text}`, '_blank');
       }
-    } catch (err) {
-      console.error("Erro ao compartilhar arquivo no WhatsApp", err);
+    } catch {
       // Fallback básico em caso de erro no fetch
       const text = encodeURIComponent(`${label} gerado pelo Formalize:\n${pdfUrl}`);
       window.open(`https://wa.me/?text=${text}`, '_blank');
