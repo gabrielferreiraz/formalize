@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   const artists = await prisma.artist.findMany({
     include: {
-      _count: { select: { documents: true } },
+      _count: { select: { documents: true, users: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -28,9 +28,9 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { name, subdomain, email, password, primaryColor } = body;
+  const { name, email, password, primaryColor } = body;
 
-  if (!name || !subdomain || !email || !password) {
+  if (!name || !email || !password) {
     return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 });
   }
 
@@ -40,7 +40,6 @@ export async function POST(req: NextRequest) {
     const artist = await prisma.artist.create({
       data: {
         name,
-        subdomain,
         primaryColor: primaryColor || "#000000",
         users: {
           create: {

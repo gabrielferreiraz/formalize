@@ -47,7 +47,6 @@ enum DocumentType {
 model Artist {
   id           String      @id @default(cuid())
   name         String
-  subdomain    String      @unique
   customDomain String?     @unique
   logoUrl      String?
   backgroundUrl String?
@@ -221,7 +220,6 @@ model ArtistRequest {
   email      String
   whatsapp   String
   artistName String
-  subdomain  String
 
   message     String?
   categoria   String?

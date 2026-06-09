@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useReducer, useCallback } from "react";
+import { useEffect, useRef, useState, useReducer, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   DndContext, DragEndEvent, DragStartEvent, DragOverlay,
@@ -119,10 +119,127 @@ const GOOGLE_FONTS_URL =
   "&family=Merriweather:wght@400;700" +
   "&family=PT+Sans:wght@400;700" +
   "&family=Source+Sans+3:wght@400;700" +
-  "&display=swap";
+  "&display=block"; // block = FOIT until font ready (prevents fallback flash)
+
+// Standard PDF fonts — always available, no async loading needed
+const STANDARD_FONT_KEYS = new Set([
+  "Helvetica", "Helvetica-Bold", "Helvetica-Oblique", "Helvetica-BoldOblique",
+  "Times-Roman", "Times-Bold", "Times-Italic", "Times-BoldItalic",
+  "Courier", "Courier-Bold", "Courier-Oblique", "Courier-BoldOblique",
+]);
 
 function cssFontProps(family: string): CssFontDef {
   return CSS_FONT[family] ?? { fontFamily: "Helvetica, Arial, sans-serif", fontWeight: 400 };
+}
+
+// ─── Font picker ──────────────────────────────────────────────────────────────
+
+const FONT_GROUPS: { group: string; fonts: { value: string; label: string; variant: string }[] }[] = [
+  {
+    group: "Padrão PDF",
+    fonts: [
+      { value: "Helvetica",             label: "Helvetica",      variant: "Regular" },
+      { value: "Helvetica-Bold",        label: "Helvetica",      variant: "Bold" },
+      { value: "Helvetica-Oblique",     label: "Helvetica",      variant: "Itálico" },
+      { value: "Helvetica-BoldOblique", label: "Helvetica",      variant: "Bold Itálico" },
+      { value: "Times-Roman",           label: "Times New Roman",variant: "Regular" },
+      { value: "Times-Bold",            label: "Times New Roman",variant: "Bold" },
+      { value: "Times-Italic",          label: "Times New Roman",variant: "Itálico" },
+      { value: "Times-BoldItalic",      label: "Times New Roman",variant: "Bold Itálico" },
+      { value: "Courier",               label: "Courier New",    variant: "Regular" },
+      { value: "Courier-Bold",          label: "Courier New",    variant: "Bold" },
+      { value: "Courier-Oblique",       label: "Courier New",    variant: "Itálico" },
+      { value: "Courier-BoldOblique",   label: "Courier New",    variant: "Bold Itálico" },
+    ],
+  },
+  {
+    group: "Google Fonts",
+    fonts: [
+      { value: "Roboto",          label: "Roboto",          variant: "Regular" },
+      { value: "Roboto-Bold",     label: "Roboto",          variant: "Bold" },
+      { value: "Roboto-Italic",   label: "Roboto",          variant: "Itálico" },
+      { value: "OpenSans",        label: "Open Sans",       variant: "Regular" },
+      { value: "OpenSans-Bold",   label: "Open Sans",       variant: "Bold" },
+      { value: "Montserrat",      label: "Montserrat",      variant: "Regular" },
+      { value: "Montserrat-Bold", label: "Montserrat",      variant: "Bold" },
+      { value: "Lato",            label: "Lato",            variant: "Regular" },
+      { value: "Lato-Bold",       label: "Lato",            variant: "Bold" },
+      { value: "Inter",           label: "Inter",           variant: "Regular" },
+      { value: "Inter-Bold",      label: "Inter",           variant: "Bold" },
+      { value: "Raleway",         label: "Raleway",         variant: "Regular" },
+      { value: "Raleway-Bold",    label: "Raleway",         variant: "Bold" },
+      { value: "Playfair",        label: "Playfair Display",variant: "Regular" },
+      { value: "Playfair-Bold",   label: "Playfair Display",variant: "Bold" },
+      { value: "Merriweather",    label: "Merriweather",    variant: "Regular" },
+      { value: "Merriweather-Bold",label:"Merriweather",    variant: "Bold" },
+      { value: "PTSans",          label: "PT Sans",         variant: "Regular" },
+      { value: "PTSans-Bold",     label: "PT Sans",         variant: "Bold" },
+      { value: "SourceSans",      label: "Source Sans 3",   variant: "Regular" },
+      { value: "SourceSans-Bold", label: "Source Sans 3",   variant: "Bold" },
+    ],
+  },
+];
+
+function FontPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const current = FONT_GROUPS.flatMap((g) => g.fonts).find((f) => f.value === value);
+  const def = cssFontProps(value);
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="input-field w-full flex items-center justify-between gap-2 text-left cursor-pointer"
+        style={{ fontFamily: def.fontFamily, fontWeight: def.fontWeight, fontStyle: def.fontStyle ?? "normal" }}
+      >
+        <span className="truncate">{current?.label ?? value}</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0 text-gray-400" style={{ transform: open ? "rotate(180deg)" : undefined, transition: "transform 0.15s" }}>
+          <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute z-[200] left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-[#0e1118] border border-gray-700/80 rounded-lg shadow-2xl">
+          {FONT_GROUPS.map(({ group, fonts }) => (
+            <div key={group}>
+              <div className="px-3 py-1 text-[10px] text-gray-500 uppercase tracking-wider bg-[#0e1118] sticky top-0 border-b border-gray-800">
+                {group}
+              </div>
+              {fonts.map((f) => {
+                const css = cssFontProps(f.value);
+                const isSelected = f.value === value;
+                return (
+                  <button
+                    key={f.value}
+                    type="button"
+                    onClick={() => { onChange(f.value); setOpen(false); }}
+                    className={`w-full px-3 py-1.5 flex items-center justify-between gap-2 text-left transition-colors ${isSelected ? "bg-yellow-500/10 text-yellow-400" : "text-white hover:bg-white/5"}`}
+                  >
+                    <span style={{ fontFamily: css.fontFamily, fontWeight: css.fontWeight, fontStyle: css.fontStyle ?? "normal", fontSize: "13px", lineHeight: 1.4 }}>
+                      {f.label}
+                    </span>
+                    <span className="text-[10px] text-gray-500 shrink-0">{f.variant}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── History reducer ──────────────────────────────────────────────────────────
@@ -234,15 +351,20 @@ function SidebarField({
 function FieldToken({
   placement,
   isSelected,
+  isLocating,
   containerW,
   containerH,
+  pageNaturalH,
   exampleValue,
   onClick,
 }: {
   placement: FieldPlacement;
   isSelected: boolean;
+  isLocating: boolean;
   containerW: number;
   containerH: number;
+  /** Natural page height in PDF points at scale=1. Used to scale font sizes to match PDF output. */
+  pageNaturalH: number;
   exampleValue: string;
   onClick: () => void;
 }) {
@@ -254,6 +376,10 @@ function FieldToken({
   const font = cssFontProps(placement.fontFamily);
   const x = (placement.x / 100) * containerW + (transform?.x ?? 0);
   const y = (placement.y / 100) * containerH + (transform?.y ?? 0);
+  // Scale font size: PDF uses points, canvas renders at containerH/pageNaturalH scale.
+  // Without this, a 14pt font appears as 14px but should appear as 14 * scale px.
+  const renderScale = pageNaturalH > 0 ? containerH / pageNaturalH : 1;
+  const fontSizePx = placement.fontSize * renderScale;
 
   return (
     <div
@@ -266,7 +392,7 @@ function FieldToken({
         position: "absolute",
         left: x,
         top: y,
-        fontSize: `${placement.fontSize}px`,
+        fontSize: `${fontSizePx}px`,
         lineHeight: 1,
         color: placement.color,
         fontFamily: font.fontFamily,
@@ -292,6 +418,12 @@ function FieldToken({
       className={isSelected ? "" : "hover:outline hover:outline-1 hover:outline-blue-400/50 hover:bg-white/5"}
     >
       {exampleValue || `[${placement.label}]`}
+      {isLocating && (
+        <>
+          <span style={{ position: "absolute", inset: -10, borderRadius: 6, border: "2px solid rgba(230,184,0,0.9)", pointerEvents: "none", animation: "locate-ring 0.55s ease-out 3" }} />
+          <span style={{ position: "absolute", inset: -20, borderRadius: 10, border: "1.5px solid rgba(230,184,0,0.45)", pointerEvents: "none", animation: "locate-ring 0.55s ease-out 0.1s 3" }} />
+        </>
+      )}
     </div>
   );
 }
@@ -303,19 +435,28 @@ function PdfCanvas({
   currentPage,
   placements,
   selectedId,
+  locatingId,
+  fontsReady,
   exampleValues,
   onSelectField,
+  onScaleChange,
 }: {
   pdfUrl: string;
   currentPage: number;
   placements: FieldPlacement[];
   selectedId: string | null;
+  locatingId: string | null;
+  fontsReady: boolean;
   exampleValues: Record<string, string>;
   onSelectField: (id: string | null) => void;
-}) {
+  onScaleChange?: (scale: number) => void;
+})
+ {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+  // Natural page height in PDF points at scale=1 — used to scale font sizes correctly
+  const [pageNaturalH, setPageNaturalH] = useState(0);
   const [renderError, setRenderError] = useState<string | null>(null);
   const [rendering, setRendering] = useState(false);
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: "pdf-canvas-drop" });
@@ -353,6 +494,12 @@ function PdfCanvas({
 
         const containerWidth = containerRef.current?.clientWidth ?? 672;
         const viewport = page.getViewport({ scale: 1 });
+        // Store natural page height (in pt) so tokens can scale font sizes to match
+        if (!cancelled) {
+          setPageNaturalH(viewport.height);
+          const renderedH = viewport.height * (containerWidth / viewport.width);
+          onScaleChange?.(renderedH / viewport.height);
+        }
         const scale = containerWidth / viewport.width;
         const sv = page.getViewport({ scale });
 
@@ -391,9 +538,12 @@ function PdfCanvas({
       }}
       onClick={() => onSelectField(null)}
     >
-      {rendering && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white/90 z-30 rounded-xl">
-          <div className="w-6 h-6 border-2 border-stage-400 border-t-gold-500 rounded-full animate-spin" />
+      {(rendering || !fontsReady) && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-30 rounded-xl gap-2">
+          <div className="w-5 h-5 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
+          {!rendering && !fontsReady && (
+            <span className="text-[10px] text-gray-400 font-medium">Carregando fontes…</span>
+          )}
         </div>
       )}
       {renderError && (
@@ -402,22 +552,62 @@ function PdfCanvas({
         </div>
       )}
       <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "auto" }} />
-      {/* Token overlay — positioned using actual rendered container size */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/* Token overlay — hidden until fonts are confirmed loaded to prevent wrong-font flash */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ opacity: fontsReady ? 1 : 0, transition: fontsReady ? "opacity 0.18s ease" : "none" }}
+      >
         <div className="relative w-full h-full pointer-events-auto">
           {pagePlacements.map((p) => (
             <FieldToken
               key={p.id}
               placement={p}
               isSelected={selectedId === p.id}
+              isLocating={locatingId === p.id}
               containerW={containerSize.w}
               containerH={containerSize.h}
+              pageNaturalH={pageNaturalH}
               exampleValue={exampleValues[p.key] ?? ""}
               onClick={() => onSelectField(p.id)}
             />
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Trash zone (appears at bottom when dragging a placed token) ──────────────
+
+function TrashZone({ visible }: { visible: boolean }) {
+  const { setNodeRef, isOver } = useDroppable({ id: "trash-zone" });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 500,
+        height: visible ? 68 : 0,
+        opacity: visible ? 1 : 0,
+        pointerEvents: visible ? "auto" : "none",
+        transition: "height 0.22s cubic-bezier(0.4,0,0.2,1), opacity 0.18s",
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+        background: isOver ? "rgba(239,68,68,0.22)" : "rgba(14,17,24,0.9)",
+        borderTop: `1.5px solid ${isOver ? "rgba(239,68,68,0.55)" : "rgba(55,65,81,0.5)"}`,
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+      }}
+    >
+      <svg
+        width="17" height="17" viewBox="0 0 24 24" fill="none"
+        stroke={isOver ? "#f87171" : "#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+        style={{ transition: "stroke 0.15s, transform 0.15s", transform: isOver ? "scale(1.25)" : "scale(1)" }}
+      >
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+      </svg>
+      <span style={{ fontSize: 13, fontWeight: 600, color: isOver ? "#f87171" : "#6b7280", transition: "color 0.15s" }}>
+        {isOver ? "Soltar para remover" : "Arraste aqui para remover"}
+      </span>
     </div>
   );
 }
@@ -429,11 +619,13 @@ function FieldDragPreview({
   label,
   placement,
   exampleValues,
+  renderScale,
 }: {
   sourceType: "chip" | "token";
   label: string;
   placement?: FieldPlacement;
   exampleValues: Record<string, string>;
+  renderScale: number;
 }) {
   if (sourceType === "chip") {
     return (
@@ -466,7 +658,7 @@ function FieldDragPreview({
       background: "rgba(14,17,24,0.9)",
       border: "1.5px solid #e6b800",
       color: placement.color,
-      fontSize: `${placement.fontSize}px`,
+      fontSize: `${placement.fontSize * renderScale}px`,
       fontFamily: font.fontFamily,
       fontWeight: font.fontWeight,
       fontStyle: font.fontStyle ?? "normal",
@@ -516,6 +708,18 @@ export default function PdfTemplateEditor() {
 
   const [isMobile, setIsMobile] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<null | "fields" | "properties">(null);
+  const [locatingId, setLocatingId] = useState<string | null>(null);
+  const locatingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const canvasScrollRef = useRef<HTMLDivElement | null>(null);
+  const [showExitModal, setShowExitModal] = useState(false);
+  const [testingPdf, setTestingPdf] = useState(false);
+
+  // Font loading state — tokens are hidden until their fonts are confirmed loaded
+  const [fontsReady, setFontsReady] = useState(false);
+  const [gFontsCssReady, setGFontsCssReady] = useState(false);
+  const loadedFontKeys = useRef<Set<string>>(new Set(Array.from(STANDARD_FONT_KEYS)));
+  // renderScale = containerH / pageNaturalH — needed to scale drag preview font sizes
+  const [renderScale, setRenderScale] = useState(1);
   const [activeDrag, setActiveDrag] = useState<{
     sourceType: "chip" | "token";
     label: string;
@@ -540,14 +744,55 @@ export default function PdfTemplateEditor() {
     if (isMobile && selectedId) setMobilePanel("properties");
   }, [selectedId, isMobile]);
 
-  // Load Google Fonts for canvas preview
+  // Load Google Fonts CSS — notifies when @font-face rules are in the document
   useEffect(() => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = GOOGLE_FONTS_URL;
+    link.onload = () => setGFontsCssReady(true);
+    link.onerror = () => setGFontsCssReady(true); // proceed with fallback fonts on error
     document.head.appendChild(link);
-    return () => { document.head.removeChild(link); };
+    return () => { if (document.head.contains(link)) document.head.removeChild(link); };
   }, []);
+
+  // Set of unique font families currently in use (stable string for useEffect dep)
+  const usedFontKey = useMemo(
+    () => Array.from(new Set(placements.map((p) => p.fontFamily))).sort().join("|"),
+    [placements],
+  );
+
+  // When CSS is ready AND placements are known, load any new Google Fonts explicitly
+  useEffect(() => {
+    if (!gFontsCssReady) return; // wait for @font-face rules to be in the document
+
+    const needed = Array.from(new Set(placements.map((p) => p.fontFamily))).filter(
+      (k) => !loadedFontKeys.current.has(k),
+    );
+
+    if (!needed.length) {
+      setFontsReady(true);
+      return;
+    }
+
+    setFontsReady(false);
+    let cancelled = false;
+
+    Promise.allSettled(
+      needed.map((k) => {
+        const def = CSS_FONT[k];
+        if (!def) return Promise.resolve();
+        // Strip quotes and fallbacks to get the exact font family name
+        const fam = def.fontFamily.split(",")[0].trim().replace(/['"]/g, "");
+        return document.fonts.load(`${def.fontStyle ?? "normal"} ${def.fontWeight} 16px "${fam}"`);
+      }),
+    ).then(() => {
+      if (cancelled) return;
+      needed.forEach((k) => loadedFontKeys.current.add(k));
+      setFontsReady(true);
+    });
+
+    return () => { cancelled = true; };
+  }, [usedFontKey, gFontsCssReady]);
 
   // Load mapping data
   useEffect(() => {
@@ -634,9 +879,18 @@ export default function PdfTemplateEditor() {
   function handleDragEnd(event: DragEndEvent) {
     setActiveDrag(null);
     const { active, over, delta } = event;
-    if (!over || over.id !== "pdf-canvas-drop") return;
-
     const activeData = active.data.current as { type: string; field?: FieldDef; placementId?: string };
+
+    // Token dropped outside canvas (including on trash zone) → delete
+    if (activeData.type === "token" && activeData.placementId) {
+      if (over?.id !== "pdf-canvas-drop") {
+        push((prev) => prev.filter((p) => p.id !== activeData.placementId));
+        if (selectedIdRef.current === activeData.placementId) setSelectedId(null);
+        return;
+      }
+    }
+
+    if (!over || over.id !== "pdf-canvas-drop") return;
     const canvasEl = document.querySelector("[data-canvas-container]");
     if (!canvasEl) return;
     const rect = canvasEl.getBoundingClientRect();
@@ -701,6 +955,26 @@ export default function PdfTemplateEditor() {
     setSelectedId(dup.id);
   }
 
+  const locate = useCallback((p: FieldPlacement) => {
+    const targetPage = p.page + 1;
+    if (targetPage !== currentPage) setCurrentPage(targetPage);
+    setSelectedId(p.id);
+    if (locatingTimerRef.current) clearTimeout(locatingTimerRef.current);
+    setLocatingId(p.id);
+    locatingTimerRef.current = setTimeout(() => setLocatingId(null), 1900);
+    // Scroll canvas to center on the field (wait for page change to render)
+    setTimeout(() => {
+      const scrollEl = canvasScrollRef.current;
+      const canvasEl = document.querySelector("[data-canvas-container]") as HTMLElement | null;
+      if (!scrollEl || !canvasEl) return;
+      const fieldY = (p.y / 100) * canvasEl.offsetHeight;
+      const fieldX = (p.x / 100) * canvasEl.offsetWidth;
+      const targetTop = canvasEl.offsetTop + fieldY - scrollEl.clientHeight / 2;
+      const targetLeft = canvasEl.offsetLeft + fieldX - scrollEl.clientWidth / 2;
+      scrollEl.scrollTo({ top: Math.max(0, targetTop), left: Math.max(0, targetLeft), behavior: "smooth" });
+    }, targetPage !== currentPage ? 320 : 40);
+  }, [currentPage]);
+
   function addFieldAtCenter(field: FieldDef) {
     const newP: FieldPlacement = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -715,6 +989,39 @@ export default function PdfTemplateEditor() {
     };
     push((prev) => [...prev, newP]);
     setSelectedId(newP.id);
+  }
+
+  // Warn on browser close/refresh when unsaved
+  useEffect(() => {
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      if (JSON.stringify(placementsRef.current) !== lastSaved) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [lastSaved]);
+
+  // Test PDF with current (possibly unsaved) state
+  async function handleTestPdf() {
+    setTestingPdf(true);
+    try {
+      const res = await fetch(`/api/super/pdf-templates/${id}/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fields: placementsRef.current }),
+      });
+      if (!res.ok) throw new Error("Erro ao gerar PDF");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch {
+      alert("Erro ao gerar prévia do PDF. Tente novamente.");
+    } finally {
+      setTestingPdf(false);
+    }
   }
 
   async function handleSave() {
@@ -799,7 +1106,7 @@ export default function PdfTemplateEditor() {
           </button>
 
           <button
-            onClick={() => window.open(`/api/super/pdf-templates/${mapping.id}/test`, "_blank")}
+            onClick={() => handleTestPdf()}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-stage-500 bg-stage-700/50 hover:bg-stage-700 text-left transition-colors"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -863,17 +1170,82 @@ export default function PdfTemplateEditor() {
             label={activeDrag.label}
             placement={activeDrag.placement}
             exampleValues={exampleValues}
+            renderScale={renderScale}
           />
         ) : null}
       </DragOverlay>
 
+      <TrashZone visible={activeDrag?.sourceType === "token"} />
+
       {savedModal}
+
+      {/* ── Exit without saving modal ──────────────────────────────────────── */}
+      {showExitModal && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 px-4">
+          <div className="bg-stage-800 border border-stage-600 rounded-2xl p-6 w-full max-w-sm space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-100">Alterações não salvas</p>
+                <p className="text-xs text-gray-500 mt-0.5">O que deseja fazer antes de sair?</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <button
+                onClick={async () => {
+                  setShowExitModal(false);
+                  await handleSave();
+                  router.push("/super-admin/pdf-templates");
+                }}
+                disabled={saving}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gold-500/40 bg-gold-500/5 hover:bg-gold-500/10 text-left transition-colors disabled:opacity-50"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e6b800" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                </svg>
+                <div>
+                  <p className="text-sm font-semibold text-gold-400">{saving ? "Salvando…" : "Salvar e sair"}</p>
+                  <p className="text-xs text-gray-500">Guardar posicionamentos e voltar</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => { setShowExitModal(false); router.push("/super-admin/pdf-templates"); }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-stage-500 bg-stage-700/40 hover:bg-stage-700 text-left transition-colors"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                <div>
+                  <p className="text-sm font-semibold text-gray-300">Sair sem salvar</p>
+                  <p className="text-xs text-gray-500">Descartar alterações desta sessão</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setShowExitModal(false)}
+                className="w-full py-2.5 rounded-xl border border-stage-600 text-gray-500 hover:text-gray-300 text-sm transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col h-[calc(100vh-64px)]">
         {/* ── Header ─────────────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 px-4 py-2.5 border-b border-stage-600 bg-stage-800 shrink-0">
           <button
-            onClick={() => router.push("/super-admin/pdf-templates")}
+            onClick={() => hasUnsaved ? setShowExitModal(true) : router.push("/super-admin/pdf-templates")}
             className="text-gray-500 hover:text-gray-200 text-sm transition-colors"
           >
             ←
@@ -920,10 +1292,11 @@ export default function PdfTemplateEditor() {
           )}
 
           <button
-            onClick={() => window.open(`/api/super/pdf-templates/${mapping.id}/test`, "_blank")}
-            className="hidden md:inline-flex px-3 py-1.5 rounded-xl border border-stage-500 text-gray-400 text-xs hover:text-white hover:border-stage-400 transition-colors shrink-0"
+            onClick={handleTestPdf}
+            disabled={testingPdf}
+            className="hidden md:inline-flex px-3 py-1.5 rounded-xl border border-stage-500 text-gray-400 text-xs hover:text-white hover:border-stage-400 transition-colors shrink-0 disabled:opacity-50"
           >
-            Testar PDF
+            {testingPdf ? "Gerando…" : "Testar PDF"}
           </button>
 
           <button
@@ -969,6 +1342,34 @@ export default function PdfTemplateEditor() {
                 </div>
               ))}
             </div>
+            {/* Placed fields — locate shortcut */}
+            {placements.length > 0 && (
+              <div className="border-t border-stage-700 pt-3 space-y-0.5">
+                <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-widest mb-1.5 px-1 flex items-center gap-1.5">
+                  Posicionados
+                  <span className="px-1.5 py-0.5 rounded-full bg-stage-600 text-gray-400 text-[10px] font-bold leading-none">{placements.length}</span>
+                </p>
+                {placements.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => locate(p)}
+                    title={`Localizar "${p.label}" na pág. ${p.page + 1}`}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-all ${
+                      selectedId === p.id
+                        ? "bg-gold-500/12 border border-gold-500/30 text-gold-400"
+                        : "border border-transparent text-gray-500 hover:bg-stage-700 hover:text-gray-200"
+                    }`}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 opacity-60">
+                      <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    <span className="flex-1 truncate text-[11px]">{p.label}</span>
+                    <span className="shrink-0 text-[10px] opacity-40">p{p.page + 1}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div className="px-3 pb-3 pt-1 border-t border-stage-700 space-y-1">
               <p className="text-[10px] text-gray-600">Clique ou arraste para adicionar</p>
               <p className="text-[10px] text-gray-600">Setas = mover 0.1% · Ctrl+Seta = 1%</p>
@@ -1026,7 +1427,7 @@ export default function PdfTemplateEditor() {
             </div>
 
             {/* Canvas scroll area */}
-            <div className="flex-1 overflow-auto p-4 md:p-6">
+            <div ref={canvasScrollRef} className="flex-1 overflow-auto p-4 md:p-6">
               <div
                 style={{ width: `${Math.round(zoom * 672)}px`, margin: "0 auto" }}
               >
@@ -1035,8 +1436,11 @@ export default function PdfTemplateEditor() {
                   currentPage={currentPage}
                   placements={placements}
                   selectedId={selectedId}
+                  locatingId={locatingId}
+                  fontsReady={fontsReady}
                   exampleValues={exampleValues}
                   onSelectField={setSelectedId}
+                  onScaleChange={setRenderScale}
                 />
               </div>
             </div>
@@ -1114,53 +1518,10 @@ export default function PdfTemplateEditor() {
                 {/* Font family */}
                 <div>
                   <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">Fonte</label>
-                  <select
-                    className="input-field text-xs w-full"
+                  <FontPicker
                     value={selectedPlacement.fontFamily}
-                    onChange={(e) => updatePlacement(selectedPlacement.id, { fontFamily: e.target.value })}
-                  >
-                    <optgroup label="Helvetica">
-                      <option value="Helvetica">Regular</option>
-                      <option value="Helvetica-Bold">Bold</option>
-                      <option value="Helvetica-Oblique">Itálico</option>
-                      <option value="Helvetica-BoldOblique">Bold Itálico</option>
-                    </optgroup>
-                    <optgroup label="Times">
-                      <option value="Times-Roman">Regular</option>
-                      <option value="Times-Bold">Bold</option>
-                      <option value="Times-Italic">Itálico</option>
-                      <option value="Times-BoldItalic">Bold Itálico</option>
-                    </optgroup>
-                    <optgroup label="Courier">
-                      <option value="Courier">Regular</option>
-                      <option value="Courier-Bold">Bold</option>
-                      <option value="Courier-Oblique">Itálico</option>
-                      <option value="Courier-BoldOblique">Bold Itálico</option>
-                    </optgroup>
-                    <optgroup label="Google Fonts">
-                      <option value="Roboto">Roboto</option>
-                      <option value="Roboto-Bold">Roboto Bold</option>
-                      <option value="Roboto-Italic">Roboto Itálico</option>
-                      <option value="OpenSans">Open Sans</option>
-                      <option value="OpenSans-Bold">Open Sans Bold</option>
-                      <option value="Montserrat">Montserrat</option>
-                      <option value="Montserrat-Bold">Montserrat Bold</option>
-                      <option value="Lato">Lato</option>
-                      <option value="Lato-Bold">Lato Bold</option>
-                      <option value="Inter">Inter</option>
-                      <option value="Inter-Bold">Inter Bold</option>
-                      <option value="Raleway">Raleway</option>
-                      <option value="Raleway-Bold">Raleway Bold</option>
-                      <option value="Playfair">Playfair Display</option>
-                      <option value="Playfair-Bold">Playfair Display Bold</option>
-                      <option value="Merriweather">Merriweather</option>
-                      <option value="Merriweather-Bold">Merriweather Bold</option>
-                      <option value="PTSans">PT Sans</option>
-                      <option value="PTSans-Bold">PT Sans Bold</option>
-                      <option value="SourceSans">Source Sans 3</option>
-                      <option value="SourceSans-Bold">Source Sans 3 Bold</option>
-                    </optgroup>
-                  </select>
+                    onChange={(v) => updatePlacement(selectedPlacement.id, { fontFamily: v })}
+                  />
                 </div>
 
                 {/* Color */}
@@ -1265,6 +1626,11 @@ export default function PdfTemplateEditor() {
         @keyframes _backdrop-in {
           from { opacity: 0; }
           to   { opacity: 1; }
+        }
+        @keyframes locate-ring {
+          0%   { opacity: 1; transform: scale(1);    }
+          70%  { opacity: 0.4; transform: scale(1.2); }
+          100% { opacity: 0; transform: scale(1.4);  }
         }
       `}</style>
 
@@ -1380,53 +1746,10 @@ export default function PdfTemplateEditor() {
               {/* Font family */}
               <div>
                 <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5 block">Fonte</label>
-                <select
-                  className="input-field text-sm w-full py-2.5"
+                <FontPicker
                   value={selectedPlacement.fontFamily}
-                  onChange={(e) => updatePlacement(selectedPlacement.id, { fontFamily: e.target.value })}
-                >
-                  <optgroup label="Helvetica">
-                    <option value="Helvetica">Regular</option>
-                    <option value="Helvetica-Bold">Bold</option>
-                    <option value="Helvetica-Oblique">Itálico</option>
-                    <option value="Helvetica-BoldOblique">Bold Itálico</option>
-                  </optgroup>
-                  <optgroup label="Times">
-                    <option value="Times-Roman">Regular</option>
-                    <option value="Times-Bold">Bold</option>
-                    <option value="Times-Italic">Itálico</option>
-                    <option value="Times-BoldItalic">Bold Itálico</option>
-                  </optgroup>
-                  <optgroup label="Courier">
-                    <option value="Courier">Regular</option>
-                    <option value="Courier-Bold">Bold</option>
-                    <option value="Courier-Oblique">Itálico</option>
-                    <option value="Courier-BoldOblique">Bold Itálico</option>
-                  </optgroup>
-                  <optgroup label="Google Fonts">
-                    <option value="Roboto">Roboto</option>
-                    <option value="Roboto-Bold">Roboto Bold</option>
-                    <option value="Roboto-Italic">Roboto Itálico</option>
-                    <option value="OpenSans">Open Sans</option>
-                    <option value="OpenSans-Bold">Open Sans Bold</option>
-                    <option value="Montserrat">Montserrat</option>
-                    <option value="Montserrat-Bold">Montserrat Bold</option>
-                    <option value="Lato">Lato</option>
-                    <option value="Lato-Bold">Lato Bold</option>
-                    <option value="Inter">Inter</option>
-                    <option value="Inter-Bold">Inter Bold</option>
-                    <option value="Raleway">Raleway</option>
-                    <option value="Raleway-Bold">Raleway Bold</option>
-                    <option value="Playfair">Playfair Display</option>
-                    <option value="Playfair-Bold">Playfair Display Bold</option>
-                    <option value="Merriweather">Merriweather</option>
-                    <option value="Merriweather-Bold">Merriweather Bold</option>
-                    <option value="PTSans">PT Sans</option>
-                    <option value="PTSans-Bold">PT Sans Bold</option>
-                    <option value="SourceSans">Source Sans 3</option>
-                    <option value="SourceSans-Bold">Source Sans 3 Bold</option>
-                  </optgroup>
-                </select>
+                  onChange={(v) => updatePlacement(selectedPlacement.id, { fontFamily: v })}
+                />
               </div>
               {/* Color */}
               <div>

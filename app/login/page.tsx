@@ -215,7 +215,7 @@ function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
-                autoComplete="email"
+                autoComplete="username"
                 disabled={disabled}
                 required
                 style={{

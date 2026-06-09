@@ -41,41 +41,63 @@ function buildTestVars(artist: {
   };
 }
 
+async function runTest(id: string, fieldsOverride?: FieldPlacement[]) {
+  const mapping = await prisma.pdfTemplateMapping.findUnique({
+    where: { id },
+    include: { artist: { select: { name: true, legalName: true, cnpj: true, pixKey: true } } },
+  });
+  if (!mapping) return null;
+
+  const baseRes = await fetch(mapping.pdfUrl);
+  if (!baseRes.ok) throw new Error("Falha ao baixar PDF base");
+
+  const baseBuffer = Buffer.from(await baseRes.arrayBuffer());
+  const vars = buildTestVars(mapping.artist);
+  const fields = fieldsOverride ?? (mapping.fields as unknown as FieldPlacement[]) ?? [];
+  const pdfBytes = await applyFieldsToBasePdf(baseBuffer, vars, fields);
+
+  return new NextResponse(Buffer.from(pdfBytes), {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `inline; filename="teste-${id}.pdf"`,
+    },
+  });
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
-  if (session?.user.role !== "SUPER_ADMIN") {
+  if (session?.user.role !== "SUPER_ADMIN")
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  try {
+    const res = await runTest(params.id);
+    if (!res) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
+    return res;
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Erro" }, { status: 502 });
   }
+}
 
-  const mapping = await prisma.pdfTemplateMapping.findUnique({
-    where: { id: params.id },
-    include: { artist: { select: { name: true, legalName: true, cnpj: true, pixKey: true } } },
-  });
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions);
+  if (session?.user.role !== "SUPER_ADMIN")
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  if (!mapping) {
-    return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
+  const body = await req.json().catch(() => ({}));
+  const fields = Array.isArray(body.fields) ? (body.fields as FieldPlacement[]) : undefined;
+
+  try {
+    const res = await runTest(params.id, fields);
+    if (!res) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
+    return res;
+  } catch (e) {
+    console.error("[pdf-test] POST error:", e);
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });
   }
-
-  const baseRes = await fetch(mapping.pdfUrl);
-  if (!baseRes.ok) {
-    return NextResponse.json({ error: "Falha ao baixar PDF base" }, { status: 502 });
-  }
-
-  const baseBuffer = Buffer.from(await baseRes.arrayBuffer());
-  const vars = buildTestVars(mapping.artist);
-  const pdfBytes = await applyFieldsToBasePdf(
-    baseBuffer,
-    vars,
-    (mapping.fields as unknown as FieldPlacement[]) ?? []
-  );
-
-  return new NextResponse(Buffer.from(pdfBytes), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="teste-${mapping.id}.pdf"`,
-    },
-  });
 }

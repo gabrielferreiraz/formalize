@@ -85,7 +85,6 @@ export async function GET(req: NextRequest) {
     return {
       id: a.id,
       name: a.name,
-      subdomain: a.subdomain,
       status: a.status,
       source: a.source,
       planLabel: a.planLabel,

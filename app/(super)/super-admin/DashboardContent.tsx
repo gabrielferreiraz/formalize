@@ -20,7 +20,6 @@ type UserRow = {
 type ArtistRow = {
   id: string;
   name: string;
-  subdomain: string;
   status: "ACTIVE" | "SUSPENDED" | "CANCELLED";
   source: string;
   planLabel: string;
@@ -125,12 +124,11 @@ function ArtistExpandRow({ artist }: { artist: ArtistRow }) {
             <div>
               <div className="flex items-center gap-2">
                 <p className="text-sm font-semibold text-gray-200">{artist.name}</p>
-                {artist.source === "LP"
+              {artist.source === "LP"
                   ? <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">LP</span>
                   : <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-blue-500/15 text-blue-400 border border-blue-500/25">Manual</span>
                 }
               </div>
-              <p className="text-xs text-gray-500">{artist.subdomain}.formalize.com.br</p>
             </div>
           </div>
         </td>
@@ -215,7 +213,7 @@ export default function DashboardContent() {
     const q = search.toLowerCase();
     return data.artists
       .filter((a) => {
-        const matchSearch = !q || a.name.toLowerCase().includes(q) || a.subdomain.toLowerCase().includes(q);
+        const matchSearch = !q || a.name.toLowerCase().includes(q);
         const matchStatus = statusFilter === "ALL" || a.status === statusFilter;
         return matchSearch && matchStatus;
       })
@@ -398,7 +396,7 @@ export default function DashboardContent() {
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             className="input-field flex-1"
-            placeholder="Buscar por nome ou subdomínio..."
+            placeholder="Buscar por nome..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />

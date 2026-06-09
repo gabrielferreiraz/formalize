@@ -41,22 +41,12 @@ export async function PATCH(req: NextRequest) {
     const request = await prisma.artistRequest.findUnique({ where: { id } });
     if (!request) return NextResponse.json({ error: "Solicitação não encontrada" }, { status: 404 });
 
-    // Check if subdomain is already taken
-    const existing = await prisma.artist.findUnique({ where: { subdomain: request.subdomain } });
-    if (existing) {
-      return NextResponse.json(
-        { error: `Subdomínio "${request.subdomain}" já está em uso. Edite-o antes de aprovar.` },
-        { status: 409 }
-      );
-    }
-
     const hashedPassword = await bcrypt.hash(initialPassword, 12);
 
     await prisma.$transaction(async (tx) => {
       const artist = await tx.artist.create({
         data: {
           name: request.artistName,
-          subdomain: request.subdomain,
           email: request.email,
           whatsapp: request.whatsapp,
           source: "LP",

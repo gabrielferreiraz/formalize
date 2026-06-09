@@ -34,21 +34,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const subdomain = artistName
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "") || "sem-subdomain";
-
   await prisma.artistRequest.create({
     data: {
       name: name.trim(),
       email: email.trim(),
       whatsapp: whatsapp.trim(),
       artistName: artistName.trim(),
-      subdomain,
       message: message?.trim() || null,
       categoria: categoria?.trim() || null,
       temContrato: temContrato === true,

@@ -79,14 +79,13 @@ export default function SuperBottomNav() {
 
   return (
     <nav
-      className="md:hidden"
+      className="md:hidden grid"
       style={{
         position: "fixed", left: 0, right: 0, bottom: 0,
         background: "rgba(14,17,24,0.96)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
         borderTop: "1px solid #252d3d",
-        display: "grid",
         gridTemplateColumns: "repeat(4, 1fr)",
         padding: "10px 4px calc(10px + env(safe-area-inset-bottom, 0px))",
         zIndex: 50,

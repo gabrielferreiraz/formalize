@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default function NovoArtistaPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", subdomain: "", email: "", password: "", primaryColor: "#e6b800" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", primaryColor: "#e6b800" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -43,13 +43,6 @@ export default function NovoArtistaPage() {
         <div>
           <label className="label">Nome Artístico</label>
           <input type="text" required className="input-field" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-        </div>
-        <div>
-          <label className="label">Subdomínio</label>
-          <div className="flex rounded overflow-hidden">
-            <input type="text" required className="input-field rounded-r-none flex-1 border-r-0" value={form.subdomain} onChange={e => setForm({...form, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')})} placeholder="minhabanda" />
-            <span className="px-3 py-2 text-gray-500 bg-stage-900 border border-l-0 border-stage-600 rounded-r flex items-center">.formalize.com.br</span>
-          </div>
         </div>
         <div>
           <label className="label">E-mail do Administrador</label>
