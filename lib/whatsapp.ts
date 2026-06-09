@@ -24,6 +24,7 @@ export async function sendWhatsAppTextMessage({
   const log = requestLogger({ action: "whatsapp.sendText" });
   const apiUrl = process.env.WHATSAPP_API_URL;
   const userId = process.env.WHATSAPP_INSTANCE_USER_ID;
+  const apiKey = process.env.WHATSAPP_API_KEY;
 
   if (!apiUrl || !userId) {
     log.warn("WhatsApp API not configured (missing env vars)");
@@ -31,22 +32,22 @@ export async function sendWhatsAppTextMessage({
   }
 
   try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (apiKey) headers["apikey"] = apiKey;
+
     const response = await fetch(
       `${apiUrl}/message/send-text/${encodeURIComponent(userId)}`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          number,
-          message,
-        }),
+        headers,
+        body: JSON.stringify({ number, message }),
       }
     );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const rawText = await response.text().catch(() => "");
+      let errorData: unknown = rawText;
+      try { errorData = JSON.parse(rawText); } catch { /* keep rawText */ }
       log.error(
         { status: response.status, errorData },
         "Failed to send WhatsApp message"
