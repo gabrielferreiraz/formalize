@@ -545,11 +545,19 @@ export default function ConfiguracoesPage() {
           </FRow>
         </AccordionSection>
 
-        {/* ── 2. Presença Online ── */}
+        {/* ── 2. Contato & Redes ── */}
         <AccordionSection
-          title="Presença Online"
-          filled={!!(data.website || data.instagram)}
+          title="Contato & Redes"
+          filled={!!(data.whatsapp || data.email || data.website || data.instagram)}
         >
+          <FRow>
+            <FFormField label="WhatsApp">
+              <input className="input-field" type="text" value={data.whatsapp || ""} onChange={(e) => handleChange("whatsapp", e.target.value)} />
+            </FFormField>
+            <FFormField label="E-mail">
+              <input className="input-field" type="email" value={data.email || ""} onChange={(e) => handleChange("email", e.target.value)} />
+            </FFormField>
+          </FRow>
           <FRow>
             <FFormField label="Website">
               <input className="input-field" type="url" value={data.website || ""} onChange={(e) => handleChange("website", e.target.value)} placeholder="https://" />
@@ -560,26 +568,13 @@ export default function ConfiguracoesPage() {
           </FRow>
         </AccordionSection>
 
-        {/* ── 3. Contato ── */}
+        {/* ── 3. Dados do Artista ── */}
         <AccordionSection
-          title="Contato"
-          filled={!!(data.whatsapp || data.email)}
+          title="Dados do Artista"
+          filled={!!(data.legalName || data.cnpj || data.address?.rua || data.bankInfo?.pix)}
         >
-          <FRow>
-            <FFormField label="WhatsApp">
-              <input className="input-field" type="text" value={data.whatsapp || ""} onChange={(e) => handleChange("whatsapp", e.target.value)} />
-            </FFormField>
-            <FFormField label="E-mail">
-              <input className="input-field" type="email" value={data.email || ""} onChange={(e) => handleChange("email", e.target.value)} />
-            </FFormField>
-          </FRow>
-        </AccordionSection>
-
-        {/* ── 4. Dados Jurídicos ── */}
-        <AccordionSection
-          title="Dados Jurídicos"
-          filled={!!(data.legalName || data.cnpj)}
-        >
+          {/* Jurídico */}
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#4b5563", margin: "0 0 10px", paddingBottom: 6, borderBottom: "1px solid #1e2535" }}>Jurídico</p>
           <FFormField label="Razão Social">
             <input className="input-field" type="text" value={data.legalName || ""} onChange={(e) => handleChange("legalName", e.target.value)} />
           </FFormField>
@@ -591,13 +586,9 @@ export default function ConfiguracoesPage() {
               <input className="input-field" type="text" value={data.instruments || ""} onChange={(e) => handleChange("instruments", e.target.value)} placeholder="Baixo, Bateria, Teclado..." />
             </FFormField>
           </FRow>
-        </AccordionSection>
 
-        {/* ── 5. Endereço ── */}
-        <AccordionSection
-          title="Endereço"
-          filled={!!(data.address?.rua)}
-        >
+          {/* Endereço */}
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#4b5563", margin: "18px 0 10px", paddingBottom: 6, borderBottom: "1px solid #1e2535" }}>Endereço</p>
           <FFormField label="Rua">
             <input className="input-field" type="text" value={data.address?.rua || ""} onChange={(e) => handleAddressChange("rua", e.target.value)} />
           </FFormField>
@@ -617,13 +608,9 @@ export default function ConfiguracoesPage() {
               <input className="input-field" type="text" value={data.address?.estado || ""} onChange={(e) => handleAddressChange("estado", e.target.value)} maxLength={2} />
             </FFormField>
           </FRow>
-        </AccordionSection>
 
-        {/* ── 6. Dados Bancários ── */}
-        <AccordionSection
-          title="Dados Bancários"
-          filled={!!(data.bankInfo?.pix || data.bankInfo?.titular)}
-        >
+          {/* Bancário */}
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#4b5563", margin: "18px 0 10px", paddingBottom: 6, borderBottom: "1px solid #1e2535" }}>Dados Bancários</p>
           <FFormField label="Titular">
             <input className="input-field" type="text" value={data.bankInfo?.titular || ""} onChange={(e) => handleBankChange("titular", e.target.value)} />
           </FFormField>
