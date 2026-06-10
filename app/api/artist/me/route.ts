@@ -60,6 +60,7 @@ export async function GET() {
 
 const ALLOWED_FIELDS = [
   "name",
+  "logoUrl", "backgroundUrl",
   "whatsapp", "email", "instagram", "spotify", "x", "youtube", "website",
   "legalName", "cnpj", "instruments",
   "address", "bankInfo", "pixKey",

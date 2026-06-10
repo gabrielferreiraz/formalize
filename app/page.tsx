@@ -8,7 +8,10 @@ export default function Home() {
     <main className="min-h-screen bg-[#07090e] font-body text-gray-100 overflow-x-hidden selection:bg-gold-500/30">
 
       {/* ── Navbar ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-white/5 bg-[#07090e]/85 backdrop-blur-md">
+      <header
+        className="fixed top-0 left-0 right-0 z-50 w-full border-b border-white/5 bg-[#07090e]/85 backdrop-blur-md"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image src="/icon-512.png" alt="Formalize" width={28} height={28} style={{ borderRadius: 7 }} priority />
@@ -26,7 +29,7 @@ export default function Home() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="relative pt-24 pb-16 px-6 overflow-hidden min-h-screen flex items-center">
+      <section className="relative pb-16 px-6 overflow-hidden min-h-screen flex items-center" style={{ paddingTop: "calc(6rem + env(safe-area-inset-top, 0px))" }}>
         <div className="lp-hero-grid absolute inset-0 pointer-events-none" />
         <div className="lp-anim-glow absolute top-1/4 left-1/4 w-[700px] h-[500px] bg-gold-500/8 rounded-full blur-[150px] pointer-events-none" />
         <div className="lp-anim-glow lp-d6 absolute bottom-1/4 right-1/3 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />

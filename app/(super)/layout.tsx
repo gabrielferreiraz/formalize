@@ -12,8 +12,11 @@ export default async function SuperAdminLayout({ children }: { children: React.R
 
   return (
     <div className="min-h-screen bg-stage-900 text-gray-100 font-body">
-      <header className="bg-stage-800/80 backdrop-blur border-b border-stage-600 px-4 h-14 flex items-center sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
+      <header
+        className="bg-stage-800/80 backdrop-blur border-b border-stage-600 sticky top-0 z-40"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
+        <div className="max-w-6xl mx-auto w-full px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Image
               src="/icon-512.png"
@@ -38,7 +41,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
           </div>
         </div>
       </header>
-      <main className="max-w-6xl mx-auto px-4 py-8 pb-24 md:pb-8">{children}</main>
+      <main className="max-w-6xl mx-auto px-4 py-8 super-main-safe">{children}</main>
       <SuperBottomNav />
     </div>
   );

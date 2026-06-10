@@ -19,6 +19,19 @@ export type FieldPlacement = {
   color: string;
 };
 
+export interface ShapeAnnotation {
+  id: string;
+  kind: "rect" | "eraser" | "textbox";
+  page: number;
+  x: number; y: number; w: number; h: number; // % of page (0-100)
+  fill: string;      // hex color (eraser uses "#ffffff" override)
+  opacity: number;   // 0-1
+  text?: string;     // textbox only
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;    // text color for textbox
+}
+
 type ArtistData = Record<string, any>;
 
 // ─── Standard PDF fonts ───────────────────────────────────────────────────────
@@ -229,7 +242,8 @@ async function buildOverlaidPdf(
   basePdfBuffer: Buffer,
   vars: Record<string, string>,
   placements: FieldPlacement[],
-  forceHelvetica = false
+  forceHelvetica = false,
+  shapes: ShapeAnnotation[] = []
 ): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.load(basePdfBuffer);
   pdfDoc.registerFontkit(fontkit);
@@ -241,8 +255,13 @@ async function buildOverlaidPdf(
     byPage.get(p.page)!.push(p);
   }
 
+  // Collect all font families needed (placements + textbox shapes)
+  const allFontFamilies = [
+    ...placements.map((p) => p.fontFamily),
+    ...shapes.filter((s) => s.kind === "textbox" && s.fontFamily).map((s) => s.fontFamily!),
+  ];
   const fontCache = new Map<string, PDFFont>();
-  const usedFamilies = Array.from(new Set(placements.map((p) => p.fontFamily)));
+  const usedFamilies = Array.from(new Set(allFontFamilies));
 
   await Promise.all(
     usedFamilies.map(async (fam) => {
@@ -269,6 +288,61 @@ async function buildOverlaidPdf(
     })
   );
 
+  // Ensure Helvetica is always available (used as textbox fallback)
+  if (!fontCache.has("Helvetica")) {
+    fontCache.set("Helvetica", await pdfDoc.embedFont(StandardFonts.Helvetica));
+  }
+
+  // Draw shapes BEFORE text fields
+  for (const shape of shapes) {
+    const page = pages[shape.page];
+    if (!page) continue;
+    const { width, height } = page.getSize();
+
+    const x_pdf = (shape.x / 100) * width;
+    const h_pdf = (shape.h / 100) * height;
+    const y_pdf = height - (shape.y / 100) * height - h_pdf;
+    const w_pdf = (shape.w / 100) * width;
+
+    if (shape.kind === "rect" || shape.kind === "eraser") {
+      const fillColor = shape.kind === "eraser" ? { r: 1, g: 1, b: 1 } : hexToRgb(shape.fill || "#ffff00");
+      page.drawRectangle({
+        x: x_pdf,
+        y: y_pdf,
+        width: w_pdf,
+        height: h_pdf,
+        color: rgb(fillColor.r, fillColor.g, fillColor.b),
+        opacity: shape.kind === "eraser" ? 1 : shape.opacity,
+      });
+    } else if (shape.kind === "textbox") {
+      // Draw background only if fill is not transparent
+      const bgColor = hexToRgb(shape.fill || "#ffffff");
+      page.drawRectangle({
+        x: x_pdf,
+        y: y_pdf,
+        width: w_pdf,
+        height: h_pdf,
+        color: rgb(bgColor.r, bgColor.g, bgColor.b),
+        opacity: 0,
+      });
+
+      if (shape.text) {
+        const fontFamily = shape.fontFamily || "Helvetica";
+        const font = fontCache.get(fontFamily) ?? fontCache.get("Helvetica")!;
+        const fontSize = shape.fontSize ?? 12;
+        const { r, g, b } = hexToRgb(shape.color || "#000000");
+        page.drawText(shape.text, {
+          x: x_pdf + 2,
+          y: y_pdf + h_pdf * 0.25,
+          size: fontSize,
+          font,
+          color: rgb(r, g, b),
+          opacity: shape.opacity,
+        });
+      }
+    }
+  }
+
   for (const [pageIdx, fields] of Array.from(byPage.entries())) {
     const page = pages[pageIdx];
     if (!page) continue;
@@ -288,18 +362,19 @@ async function buildOverlaidPdf(
     }
   }
 
-  return pdfDoc.save();
+  return pdfDoc.save({ useObjectStreams: false, addDefaultPage: false });
 }
 
 export async function applyFieldsToBasePdf(
   basePdfBuffer: Buffer,
   vars: Record<string, string>,
-  placements: FieldPlacement[]
+  placements: FieldPlacement[],
+  shapes?: ShapeAnnotation[]
 ): Promise<Uint8Array> {
   try {
-    return await buildOverlaidPdf(basePdfBuffer, vars, placements, false);
+    return await buildOverlaidPdf(basePdfBuffer, vars, placements, false, shapes);
   } catch (err) {
     logger.warn({ err: String(err) }, "pdf-overlay: save failed — retrying with Helvetica fallback for all custom fonts");
-    return buildOverlaidPdf(basePdfBuffer, vars, placements, true);
+    return buildOverlaidPdf(basePdfBuffer, vars, placements, true, shapes);
   }
 }

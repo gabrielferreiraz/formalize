@@ -20,6 +20,105 @@ function isStandalone(): boolean {
   );
 }
 
+// ── Ícone Share do Safari (iOS) ──────────────────────────────────
+function IosShareIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="12 2 12 14" />
+      <polyline points="8 6 12 2 16 6" />
+      <path d="M8 12H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-3" />
+    </svg>
+  );
+}
+
+// ── Ícone "Adicionar à Tela de Início" (iOS — plus em quadrado) ──
+function IosAddIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="3.5" />
+      <line x1="12" y1="8" x2="12" y2="16" />
+      <line x1="8" y1="12" x2="16" y2="12" />
+    </svg>
+  );
+}
+
+// ── Ícone três pontos do Chrome (Android) ───────────────────────
+function AndroidMenuIcon() {
+  return (
+    <svg width="18" height="22" viewBox="0 0 6 22" fill="currentColor">
+      <circle cx="3" cy="2.5" r="1.8" />
+      <circle cx="3" cy="11" r="1.8" />
+      <circle cx="3" cy="19.5" r="1.8" />
+    </svg>
+  );
+}
+
+// ── Ícone "Adicionar à tela" genérico ───────────────────────────
+function AddScreenIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <line x1="12" y1="8" x2="12" y2="16" />
+      <line x1="8" y1="12" x2="16" y2="12" />
+    </svg>
+  );
+}
+
+// ── Ícone confirmar ─────────────────────────────────────────────
+function ConfirmIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+const IOS_STEPS = [
+  {
+    Icon: IosShareIcon,
+    label: "Toque em Compartilhar",
+    sub: "Barra inferior do Safari",
+    color: "#3b9eff",
+  },
+  {
+    Icon: IosAddIcon,
+    label: "Adicionar à Tela de Início",
+    sub: "Role a lista de opções",
+    color: "#f5c842",
+  },
+  {
+    Icon: ConfirmIcon,
+    label: 'Toque em "Adicionar"',
+    sub: "Canto superior direito",
+    color: "#4ade80",
+  },
+];
+
+const ANDROID_STEPS = [
+  {
+    Icon: AndroidMenuIcon,
+    label: "Abra o menu do Chrome",
+    sub: "Três pontos no canto superior direito",
+    color: "#3b9eff",
+  },
+  {
+    Icon: AddScreenIcon,
+    label: "Adicionar à tela inicial",
+    sub: "Selecione esta opção",
+    color: "#f5c842",
+  },
+  {
+    Icon: ConfirmIcon,
+    label: "Confirme a instalação",
+    sub: 'Toque em "Adicionar"',
+    color: "#4ade80",
+  },
+];
+
 export function PwaInstallBanner() {
   const [visible, setVisible] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
@@ -34,8 +133,6 @@ export function PwaInstallBanner() {
     setPlatform(plt);
 
     if (plt === "android" || plt === "other") {
-      // beforeinstallprompt dispara uma vez por sessão, muito cedo na carga da página.
-      // O root layout captura e guarda em window.__pwaPrompt antes do React montar.
       const pre = (window as any).__pwaPrompt;
       if (pre) {
         (window as any).__pwaPrompt = null;
@@ -43,8 +140,6 @@ export function PwaInstallBanner() {
         setVisible(true);
         return;
       }
-
-      // Fallback: ouve normalmente caso ainda não tenha disparado
       const handler = (e: Event) => {
         e.preventDefault();
         (window as any).__pwaPrompt = null;
@@ -54,7 +149,6 @@ export function PwaInstallBanner() {
       window.addEventListener("beforeinstallprompt", handler as any);
       return () => window.removeEventListener("beforeinstallprompt", handler as any);
     } else {
-      // iOS — sempre mostra o banner manual
       setVisible(true);
     }
   }, []);
@@ -76,85 +170,121 @@ export function PwaInstallBanner() {
 
   if (!visible) return null;
 
-  const iosSteps = [
-    { icon: "⬆️", text: 'Toque em "Compartilhar" (ícone de seta para cima)' },
-    { icon: "➕", text: 'Role para baixo e toque em "Adicionar à Tela de Início"' },
-    { icon: "✅", text: 'Toque em "Adicionar" para confirmar' },
-  ];
+  const steps = platform === "ios" ? IOS_STEPS : ANDROID_STEPS;
+  const hasNativePrompt = platform !== "ios" && !!deferredPrompt;
 
   return (
     <div style={{
-      position: "fixed", bottom: "calc(70px + env(safe-area-inset-bottom, 0px))",
+      position: "fixed",
+      bottom: "calc(70px + env(safe-area-inset-bottom, 0px))",
       left: 12, right: 12,
       zIndex: 8888,
-      background: "#141824",
-      border: "1px solid #252d3d",
-      borderRadius: 16,
+      background: "#111827",
+      border: "1px solid #1f2937",
+      borderRadius: 18,
       padding: "14px 16px",
-      boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+      boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
       fontFamily: "'Inter', sans-serif",
     }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{
-          width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-          background: "linear-gradient(135deg, rgba(245,200,66,0.14) 0%, rgba(245,200,66,0.04) 100%)",
+          width: 42, height: 42, borderRadius: 11, flexShrink: 0,
+          background: "linear-gradient(135deg, rgba(245,200,66,0.15), rgba(245,200,66,0.04))",
           border: "1px solid rgba(245,200,66,0.22)",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f5c842" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="#f5c842" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
           </svg>
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Instalar Formalize</div>
-          <div style={{ fontSize: 11, color: "#6b7280", marginTop: 1 }}>Acesso rápido direto da tela inicial</div>
+
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9", lineHeight: 1.2 }}>
+            Instalar Formalize
+          </div>
+          <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+            Acesso rápido na tela inicial
+          </div>
         </div>
-        <button onClick={dismiss} style={{ background: "none", border: "none", color: "#4b5563", cursor: "pointer", padding: 4, lineHeight: 0 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+
+        <button onClick={dismiss} style={{
+          background: "none", border: "none", color: "#4b5563",
+          cursor: "pointer", padding: 6, lineHeight: 0, flexShrink: 0,
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
         </button>
       </div>
 
-      {/* Steps (iOS ou "Mostrar mais") */}
-      {showSteps && platform === "ios" && (
-        <div style={{ marginTop: 14, borderTop: "1px solid #1e2535", paddingTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-          {iosSteps.map((s, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+      {/* Steps expandidos */}
+      {showSteps && (
+        <div style={{
+          marginTop: 14, paddingTop: 14,
+          borderTop: "1px solid #1f2937",
+          display: "flex", flexDirection: "column", gap: 12,
+        }}>
+          {steps.map((s, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {/* Ícone real do browser */}
               <div style={{
-                width: 24, height: 24, borderRadius: 8, background: "#1a2030", border: "1px solid #252d3d",
+                width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                background: `${s.color}14`,
+                border: `1px solid ${s.color}30`,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 13, flexShrink: 0,
-              }}>{i + 1}</div>
-              <span style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.5, paddingTop: 3 }}>{s.text}</span>
+                color: s.color,
+              }}>
+                <s.Icon />
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", lineHeight: 1.3 }}>
+                  {s.label}
+                </div>
+                <div style={{ fontSize: 11, color: "#4b5563", marginTop: 1 }}>
+                  {s.sub}
+                </div>
+              </div>
+              {i < steps.length - 1 && (
+                <div style={{
+                  marginLeft: "auto", flexShrink: 0,
+                  color: "#374151", fontSize: 16, lineHeight: 1,
+                }}>›</div>
+              )}
             </div>
           ))}
         </div>
       )}
 
-      {/* Actions */}
+      {/* Ações */}
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <button
-          onClick={() => setShowSteps((v) => !v)}
-          style={{
-            flex: 1, height: 38, borderRadius: 10,
-            border: "1px solid #252d3d", background: "transparent",
-            color: "#94a3b8", fontSize: 12, fontWeight: 600, cursor: "pointer",
-            fontFamily: "inherit",
-          }}
-        >
-          {showSteps ? "Ocultar" : "Mostrar como"}
-        </button>
-        {platform !== "ios" && deferredPrompt && (
+        {!hasNativePrompt && (
           <button
-            onClick={handleInstall}
+            onClick={() => setShowSteps(v => !v)}
             style={{
-              flex: 1, height: 38, borderRadius: 10,
-              border: "none", background: "#e6b800",
-              color: "#1a1000", fontSize: 12, fontWeight: 700, cursor: "pointer",
+              flex: 1, height: 40, borderRadius: 10,
+              border: "1px solid #1f2937", background: "transparent",
+              color: showSteps ? "#94a3b8" : "#64748b",
+              fontSize: 13, fontWeight: 600, cursor: "pointer",
               fontFamily: "inherit",
             }}
           >
-            Instalar
+            {showSteps ? "Ocultar" : "Como instalar"}
+          </button>
+        )}
+        {hasNativePrompt && (
+          <button
+            onClick={handleInstall}
+            style={{
+              flex: 1, height: 40, borderRadius: 10,
+              border: "none", background: "#e6b800",
+              color: "#1a1000", fontSize: 13, fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit",
+            }}
+          >
+            Instalar agora
           </button>
         )}
       </div>

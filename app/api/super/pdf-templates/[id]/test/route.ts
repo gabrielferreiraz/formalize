@@ -2,7 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { applyFieldsToBasePdf, type FieldPlacement } from "@/lib/pdf-overlay";
+import { applyFieldsToBasePdf, type FieldPlacement, type ShapeAnnotation } from "@/lib/pdf-overlay";
+
+// Cache em memória do buffer do PDF base — evita re-download a cada teste
+const pdfBufferCache = new Map<string, { buf: Buffer; ts: number }>();
+const PDF_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+async function fetchPdfBuffer(url: string): Promise<Buffer> {
+  const cached = pdfBufferCache.get(url);
+  if (cached && Date.now() - cached.ts < PDF_CACHE_TTL) return cached.buf;
+  const res = await fetch(url, { next: { revalidate: 0 } });
+  if (!res.ok) throw new Error("Falha ao baixar PDF base");
+  const buf = Buffer.from(await res.arrayBuffer());
+  pdfBufferCache.set(url, { buf, ts: Date.now() });
+  return buf;
+}
 
 function buildTestVars(artist: {
   name: string;
@@ -41,20 +55,25 @@ function buildTestVars(artist: {
   };
 }
 
-async function runTest(id: string, fieldsOverride?: FieldPlacement[]) {
+async function runTest(id: string, fieldsOverride?: FieldPlacement[], shapesOverride?: ShapeAnnotation[]) {
   const mapping = await prisma.pdfTemplateMapping.findUnique({
     where: { id },
     include: { artist: { select: { name: true, legalName: true, cnpj: true, pixKey: true } } },
   });
   if (!mapping) return null;
 
-  const baseRes = await fetch(mapping.pdfUrl);
-  if (!baseRes.ok) throw new Error("Falha ao baixar PDF base");
-
-  const baseBuffer = Buffer.from(await baseRes.arrayBuffer());
+  const baseBuffer = await fetchPdfBuffer(mapping.pdfUrl);
   const vars = buildTestVars(mapping.artist);
-  const fields = fieldsOverride ?? (mapping.fields as unknown as FieldPlacement[]) ?? [];
-  const pdfBytes = await applyFieldsToBasePdf(baseBuffer, vars, fields);
+  // Support both legacy array format and new { placements, shapes } format
+  const savedFields = mapping.fields as any;
+  const defaultFields: FieldPlacement[] = Array.isArray(savedFields)
+    ? savedFields
+    : Array.isArray(savedFields?.placements) ? savedFields.placements : [];
+  const defaultShapes: ShapeAnnotation[] = Array.isArray(savedFields?.shapes) ? savedFields.shapes : [];
+
+  const fields = fieldsOverride ?? defaultFields;
+  const shapes = shapesOverride ?? defaultShapes;
+  const pdfBytes = await applyFieldsToBasePdf(baseBuffer, vars, fields, shapes);
 
   return new NextResponse(Buffer.from(pdfBytes), {
     headers: {
@@ -91,9 +110,10 @@ export async function POST(
 
   const body = await req.json().catch(() => ({}));
   const fields = Array.isArray(body.fields) ? (body.fields as FieldPlacement[]) : undefined;
+  const shapes = Array.isArray(body.shapes) ? (body.shapes as ShapeAnnotation[]) : undefined;
 
   try {
-    const res = await runTest(params.id, fields);
+    const res = await runTest(params.id, fields, shapes);
     if (!res) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
     return res;
   } catch (e) {

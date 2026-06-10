@@ -185,7 +185,25 @@ select.input-field {
 
 /* ── Animação da barra flutuante quando o nav some ── */
 body.nav-hidden .bottom-sticky-bar {
-  transform: translateY(72px) !important;
+  transform: translateY(calc(72px + env(safe-area-inset-bottom, 0px))) !important;
+}
+
+/* ── Layout safe area padding (mobile: inclui safe-area-bottom; md+: apenas padding normal) ── */
+.admin-main-safe {
+  padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .admin-main-safe {
+    padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+.super-main-safe {
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .super-main-safe {
+    padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* ── Landing page ── */

@@ -68,10 +68,6 @@ export async function POST(req: NextRequest) {
       // Log without email to avoid PII in logs
       log.info({ userId: user.id }, "password reset token created");
 
-      // Helper function to add delays
-      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-      
-      // Busca o artista para obter o WhatsApp
       if (user.artistId) {
         const artist = await prisma.artist.findUnique({
           where: { id: user.artistId },
@@ -79,44 +75,28 @@ export async function POST(req: NextRequest) {
         });
 
         if (artist?.whatsapp) {
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL;
+          const appUrl = process.env.NEXT_PUBLIC_ROOT_DOMAIN
+            ? `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`
+            : "https://app.formalize.com.br";
           const resetLink = `${appUrl}/reset-password?token=${resetToken.token}`;
 
-          // Mensagem 1: Aviso inicial
-          const waMsg1 = `Olá! Você solicitou a redefinição de senha no Formalize.`;
-          
-          // Mensagem 2: Link de redefinição
-          const waMsg2 = `Link para redefinir senha:\n${resetLink}`;
-          
-          // Mensagem 3: Aviso de validade
-          const waMsg3 = `Este link é válido por ${TOKEN_TTL_HOURS} horas.`;
+          const waMsg = `Olá, ${artist.name}! Você solicitou a redefinição de senha no *Formalize*.\n\nClique no link abaixo para criar uma nova senha:\n${resetLink}\n\n_(Válido por ${TOKEN_TTL_HOURS} horas)_`;
 
-          const formattedNumber = formatWhatsAppNumber(artist.whatsapp);
-          
           try {
-            // Envia primeira mensagem
             await sendWhatsAppTextMessage({
-              number: formattedNumber,
-              message: waMsg1,
+              number: formatWhatsAppNumber(artist.whatsapp),
+              message: waMsg,
             });
-            
-            await delay(1500);
-            
-            await sendWhatsAppTextMessage({
-              number: formattedNumber,
-              message: waMsg2,
-            });
-            
-            await delay(1500);
-            
-            await sendWhatsAppTextMessage({
-              number: formattedNumber,
-              message: waMsg3,
-            });
-            
           } catch (err) {
-            log.error({ err }, "Error sending WhatsApp messages for password reset");
+            log.error({ err }, "Error sending WhatsApp message for password reset");
           }
+
+          // Notify admin — fire and forget
+          const adminNumber = process.env.ADMIN_NOTIFY_WHATSAPP ?? "5567981783902";
+          sendWhatsAppTextMessage({
+            number: adminNumber,
+            message: `🔑 *Reset de senha solicitado*\n\n*${artist.name}* solicitou redefinição de senha no Formalize.`,
+          }).catch(() => {});
         }
       }
     } catch (err) {

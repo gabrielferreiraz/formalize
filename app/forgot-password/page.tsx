@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
               Solicitação registrada
             </p>
             <p style={{ fontSize: 13, color: "#4b5563", lineHeight: 1.6, marginBottom: 24 }}>
-              Nossa equipe vai entrar em contato pelo WhatsApp cadastrado com o link de redefinição em breve.
+              Enviamos um link de redefinição para o WhatsApp cadastrado. Verifique suas mensagens.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
               {process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP && (

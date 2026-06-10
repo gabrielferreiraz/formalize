@@ -34,20 +34,41 @@ export async function GET(req: NextRequest) {
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15_000);
+  const timeout = setTimeout(() => controller.abort(), 30_000);
 
   try {
-    const res = await fetch(parsed.toString(), { signal: controller.signal });
+    // Forward Range header so pdfjs can use partial content (loads only the pages it needs)
+    const rangeHeader = req.headers.get("range");
+    const upstreamHeaders: HeadersInit = {};
+    if (rangeHeader) upstreamHeaders["Range"] = rangeHeader;
+
+    const res = await fetch(parsed.toString(), {
+      signal: controller.signal,
+      headers: upstreamHeaders,
+    });
     clearTimeout(timeout);
-    if (!res.ok) {
+
+    if (!res.ok && res.status !== 206) {
       return NextResponse.json({ error: "Falha ao buscar PDF" }, { status: 502 });
     }
-    const buffer = await res.arrayBuffer();
-    return new NextResponse(buffer, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": "inline",
-      },
+
+    const responseHeaders: Record<string, string> = {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": "inline",
+      "Accept-Ranges": "bytes",
+      "Cache-Control": "private, max-age=300, stale-while-revalidate=60",
+    };
+
+    // Forward size headers so pdfjs knows file length for range arithmetic
+    const contentLength = res.headers.get("content-length");
+    if (contentLength) responseHeaders["Content-Length"] = contentLength;
+    const contentRange = res.headers.get("content-range");
+    if (contentRange) responseHeaders["Content-Range"] = contentRange;
+
+    // Stream body directly — no buffering, pdfjs starts rendering immediately
+    return new NextResponse(res.body, {
+      status: res.status,
+      headers: responseHeaders,
     });
   } catch {
     clearTimeout(timeout);

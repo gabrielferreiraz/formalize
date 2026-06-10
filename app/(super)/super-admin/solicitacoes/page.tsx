@@ -53,10 +53,6 @@ function fmtDateTime(iso: string) {
   });
 }
 
-function genPassword() {
-  const chars = "abcdefghjkmnpqrstuvwxyz23456789!@#";
-  return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-}
 
 function CopyButton({ text, label = "Copiar" }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
@@ -90,9 +86,11 @@ function DetailModal({ req, onClose, onUpdate }: {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [note, setNote] = useState(req.rejectedNote || "");
-  const [password, setPassword] = useState(() => genPassword());
-  const [showPass, setShowPass] = useState(false);
-  const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null);
+  const [autoSend, setAutoSend] = useState(true);
+  const [waSentStatus, setWaSentStatus] = useState<"idle" | "sent" | "failed">("idle");
+  const [firstLogin, setFirstLogin] = useState<{ email: string; link: string } | null>(null);
+  const [resending, setResending] = useState(false);
+  const [resendResult, setResendResult] = useState<{ link: string; waSent: boolean } | null>(null);
 
   async function approve() {
     setError(""); setLoading(true);
@@ -100,11 +98,12 @@ function DetailModal({ req, onClose, onUpdate }: {
       const res = await fetch("/api/super/requests", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: req.id, status: "APPROVED", initialPassword: password }),
+        body: JSON.stringify({ id: req.id, status: "APPROVED", sendWhatsApp: autoSend }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Erro ao aprovar."); return; }
-      setCredentials({ email: req.email, password });
+      setFirstLogin({ email: req.email, link: data.firstLoginLink ?? "" });
+      if (autoSend) setWaSentStatus(data.whatsappSent ? "sent" : "failed");
       onUpdate(data);
     } finally { setLoading(false); }
   }
@@ -123,16 +122,21 @@ function DetailModal({ req, onClose, onUpdate }: {
     } finally { setLoading(false); }
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_ROOT_DOMAIN
-    ? `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`
-    : "https://app.formalize.com.br";
+  async function resendLink() {
+    setResending(true);
+    try {
+      const res = await fetch("/api/super/resend-access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId: req.id }),
+      });
+      const data = await res.json();
+      if (res.ok) setResendResult({ link: data.firstLoginLink, waSent: data.whatsappSent });
+    } finally { setResending(false); }
+  }
 
-  const whatsappMsg1 = credentials
-    ? `Olá, ${req.name}! 🎉 Seu acesso ao *Formalize* foi criado!\n\nAcesse pelo link:\n${appUrl}/login\n\nSeu e-mail de login: *${credentials.email}*\n\nVou enviar sua senha temporária na próxima mensagem.\n\n📲 *Dica importante:* depois de fazer o login, instale o app tocando em "Adicionar à tela inicial" (ou "Instalar app" no banner) — fica muito mais fácil de acessar no dia a dia sem precisar abrir o navegador toda vez!`
-    : "";
-
-  const whatsappMsg2 = credentials
-    ? `🔑 Sua senha temporária:\n\n*${credentials.password}*\n\nNo primeiro acesso você vai precisar criar uma senha nova.`
+  const whatsappMsgManual = firstLogin
+    ? `Olá, ${req.name}! 🎉 Seu acesso ao *Formalize* foi aprovado!\n\nClique no link abaixo para definir sua senha e entrar:\n${firstLogin.link}\n\n_(Link válido por 48 horas)_\n\n📲 *Dica:* depois de entrar, instale o app tocando em "Adicionar à tela inicial" para acesso rápido no dia a dia!`
     : "";
 
   const accent = STATUS_ACCENT[req.status];
@@ -210,8 +214,43 @@ function DetailModal({ req, onClose, onUpdate }: {
             </div>
           )}
 
-          {/* ── Credentials panel (post-approval) ── */}
-          {credentials && (
+          {/* ── Resend access for already-approved requests ── */}
+          {req.status === "APPROVED" && !firstLogin && (
+            <div className="space-y-3 pt-1 border-t border-stage-600/60">
+              <p className="text-xs text-gray-500">Conta ativa. Gere um novo link de acesso se o artista precisar.</p>
+              {resendResult ? (
+                <div className="space-y-2">
+                  <div className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-xs font-semibold ${resendResult.waSent ? "bg-green-500/8 border-green-500/25 text-green-400" : "bg-yellow-500/8 border-yellow-500/25 text-yellow-400"}`}>
+                    {resendResult.waSent ? "Link enviado via WhatsApp ✓" : "Link gerado — envie manualmente:"}
+                  </div>
+                  <div className="flex items-center justify-between gap-3 px-4 py-3 bg-stage-700 border border-stage-600 rounded-xl">
+                    <p className="text-xs text-gray-300 font-mono break-all truncate">{resendResult.link}</p>
+                    <CopyButton text={resendResult.link} />
+                  </div>
+                  {!resendResult.waSent && (
+                    <a href={`https://wa.me/${req.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${req.name}! Aqui está seu link de acesso ao Formalize:\n${resendResult.link}\n\n_(Válido por 48 horas)_`)}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-700 hover:bg-green-600 text-white text-sm font-bold transition-colors">
+                      <WaIcon /> Enviar pelo WhatsApp
+                    </a>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={resendLink}
+                  disabled={resending}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-stage-500 text-gray-300 hover:border-stage-400 hover:text-gray-100 text-sm font-semibold transition-colors disabled:opacity-50"
+                >
+                  {resending ? (
+                    <><div className="w-4 h-4 rounded-full border-2 border-gray-500/30 border-t-gray-400 animate-spin" /> Gerando...</>
+                  ) : "Gerar novo link de acesso"}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* ── First-login panel (post-approval) ── */}
+          {firstLogin && (
             <div className="space-y-3 pt-1 border-t border-stage-600/60">
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center">
@@ -219,11 +258,11 @@ function DetailModal({ req, onClose, onUpdate }: {
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </div>
-                <p className="text-xs font-bold text-green-400 tracking-wide uppercase">Conta criada — envie as credenciais</p>
+                <p className="text-xs font-bold text-green-400 tracking-wide uppercase">Conta criada</p>
               </div>
 
               <div className="bg-stage-700 border border-stage-600 rounded-xl overflow-hidden divide-y divide-stage-600/60">
-                {([["E-mail de login", credentials.email], ["Senha temporária", credentials.password]] as [string, string][]).map(([k, v]) => (
+                {([["E-mail de login", firstLogin.email], ["Link de primeiro acesso", firstLogin.link]] as [string, string][]).map(([k, v]) => (
                   <div key={k} className="flex items-center justify-between gap-3 px-4 py-3">
                     <div className="min-w-0">
                       <p className="text-[10px] text-gray-600 font-semibold uppercase tracking-widest mb-0.5">{k}</p>
@@ -233,56 +272,47 @@ function DetailModal({ req, onClose, onUpdate }: {
                   </div>
                 ))}
               </div>
+              <p className="text-xs text-gray-600">Link válido por 48h. O artista clica e cria a própria senha.</p>
 
-              <p className="text-xs text-gray-600">Envie as mensagens em sequência — a senha separada fica fácil de copiar.</p>
-              <div className="grid grid-cols-1 gap-2">
-                <a
-                  href={`https://wa.me/${req.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMsg1)}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-700 hover:bg-green-600 text-white text-sm font-bold transition-colors"
-                >
-                  <WaIcon /> 1ª msg — Boas-vindas + link
+              {waSentStatus === "sent" ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-green-500/8 border border-green-500/25">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <p className="text-xs text-green-400 font-semibold">Link enviado automaticamente via WhatsApp</p>
+                  </div>
+                  <p className="text-xs text-gray-600">Se precisar reenviar manualmente:</p>
+                  <a href={`https://wa.me/${req.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMsgManual)}`} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-1.5 py-2 rounded-xl border border-green-600/40 text-green-400 text-xs font-semibold hover:bg-green-600/10 transition-colors">
+                    <WaIcon size={12} /> Reenviar link
+                  </a>
+                </div>
+              ) : waSentStatus === "failed" ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/8 border border-red-500/25">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <p className="text-xs text-red-400 font-semibold">Falha no envio automático — envie manualmente:</p>
+                  </div>
+                  <a href={`https://wa.me/${req.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMsgManual)}`} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-700 hover:bg-green-600 text-white text-sm font-bold transition-colors">
+                    <WaIcon /> Enviar link de primeiro acesso
+                  </a>
+                </div>
+              ) : (
+                <a href={`https://wa.me/${req.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMsgManual)}`} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-700 hover:bg-green-600 text-white text-sm font-bold transition-colors">
+                  <WaIcon /> Enviar link de primeiro acesso
                 </a>
-                <a
-                  href={`https://wa.me/${req.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMsg2)}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-600/80 hover:bg-green-600 text-white text-sm font-bold transition-colors"
-                >
-                  <WaIcon /> 2ª msg — Senha temporária
-                </a>
-              </div>
+              )}
             </div>
           )}
 
           {/* ── Pending actions ── */}
-          {req.status === "PENDING" && !credentials && (
+          {req.status === "PENDING" && !firstLogin && (
             <div className="space-y-4 pt-1 border-t border-stage-600/60">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="label mb-0">Senha inicial</label>
-                  <button onClick={() => setPassword(genPassword())} className="text-xs text-gold-400 hover:text-gold-300 font-medium">
-                    Gerar nova
-                  </button>
-                </div>
-                <div className="relative">
-                  <input
-                    type={showPass ? "text" : "password"}
-                    className="input-field pr-16 font-mono"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    minLength={6}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-gray-300 font-medium"
-                  >
-                    {showPass ? "Ocultar" : "Ver"}
-                  </button>
-                </div>
-                <p className="text-xs text-gray-600 mt-1.5">Artista troca obrigatoriamente no primeiro acesso.</p>
-              </div>
-
               <div>
                 <label className="label">Nota de rejeição <span className="normal-case text-gray-600 font-normal">(opcional)</span></label>
                 <textarea
@@ -292,6 +322,19 @@ function DetailModal({ req, onClose, onUpdate }: {
                   onChange={(e) => setNote(e.target.value)}
                 />
               </div>
+
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <div
+                  className={`w-10 h-6 rounded-full relative transition-colors flex-shrink-0 ${autoSend ? "bg-green-600" : "bg-stage-600"}`}
+                  onClick={() => setAutoSend(v => !v)}
+                >
+                  <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${autoSend ? "translate-x-5" : "translate-x-1"}`} />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-300">Enviar link de primeiro acesso via WhatsApp</p>
+                  <p className="text-[10px] text-gray-600">Artista recebe o link e cria a própria senha</p>
+                </div>
+              </label>
 
               {error && (
                 <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2.5">{error}</p>
@@ -307,7 +350,7 @@ function DetailModal({ req, onClose, onUpdate }: {
                 </button>
                 <button
                   onClick={approve}
-                  disabled={loading || password.length < 6}
+                  disabled={loading}
                   className="py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? "Criando..." : "Aprovar"}

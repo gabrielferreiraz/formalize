@@ -630,8 +630,8 @@ function TabDocumentos({ artistId }: { artistId: string }) {
 
 const TABS = ["Dados", "Usuários", "Documentos"] as const;
 
-export default function ArtistDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function ArtistDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const [artist, setArtist] = useState<Artist | null>(null);
   const [tab, setTab] = useState<(typeof TABS)[number]>("Dados");

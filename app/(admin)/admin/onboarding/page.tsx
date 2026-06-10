@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 const TOTAL_STEPS = 4;
@@ -29,6 +29,21 @@ function hexToRgb(hex: string) {
   return r
     ? `${parseInt(r[1], 16)},${parseInt(r[2], 16)},${parseInt(r[3], 16)}`
     : "245,200,66";
+}
+
+function accentTextColor(hex: string): string {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return "#07090e";
+  const luminance = (0.299 * parseInt(m[1], 16) + 0.587 * parseInt(m[2], 16) + 0.114 * parseInt(m[3], 16)) / 255;
+  return luminance > 0.45 ? "#07090e" : "#f0f4f8";
+}
+
+// Garante que a cor accent seja visível sobre fundo escuro (#07090e)
+function accentOnDark(hex: string): string {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return "#e6b800";
+  const luminance = (0.299 * parseInt(m[1], 16) + 0.587 * parseInt(m[2], 16) + 0.114 * parseInt(m[3], 16)) / 255;
+  return luminance < 0.12 ? "#7090b8" : hex;
 }
 
 // ── Underline input — premium form pattern ──────────────────────
@@ -95,53 +110,42 @@ function StepIntro() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
       <Field>
-        {/* Layered glow icon */}
-        <div style={{ position: "relative", width: 58, height: 58, marginBottom: 34 }}>
+        <div style={{ position: "relative", width: 64, height: 64, marginBottom: 40 }}>
           <div style={{
-            position: "absolute", inset: -10,
-            borderRadius: 24,
+            position: "absolute", inset: -10, borderRadius: 24,
             background: "radial-gradient(circle, rgba(var(--accent-rgb),0.07) 0%, transparent 70%)",
           }} />
           <div style={{
-            position: "absolute", inset: 0,
-            borderRadius: 16,
+            position: "absolute", inset: 0, borderRadius: 16,
             background: "linear-gradient(135deg, rgba(var(--accent-rgb),0.12) 0%, rgba(var(--accent-rgb),0.03) 100%)",
             border: "1px solid rgba(var(--accent-rgb),0.22)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-              stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              stroke="var(--accent-on-dark)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
             </svg>
           </div>
         </div>
 
-        <div style={{
-          fontSize: 10, fontWeight: 700, color: "var(--accent)",
-          letterSpacing: "0.15em", textTransform: "uppercase",
-          marginBottom: 16, opacity: 0.7,
-        }}>
-          Configuração inicial
-        </div>
-
         <h1 style={{
-          fontSize: 42, fontWeight: 800, letterSpacing: "-0.04em",
-          lineHeight: 1.05, margin: "0 0 16px",
+          fontSize: 44, fontWeight: 800, letterSpacing: "-0.04em",
+          lineHeight: 1.05, margin: "0 0 18px",
           animation: "headlineReveal 0.5s cubic-bezier(0.22,1,0.36,1) 0.06s both",
         }}>
           <span style={{ color: "#e8edf5" }}>Antes de<br /></span>
-          <span style={{ color: "var(--accent)" }}>começarmos</span>
+          <span style={{ color: "var(--accent-on-dark)" }}>começarmos</span>
         </h1>
 
-        <p style={{ fontSize: 14, color: "#2a3d52", lineHeight: 1.7, margin: 0 }}>
-          Precisamos de algumas informações para personalizar seus documentos com a sua identidade artística.
+        <p style={{ fontSize: 16, color: "#5a7896", lineHeight: 1.65, margin: 0 }}>
+          Vamos preencher algumas informações que aparecem nos seus contratos e orçamentos.
         </p>
       </Field>
 
       <Field delay={120}>
         <div style={{
           height: 1,
-          background: "linear-gradient(to right, transparent, #0d1828 25%, #0d1828 75%, transparent)",
+          background: "linear-gradient(to right, transparent, #1e3050 25%, #1e3050 75%, transparent)",
           marginBottom: 22,
         }} />
 
@@ -149,17 +153,16 @@ function StepIntro() {
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 7,
             padding: "7px 16px", borderRadius: 100,
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid #0d1828",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid #1e3050",
           }}>
             <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ade80", opacity: 0.85 }} />
-            <span style={{ fontSize: 11, color: "#1e2d3e", fontWeight: 500 }}>
+            <span style={{ fontSize: 13, color: "#5a7896", fontWeight: 500 }}>
               Leva menos de 2 minutos
             </span>
           </div>
-
-          <span style={{ fontSize: 12, color: "#192435", textAlign: "center", lineHeight: 1.55 }}>
-            Você pode pular essa etapa a qualquer momento.
+          <span style={{ fontSize: 13, color: "#4a6888", textAlign: "center", lineHeight: 1.55 }}>
+            Você pode pular qualquer etapa.
           </span>
         </div>
       </Field>
@@ -262,7 +265,7 @@ function Step1({
                   style={{
                     fontSize: 14,
                     fontWeight: active ? 600 : 400,
-                    color: active ? "#dde4f0" : "#3d5068",
+                    color: active ? "#dde4f0" : "#5a7896",
                     flex: 1,
                     textAlign: "left",
                     transition: "color 0.15s, font-weight 0.15s",
@@ -309,7 +312,7 @@ function Step1({
               style={{
                 fontSize: 14,
                 fontWeight: !isPalette ? 600 : 400,
-                color: !isPalette ? "#dde4f0" : "#3d5068",
+                color: !isPalette ? "#dde4f0" : "#5a7896",
                 flex: 1,
                 textAlign: "left",
               }}
@@ -385,7 +388,7 @@ function Step1({
   );
 }
 
-// ── Step 3 — Jurídico ───────────────────────────────────────────
+// ── Step 2 — Jurídico ───────────────────────────────────────────
 function Step2({
   data,
   onChange,
@@ -443,13 +446,15 @@ function Step2({
   );
 }
 
-// ── Step 4 — Contato ────────────────────────────────────────────
+// ── Step 3 — Contato ────────────────────────────────────────────
 function Step3({
   data,
   onChange,
+  onWhatsapp,
 }: {
   data: OnboardingData;
   onChange: (d: OnboardingData) => void;
+  onWhatsapp: (raw: string) => void;
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
@@ -463,9 +468,10 @@ function Step3({
         <UInput
           label="WhatsApp"
           value={data.whatsapp}
-          onChange={(e) => onChange({ ...data, whatsapp: e.target.value })}
+          onChange={(e) => onWhatsapp(e.target.value)}
           placeholder="(67) 99999-9999"
           type="tel"
+          inputMode="numeric"
         />
       </Field>
 
@@ -481,7 +487,7 @@ function Step3({
   );
 }
 
-// ── Step 5 — Logo ───────────────────────────────────────────────
+// ── Step 4 — Logo ───────────────────────────────────────────────
 function Step4({
   data,
   logoUrl,
@@ -546,7 +552,7 @@ function Step4({
                 style={{
                   marginLeft: "auto",
                   fontSize: 13,
-                  color: "#253040",
+                  color: "#6888a8",
                   cursor: "pointer",
                   fontWeight: 500,
                 }}
@@ -579,24 +585,27 @@ function Step4({
               />
             ) : (
               <>
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#253040"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-                <span style={{ fontSize: 14, color: "#3d5068", fontWeight: 500 }}>
+                <div style={{ animation: "logoFloat 2.6s ease-in-out infinite" }}>
+                  <svg
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--accent-on-dark)"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ opacity: 0.7 }}
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                </div>
+                <span style={{ fontSize: 15, color: "#c8d8e8", fontWeight: 600 }}>
                   Enviar logo
                 </span>
-                <span style={{ fontSize: 11, color: "#1a2535" }}>
+                <span style={{ fontSize: 12, color: "#4a6888" }}>
                   PNG, JPG ou SVG
                 </span>
               </>
@@ -615,6 +624,326 @@ function Step4({
   );
 }
 
+// ── Logo Crop Modal ─────────────────────────────────────────────
+function LogoCropModal({
+  file,
+  onConfirm,
+  onCancel,
+}: {
+  file: File;
+  onConfirm: (blob: Blob) => void;
+  onCancel: () => void;
+}) {
+  const [imgSrc, setImgSrc] = useState<string | null>(null);
+  const [dims, setDims] = useState({ natW: 0, natH: 0, dispW: 0, dispH: 0 });
+  const [crop, setCrop] = useState({ x: 0, y: 0, w: 0, h: 0 });
+  const [confirming, setConfirming] = useState(false);
+  const [ratio, setRatio] = useState<number | null>(null); // null = livre, 1 = quadrado, 2.5 = 5:2
+  const dragRef = useRef<null | {
+    type: "move" | "nw" | "ne" | "sw" | "se";
+    startX: number; startY: number;
+    startCrop: { x: number; y: number; w: number; h: number };
+  }>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setImgSrc(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  // Parar drag ao soltar o mouse/toque fora do container
+  useEffect(() => {
+    const stop = () => { dragRef.current = null; };
+    window.addEventListener("mouseup", stop);
+    window.addEventListener("touchend", stop);
+    return () => {
+      window.removeEventListener("mouseup", stop);
+      window.removeEventListener("touchend", stop);
+    };
+  }, []);
+
+  function onImgLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+    const img = e.currentTarget;
+    const nw = img.naturalWidth;
+    const nh = img.naturalHeight;
+    if (!nw || !nh) return;
+    const maxW = Math.min(window.innerWidth - 48, 500);
+    const maxH = Math.min(window.innerHeight * 0.48, 360);
+    const scale = Math.min(maxW / nw, maxH / nh, 1);
+    const dw = Math.round(nw * scale);
+    const dh = Math.round(nh * scale);
+    setDims({ natW: nw, natH: nh, dispW: dw, dispH: dh });
+    const p = 0.08;
+    setCrop({
+      x: Math.round(dw * p), y: Math.round(dh * p),
+      w: Math.round(dw * (1 - 2 * p)), h: Math.round(dh * (1 - 2 * p)),
+    });
+  }
+
+  function getPos(e: React.MouseEvent | React.TouchEvent) {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return { x: 0, y: 0 };
+    const pt = "touches" in e && e.touches.length > 0
+      ? e.touches[0]
+      : "changedTouches" in e
+        ? (e as React.TouchEvent).changedTouches[0]
+        : (e as unknown as MouseEvent);
+    return {
+      x: (pt as { clientX: number }).clientX - rect.left,
+      y: (pt as { clientY: number }).clientY - rect.top,
+    };
+  }
+
+  function startDrag(type: "move" | "nw" | "ne" | "sw" | "se") {
+    return (e: React.MouseEvent | React.TouchEvent) => {
+      e.stopPropagation();
+      const pos = getPos(e);
+      dragRef.current = { type, startX: pos.x, startY: pos.y, startCrop: { ...crop } };
+    };
+  }
+
+  function onMove(e: React.MouseEvent | React.TouchEvent) {
+    const d = dragRef.current;
+    if (!d) return;
+    const { dispW, dispH } = dims;
+    if (!dispW) return;
+    const pos = getPos(e);
+    const dx = pos.x - d.startX;
+    const dy = pos.y - d.startY;
+    const s = d.startCrop;
+    const MIN = 40;
+    let { x, y, w, h } = s;
+
+    if (d.type === "move") {
+      x = Math.max(0, Math.min(dispW - w, s.x + dx));
+      y = Math.max(0, Math.min(dispH - h, s.y + dy));
+    } else if (d.type === "se") {
+      w = Math.max(MIN, Math.min(dispW - s.x, s.w + dx));
+      h = ratio ? w / ratio : Math.max(MIN, Math.min(dispH - s.y, s.h + dy));
+    } else if (d.type === "sw") {
+      const nx = Math.max(0, Math.min(s.x + s.w - MIN, s.x + dx));
+      w = s.w + (s.x - nx); x = nx;
+      h = ratio ? w / ratio : Math.max(MIN, Math.min(dispH - s.y, s.h + dy));
+    } else if (d.type === "ne") {
+      const ny = Math.max(0, Math.min(s.y + s.h - MIN, s.y + dy));
+      h = s.h + (s.y - ny); y = ny;
+      w = ratio ? h * ratio : Math.max(MIN, Math.min(dispW - s.x, s.w + dx));
+    } else if (d.type === "nw") {
+      const nx = Math.max(0, Math.min(s.x + s.w - MIN, s.x + dx));
+      const ny = Math.max(0, Math.min(s.y + s.h - MIN, s.y + dy));
+      w = s.w + (s.x - nx); x = nx;
+      h = ratio ? w / ratio : s.h + (s.y - ny); y = ratio ? y : ny;
+    }
+    setCrop({ x, y, w, h });
+  }
+
+  async function handleConfirm() {
+    if (!imgSrc || !dims.dispW || confirming) return;
+    setConfirming(true);
+    const { natW, natH, dispW, dispH } = dims;
+    const scaleX = natW / dispW;
+    const scaleY = natH / dispH;
+    const sx = Math.round(crop.x * scaleX);
+    const sy = Math.round(crop.y * scaleY);
+    const sw = Math.max(1, Math.round(crop.w * scaleX));
+    const sh = Math.max(1, Math.round(crop.h * scaleY));
+    const canvas = document.createElement("canvas");
+    canvas.width = sw; canvas.height = sh;
+    const ctx = canvas.getContext("2d")!;
+    const img = new Image();
+    await new Promise<void>((res, rej) => {
+      img.onload = () => res();
+      img.onerror = () => rej(new Error("img load failed"));
+      img.src = imgSrc;
+    }).catch(() => { setConfirming(false); });
+    if (!img.complete) return;
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+    canvas.toBlob(blob => {
+      if (blob) onConfirm(blob);
+      else setConfirming(false);
+    }, "image/png");
+  }
+
+  function applyRatio(r: number | null) {
+    setRatio(r);
+    if (!r || !dims.dispW) return;
+    const { dispW, dispH } = dims;
+    const maxW = dispW * 0.84;
+    const maxH = dispH * 0.84;
+    let w = maxW, h = w / r;
+    if (h > maxH) { h = maxH; w = h * r; }
+    w = Math.round(w); h = Math.round(h);
+    setCrop({ x: Math.round((dispW - w) / 2), y: Math.round((dispH - h) / 2), w, h });
+  }
+
+  const { dispW, dispH } = dims;
+  const ready = dispW > 0;
+  const H = 22; // handle hit area
+
+  return createPortal(
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 99999,
+      background: "rgba(0,0,0,0.93)",
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      padding: "calc(24px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px))",
+      fontFamily: "'Inter', system-ui, sans-serif",
+    }}>
+      <div style={{ width: "100%", maxWidth: 560 }}>
+        <p style={{
+          fontSize: 10, fontWeight: 700, color: "#e6b800",
+          letterSpacing: "0.14em", textTransform: "uppercase",
+          margin: "0 0 14px",
+        }}>
+          Ajustar logo
+        </p>
+
+        {/* Imagem sempre no DOM (oculta) para que onLoad dispare */}
+        {imgSrc && (
+          <img src={imgSrc} alt="" onLoad={onImgLoad} draggable={false} style={{ display: "none" }} />
+        )}
+
+        {/* Presets de proporção */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+          {([
+            { label: "Livre", value: null },
+            { label: "1:1", value: 1 },
+            { label: "5:2", value: 2.5, hint: "máx sistema" },
+          ] as { label: string; value: number | null; hint?: string }[]).map(p => (
+            <button
+              key={p.label}
+              onClick={() => applyRatio(p.value)}
+              style={{
+                height: 28, padding: "0 12px", borderRadius: 8,
+                border: `1px solid ${ratio === p.value ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.1)"}`,
+                background: ratio === p.value ? "rgba(255,255,255,0.1)" : "transparent",
+                color: ratio === p.value ? "#e8edf5" : "#5a7896",
+                fontSize: 11, fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
+                transition: "all 0.15s",
+              }}
+            >
+              {p.label}{p.hint ? <span style={{ marginLeft: 4, opacity: 0.5, fontWeight: 400 }}>({p.hint})</span> : null}
+            </button>
+          ))}
+        </div>
+
+        {!ready ? (
+          <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{
+              width: 24, height: 24, borderRadius: "50%",
+              border: "2px solid rgba(255,255,255,0.08)",
+              borderTopColor: "#e6b800",
+              animation: "spin 0.8s linear infinite",
+            }} />
+          </div>
+        ) : (
+          <div
+            ref={containerRef}
+            style={{
+              position: "relative", width: dispW, height: dispH,
+              margin: "0 auto", userSelect: "none", touchAction: "none",
+              borderRadius: 8,
+            }}
+            onMouseMove={onMove}
+            onTouchMove={onMove}
+          >
+            <img
+              src={imgSrc ?? ""}
+              alt=""
+              width={dispW}
+              height={dispH}
+              draggable={false}
+              style={{ display: "block", borderRadius: 8 }}
+            />
+
+            {/* Escurecimento fora do recorte */}
+            {([
+              { left: 0, top: 0, width: dispW, height: crop.y },
+              { left: 0, top: crop.y + crop.h, width: dispW, height: dispH - crop.y - crop.h },
+              { left: 0, top: crop.y, width: crop.x, height: crop.h },
+              { left: crop.x + crop.w, top: crop.y, width: dispW - crop.x - crop.w, height: crop.h },
+            ] as React.CSSProperties[]).map((r, i) => (
+              <div key={i} style={{ position: "absolute", background: "rgba(0,0,0,0.65)", pointerEvents: "none", ...r }} />
+            ))}
+
+            {/* Caixa de recorte */}
+            <div
+              onMouseDown={startDrag("move")}
+              onTouchStart={startDrag("move")}
+              style={{
+                position: "absolute",
+                left: crop.x, top: crop.y, width: crop.w, height: crop.h,
+                border: "1.5px solid rgba(255,255,255,0.9)",
+                cursor: "move", boxSizing: "border-box",
+                overflow: "visible",
+              }}
+            >
+              {/* Alças nos cantos — área de toque maior que o visual */}
+              {(["nw", "ne", "sw", "se"] as const).map(dir => (
+                <div
+                  key={dir}
+                  onMouseDown={startDrag(dir)}
+                  onTouchStart={startDrag(dir)}
+                  style={{
+                    position: "absolute",
+                    width: H, height: H,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    ...(dir[0] === "n" ? { top: -H / 2 } : { bottom: -H / 2 }),
+                    ...(dir[1] === "w" ? { left: -H / 2 } : { right: -H / 2 }),
+                    cursor: `${dir}-resize`,
+                    zIndex: 3,
+                  }}
+                >
+                  <div style={{
+                    width: 10, height: 10,
+                    background: "#fff",
+                    borderRadius: 2,
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.6)",
+                    pointerEvents: "none",
+                  }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <p style={{ fontSize: 11, color: "#5a7896", margin: "10px 0 0", textAlign: "center" }}>
+          Arraste para mover · Alças nos cantos para redimensionar
+        </p>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+          <button
+            onClick={onCancel}
+            style={{
+              flex: 1, height: 46, borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "transparent", color: "#7090b0",
+              fontSize: 14, fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
+            }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={!ready || confirming}
+            style={{
+              flex: 2, height: 46, borderRadius: 12, border: "none",
+              background: "linear-gradient(135deg, #f5c842, #d4a017)",
+              color: "#07090e", fontSize: 14, fontWeight: 700,
+              fontFamily: "inherit",
+              cursor: ready && !confirming ? "pointer" : "not-allowed",
+              opacity: ready && !confirming ? 1 : 0.5,
+            }}
+          >
+            {confirming ? "Processando..." : "Usar recorte"}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 // ── Main ────────────────────────────────────────────────────────
 export default function OnboardingPage() {
   const [step, setStep] = useState(0);
@@ -625,8 +954,11 @@ export default function OnboardingPage() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const [cnpjLoading, setCnpjLoading] = useState(false);
   const [fetchError, setFetchError] = useState(false);
+  const [finishError, setFinishError] = useState(false);
+  const [uploadError, setUploadError] = useState(false);
 
   const [data, setData] = useState<OnboardingData>({
     name: "",
@@ -688,7 +1020,7 @@ export default function OnboardingPage() {
     return () => clearTimeout(loopTimer);
   }, []);
 
-  async function patch(fields: Record<string, unknown>) {
+  async function patch(fields: Record<string, unknown>): Promise<boolean> {
     console.log("[onboarding] patch — fields:", Object.keys(fields), fields);
     setSaving(true);
     try {
@@ -701,9 +1033,12 @@ export default function OnboardingPage() {
       if (!res.ok) {
         const body = await res.text().catch(() => "(sem body)");
         console.error("[onboarding] patch — ERRO na resposta:", res.status, body);
+        return false;
       }
+      return true;
     } catch (err) {
       console.error("[onboarding] patch — ERRO de rede:", err);
+      return false;
     } finally {
       setSaving(false);
     }
@@ -711,7 +1046,13 @@ export default function OnboardingPage() {
 
   async function finish() {
     console.log("[onboarding] finish — iniciando, step:", step);
-    await patch({ onboardingDone: true });
+    setFinishError(false);
+    const ok = await patch({ onboardingDone: true });
+    if (!ok) {
+      console.error("[onboarding] finish — patch falhou, abortando redirect");
+      setFinishError(true);
+      return;
+    }
     console.log("[onboarding] finish — patch onboardingDone=true concluído, redirecionando para /admin/orcamento");
     sessionStorage.removeItem("ob_loads");
     sessionStorage.setItem("just_onboarded", "1");
@@ -722,9 +1063,22 @@ export default function OnboardingPage() {
 
   async function handleContinue() {
     console.log(`[onboarding] handleContinue — step atual: ${step}`);
-    if (step === 1) await patch({ name: data.name, primaryColor: data.primaryColor });
-    else if (step === 2) await patch({ legalName: data.legalName, cnpj: data.cnpj });
-    else if (step === 3) await patch({ whatsapp: data.whatsapp, pixKey: data.pixKey });
+    const ne = (v: string) => v.trim().length > 0;
+    if (step === 1) {
+      const f: Record<string, unknown> = { primaryColor: data.primaryColor };
+      if (ne(data.name)) f.name = data.name.trim();
+      await patch(f);
+    } else if (step === 2) {
+      const f: Record<string, unknown> = {};
+      if (ne(data.legalName)) f.legalName = data.legalName.trim();
+      if (ne(data.cnpj)) f.cnpj = data.cnpj;
+      if (Object.keys(f).length > 0) await patch(f);
+    } else if (step === 3) {
+      const f: Record<string, unknown> = {};
+      if (ne(data.whatsapp)) f.whatsapp = data.whatsapp;
+      if (ne(data.pixKey)) f.pixKey = data.pixKey.trim();
+      if (Object.keys(f).length > 0) await patch(f);
+    }
     if (step < TOTAL_STEPS) {
       console.log(`[onboarding] avançando para step ${step + 1}`);
       setDirection("forward");
@@ -788,27 +1142,49 @@ export default function OnboardingPage() {
     }
   }
 
-  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleWhatsApp(raw: string) {
+    const d = raw.replace(/\D/g, "").slice(0, 11);
+    let fmt = d;
+    if (d.length > 2)  fmt = `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    if (d.length === 11) fmt = `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+    else if (d.length === 10) fmt = `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    setData(prev => ({ ...prev, whatsapp: fmt }));
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("type", "logo");
+    if (file) setCropFile(file);
+    if (e.target) e.target.value = "";
+  }
+
+  async function handleCropConfirm(blob: Blob) {
+    setCropFile(null);
+    setUploadError(false);
     setLogoUploading(true);
     try {
+      const formData = new FormData();
+      formData.append("file", new File([blob], "logo.png", { type: "image/png" }));
+      formData.append("type", "logo");
       const res = await fetch("/api/artist/upload", { method: "POST", body: formData });
       if (res.ok) {
         const { url } = await res.json();
-        setLogoUrl(url);
+        setLogoUrl(url + "?t=" + Date.now());
         await patch({ logoUrl: url });
+      } else {
+        console.error("[onboarding] upload logo — servidor retornou", res.status);
+        setUploadError(true);
       }
+    } catch (err) {
+      console.error("[onboarding] upload logo — erro de rede:", err);
+      setUploadError(true);
     } finally {
       setLogoUploading(false);
-      if (e.target) e.target.value = "";
     }
   }
 
   const colorRgb = hexToRgb(data.primaryColor);
+  const ctaText = accentTextColor(data.primaryColor);
+  const accentVisible = accentOnDark(data.primaryColor);
   const ctaLabel = step === 0 ? "Prosseguir" : step === TOTAL_STEPS ? "Concluir" : "Continuar";
 
   return (
@@ -817,6 +1193,8 @@ export default function OnboardingPage() {
         {
           "--accent": data.primaryColor,
           "--accent-rgb": colorRgb,
+          "--accent-text": ctaText,
+          "--accent-on-dark": accentVisible,
           position: "fixed",
           inset: 0,
           zIndex: 9999,
@@ -901,8 +1279,8 @@ export default function OnboardingPage() {
         </button>
       </div>
 
-      {/* Aviso se o fetch de dados falhou — formulário ainda funciona normalmente */}
-      {fetchError && (
+      {/* Avisos de erro inline */}
+      {(fetchError || finishError || uploadError) && (
         <div style={{
           margin: "0 16px 4px",
           padding: "8px 14px",
@@ -915,14 +1293,22 @@ export default function OnboardingPage() {
           gap: 10,
         }}>
           <span style={{ fontSize: 11, color: "#f87171", lineHeight: 1.4 }}>
-            Não conseguimos carregar seus dados — preencha normalmente, tudo será salvo.
+            {finishError
+              ? "Não foi possível salvar. Verifique sua conexão e tente novamente."
+              : uploadError
+                ? "Erro ao enviar o logo. Tente novamente."
+                : "Não conseguimos carregar seus dados — preencha normalmente, tudo será salvo."}
           </span>
           <button
             type="button"
-            onClick={() => { setFetchError(false); window.location.reload(); }}
+            onClick={() => {
+              if (finishError) { setFinishError(false); handleContinue(); }
+              else if (uploadError) setUploadError(false);
+              else { setFetchError(false); window.location.reload(); }
+            }}
             style={{ fontSize: 11, color: "#f87171", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
           >
-            Tentar novamente
+            {finishError ? "Tentar salvar" : "OK"}
           </button>
         </div>
       )}
@@ -952,13 +1338,13 @@ export default function OnboardingPage() {
             cnpjLoading={cnpjLoading}
           />
         )}
-        {step === 3 && <Step3 data={data} onChange={setData} />}
+        {step === 3 && <Step3 data={data} onChange={setData} onWhatsapp={handleWhatsApp} />}
         {step === 4 && (
           <Step4
             data={data}
             logoUrl={logoUrl}
             uploading={logoUploading}
-            onUpload={handleLogoUpload}
+            onUpload={handleFileSelect}
           />
         )}
       </div>
@@ -1031,7 +1417,7 @@ export default function OnboardingPage() {
         .ob-step-n {
           font-size: 11px;
           font-weight: 700;
-          color: var(--accent);
+          color: var(--accent-on-dark);
           letter-spacing: 0.1em;
           margin-bottom: 12px;
           opacity: 0.9;
@@ -1047,7 +1433,7 @@ export default function OnboardingPage() {
         }
         .ob-sub {
           font-size: 13px;
-          color: #2d4056;
+          color: #5a7896;
           line-height: 1.5;
           margin: 0;
           font-weight: 400;
@@ -1060,7 +1446,7 @@ export default function OnboardingPage() {
           height: 48px;
           background: transparent;
           border: none;
-          border-bottom: 1.5px solid #111a28;
+          border-bottom: 1.5px solid #1e3050;
           border-radius: 0;
           padding: 0;
           font-size: 17px;
@@ -1075,20 +1461,20 @@ export default function OnboardingPage() {
         .ob-input--focus {
           border-bottom-color: var(--accent);
         }
-        .ob-input::placeholder { color: #1e2d3e; }
+        .ob-input::placeholder { color: #3d5880; }
         .ob-label {
           font-size: 10px;
           font-weight: 700;
-          color: #1a2a3a;
+          color: #4a6888;
           letter-spacing: 0.1em;
           text-transform: uppercase;
           margin-bottom: 6px;
           transition: color 0.15s;
         }
-        .ob-label--focus { color: var(--accent); }
+        .ob-label--focus { color: var(--accent-on-dark); }
         .ob-note {
           font-size: 11px;
-          color: #19273a;
+          color: #4a6080;
           margin-top: 7px;
         }
 
@@ -1100,7 +1486,7 @@ export default function OnboardingPage() {
           gap: 14px;
           padding: 12px 0;
           border: none;
-          border-bottom: 1px solid #0c1320;
+          border-bottom: 1px solid #1a2840;
           background: transparent;
           cursor: pointer;
           font-family: inherit;
@@ -1123,24 +1509,34 @@ export default function OnboardingPage() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 10px;
+          gap: 12px;
           width: 100%;
-          min-height: 148px;
-          border: 1.5px solid #0d1422;
+          min-height: 160px;
+          border: 1.5px solid #1e3050;
           border-radius: 14px;
           background: transparent;
           transition: border-color 0.2s, background 0.2s;
+          animation: uploadPulse 3s ease-in-out infinite;
         }
         .ob-upload:hover {
-          border-color: #182030;
-          background: rgba(255,255,255,0.008);
+          border-color: rgba(var(--accent-rgb), 0.5);
+          background: rgba(var(--accent-rgb), 0.04);
+          animation: none;
+        }
+        @keyframes uploadPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0); border-color: #1e3050; }
+          50%       { box-shadow: 0 0 18px 2px rgba(var(--accent-rgb), 0.08); border-color: rgba(var(--accent-rgb), 0.28); }
+        }
+        @keyframes logoFloat {
+          0%, 100% { transform: translateY(0); }
+          50%       { transform: translateY(-5px); }
         }
 
         /* ── Navigation buttons ── */
         .ob-skip-btn {
           background: none;
           border: none;
-          color: #182030;
+          color: #4a6888;
           font-size: 12px;
           font-weight: 500;
           cursor: pointer;
@@ -1149,14 +1545,14 @@ export default function OnboardingPage() {
           letter-spacing: 0.01em;
           transition: color 0.15s;
         }
-        .ob-skip-btn:hover { color: #253040; }
+        .ob-skip-btn:hover { color: #7090b0; }
         .ob-back-btn {
           flex: 1;
           height: 54px;
           border-radius: 12px;
           border: none;
           background: transparent;
-          color: #1e2d3e;
+          color: #4a6888;
           font-size: 14px;
           font-weight: 500;
           cursor: pointer;
@@ -1164,14 +1560,14 @@ export default function OnboardingPage() {
           transition: color 0.15s;
           -webkit-tap-highlight-color: transparent;
         }
-        .ob-back-btn:hover { color: #3d5068; }
+        .ob-back-btn:hover { color: #7090b0; }
         .ob-cta-btn {
           flex: 2;
           height: 54px;
           border-radius: 12px;
           border: none;
           background: var(--accent);
-          color: #07090e;
+          color: var(--accent-text);
           font-size: 15px;
           font-weight: 700;
           cursor: pointer;
@@ -1245,6 +1641,14 @@ export default function OnboardingPage() {
           to   { opacity: 0; }
         }
       `}</style>
+
+      {mounted && cropFile && (
+        <LogoCropModal
+          file={cropFile}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropFile(null)}
+        />
+      )}
 
       {mounted && showWelcome && createPortal(
         <div style={{

@@ -121,7 +121,7 @@ export default async function AdminLayout({
         />
         <FormProvider initialArtist={initialArtist}>
           <main
-            className="mx-auto px-4 py-6 pb-28 md:pb-10 md:max-w-4xl animate-fade-in"
+            className="mx-auto px-4 py-6 admin-main-safe md:max-w-4xl animate-fade-in"
             style={{ width: "100%", boxSizing: "border-box", overflowX: "clip" }}
           >
             <UpcomingEventsBanner />

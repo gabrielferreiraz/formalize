@@ -36,7 +36,8 @@ function checkRateLimit(key: string): boolean {
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
-    maxAge: 8 * 60 * 60, // 8 horas
+    maxAge: 30 * 24 * 60 * 60,   // 30 dias
+    updateAge: 24 * 60 * 60,     // renova o cookie a cada 24h de uso ativo
   },
 
   providers: [
@@ -170,7 +171,7 @@ export const authOptions: NextAuthOptions = {
       // jwt callback tem write access ao token; session callback não.
       const validatedAt = token.validatedAt ?? 0;
       const tokenAgeMs = Date.now() - validatedAt;
-      if (token.id && tokenAgeMs > 5 * 60 * 1000) {
+      if (token.id && tokenAgeMs > 30 * 60 * 1000) {
         logger.debug(
           { tokenAgeMs, action: "auth.jwt" },
           "jwt: token renewal — re-validating with DB"

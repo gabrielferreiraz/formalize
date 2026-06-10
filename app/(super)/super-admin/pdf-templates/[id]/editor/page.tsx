@@ -9,6 +9,25 @@ import {
 } from "@dnd-kit/core";
 import type { FieldPlacement } from "@/lib/pdf-overlay";
 
+// ─── Shape types ──────────────────────────────────────────────────────────────
+
+type ToolMode = "select" | "rect" | "eraser" | "textbox";
+
+export interface ShapeAnnotation {
+  id: string;
+  kind: "rect" | "eraser" | "textbox";
+  page: number;
+  x: number; y: number; w: number; h: number;
+  fill: string;
+  opacity: number;
+  text?: string;
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;
+}
+
+type DocState = { placements: FieldPlacement[]; shapes: ShapeAnnotation[] };
+
 // ─── Field catalogue ─────────────────────────────────────────────────────────
 
 type FieldDef = { key: string; label: string };
@@ -73,39 +92,39 @@ const FIELD_CATEGORIES: { category: string; fields: FieldDef[] }[] = [
 type CssFontDef = { fontFamily: string; fontWeight: number; fontStyle?: string };
 
 const CSS_FONT: Record<string, CssFontDef> = {
-  "Helvetica":             { fontFamily: "Helvetica, Arial, sans-serif",         fontWeight: 400 },
-  "Helvetica-Bold":        { fontFamily: "Helvetica, Arial, sans-serif",         fontWeight: 700 },
-  "Helvetica-Oblique":     { fontFamily: "Helvetica, Arial, sans-serif",         fontWeight: 400, fontStyle: "italic" },
-  "Helvetica-BoldOblique": { fontFamily: "Helvetica, Arial, sans-serif",         fontWeight: 700, fontStyle: "italic" },
-  "Times-Roman":           { fontFamily: "'Times New Roman', Times, serif",       fontWeight: 400 },
-  "Times-Bold":            { fontFamily: "'Times New Roman', Times, serif",       fontWeight: 700 },
-  "Times-Italic":          { fontFamily: "'Times New Roman', Times, serif",       fontWeight: 400, fontStyle: "italic" },
-  "Times-BoldItalic":      { fontFamily: "'Times New Roman', Times, serif",       fontWeight: 700, fontStyle: "italic" },
-  "Courier":               { fontFamily: "'Courier New', Courier, monospace",     fontWeight: 400 },
-  "Courier-Bold":          { fontFamily: "'Courier New', Courier, monospace",     fontWeight: 700 },
-  "Courier-Oblique":       { fontFamily: "'Courier New', Courier, monospace",     fontWeight: 400, fontStyle: "italic" },
-  "Courier-BoldOblique":   { fontFamily: "'Courier New', Courier, monospace",     fontWeight: 700, fontStyle: "italic" },
-  "Roboto":            { fontFamily: "'Roboto', sans-serif",            fontWeight: 400 },
-  "Roboto-Bold":       { fontFamily: "'Roboto', sans-serif",            fontWeight: 700 },
-  "Roboto-Italic":     { fontFamily: "'Roboto', sans-serif",            fontWeight: 400, fontStyle: "italic" },
-  "OpenSans":          { fontFamily: "'Open Sans', sans-serif",         fontWeight: 400 },
-  "OpenSans-Bold":     { fontFamily: "'Open Sans', sans-serif",         fontWeight: 700 },
-  "Montserrat":        { fontFamily: "'Montserrat', sans-serif",        fontWeight: 400 },
-  "Montserrat-Bold":   { fontFamily: "'Montserrat', sans-serif",        fontWeight: 700 },
-  "Lato":              { fontFamily: "'Lato', sans-serif",              fontWeight: 400 },
-  "Lato-Bold":         { fontFamily: "'Lato', sans-serif",              fontWeight: 700 },
-  "Inter":             { fontFamily: "'Inter', sans-serif",             fontWeight: 400 },
-  "Inter-Bold":        { fontFamily: "'Inter', sans-serif",             fontWeight: 700 },
-  "Raleway":           { fontFamily: "'Raleway', sans-serif",           fontWeight: 400 },
-  "Raleway-Bold":      { fontFamily: "'Raleway', sans-serif",           fontWeight: 700 },
-  "Playfair":          { fontFamily: "'Playfair Display', serif",       fontWeight: 400 },
-  "Playfair-Bold":     { fontFamily: "'Playfair Display', serif",       fontWeight: 700 },
-  "Merriweather":      { fontFamily: "'Merriweather', serif",           fontWeight: 400 },
-  "Merriweather-Bold": { fontFamily: "'Merriweather', serif",           fontWeight: 700 },
-  "PTSans":            { fontFamily: "'PT Sans', sans-serif",           fontWeight: 400 },
-  "PTSans-Bold":       { fontFamily: "'PT Sans', sans-serif",           fontWeight: 700 },
-  "SourceSans":        { fontFamily: "'Source Sans 3', sans-serif",     fontWeight: 400 },
-  "SourceSans-Bold":   { fontFamily: "'Source Sans 3', sans-serif",     fontWeight: 700 },
+  "Helvetica": { fontFamily: "Helvetica, Arial, sans-serif", fontWeight: 400 },
+  "Helvetica-Bold": { fontFamily: "Helvetica, Arial, sans-serif", fontWeight: 700 },
+  "Helvetica-Oblique": { fontFamily: "Helvetica, Arial, sans-serif", fontWeight: 400, fontStyle: "italic" },
+  "Helvetica-BoldOblique": { fontFamily: "Helvetica, Arial, sans-serif", fontWeight: 700, fontStyle: "italic" },
+  "Times-Roman": { fontFamily: "'Times New Roman', Times, serif", fontWeight: 400 },
+  "Times-Bold": { fontFamily: "'Times New Roman', Times, serif", fontWeight: 700 },
+  "Times-Italic": { fontFamily: "'Times New Roman', Times, serif", fontWeight: 400, fontStyle: "italic" },
+  "Times-BoldItalic": { fontFamily: "'Times New Roman', Times, serif", fontWeight: 700, fontStyle: "italic" },
+  "Courier": { fontFamily: "'Courier New', Courier, monospace", fontWeight: 400 },
+  "Courier-Bold": { fontFamily: "'Courier New', Courier, monospace", fontWeight: 700 },
+  "Courier-Oblique": { fontFamily: "'Courier New', Courier, monospace", fontWeight: 400, fontStyle: "italic" },
+  "Courier-BoldOblique": { fontFamily: "'Courier New', Courier, monospace", fontWeight: 700, fontStyle: "italic" },
+  "Roboto": { fontFamily: "'Roboto', sans-serif", fontWeight: 400 },
+  "Roboto-Bold": { fontFamily: "'Roboto', sans-serif", fontWeight: 700 },
+  "Roboto-Italic": { fontFamily: "'Roboto', sans-serif", fontWeight: 400, fontStyle: "italic" },
+  "OpenSans": { fontFamily: "'Open Sans', sans-serif", fontWeight: 400 },
+  "OpenSans-Bold": { fontFamily: "'Open Sans', sans-serif", fontWeight: 700 },
+  "Montserrat": { fontFamily: "'Montserrat', sans-serif", fontWeight: 400 },
+  "Montserrat-Bold": { fontFamily: "'Montserrat', sans-serif", fontWeight: 700 },
+  "Lato": { fontFamily: "'Lato', sans-serif", fontWeight: 400 },
+  "Lato-Bold": { fontFamily: "'Lato', sans-serif", fontWeight: 700 },
+  "Inter": { fontFamily: "'Inter', sans-serif", fontWeight: 400 },
+  "Inter-Bold": { fontFamily: "'Inter', sans-serif", fontWeight: 700 },
+  "Raleway": { fontFamily: "'Raleway', sans-serif", fontWeight: 400 },
+  "Raleway-Bold": { fontFamily: "'Raleway', sans-serif", fontWeight: 700 },
+  "Playfair": { fontFamily: "'Playfair Display', serif", fontWeight: 400 },
+  "Playfair-Bold": { fontFamily: "'Playfair Display', serif", fontWeight: 700 },
+  "Merriweather": { fontFamily: "'Merriweather', serif", fontWeight: 400 },
+  "Merriweather-Bold": { fontFamily: "'Merriweather', serif", fontWeight: 700 },
+  "PTSans": { fontFamily: "'PT Sans', sans-serif", fontWeight: 400 },
+  "PTSans-Bold": { fontFamily: "'PT Sans', sans-serif", fontWeight: 700 },
+  "SourceSans": { fontFamily: "'Source Sans 3', sans-serif", fontWeight: 400 },
+  "SourceSans-Bold": { fontFamily: "'Source Sans 3', sans-serif", fontWeight: 700 },
 };
 
 const GOOGLE_FONTS_URL =
@@ -138,44 +157,44 @@ const FONT_GROUPS: { group: string; fonts: { value: string; label: string; varia
   {
     group: "Padrão PDF",
     fonts: [
-      { value: "Helvetica",             label: "Helvetica",      variant: "Regular" },
-      { value: "Helvetica-Bold",        label: "Helvetica",      variant: "Bold" },
-      { value: "Helvetica-Oblique",     label: "Helvetica",      variant: "Itálico" },
-      { value: "Helvetica-BoldOblique", label: "Helvetica",      variant: "Bold Itálico" },
-      { value: "Times-Roman",           label: "Times New Roman",variant: "Regular" },
-      { value: "Times-Bold",            label: "Times New Roman",variant: "Bold" },
-      { value: "Times-Italic",          label: "Times New Roman",variant: "Itálico" },
-      { value: "Times-BoldItalic",      label: "Times New Roman",variant: "Bold Itálico" },
-      { value: "Courier",               label: "Courier New",    variant: "Regular" },
-      { value: "Courier-Bold",          label: "Courier New",    variant: "Bold" },
-      { value: "Courier-Oblique",       label: "Courier New",    variant: "Itálico" },
-      { value: "Courier-BoldOblique",   label: "Courier New",    variant: "Bold Itálico" },
+      { value: "Helvetica", label: "Helvetica", variant: "Regular" },
+      { value: "Helvetica-Bold", label: "Helvetica", variant: "Bold" },
+      { value: "Helvetica-Oblique", label: "Helvetica", variant: "Itálico" },
+      { value: "Helvetica-BoldOblique", label: "Helvetica", variant: "Bold Itálico" },
+      { value: "Times-Roman", label: "Times New Roman", variant: "Regular" },
+      { value: "Times-Bold", label: "Times New Roman", variant: "Bold" },
+      { value: "Times-Italic", label: "Times New Roman", variant: "Itálico" },
+      { value: "Times-BoldItalic", label: "Times New Roman", variant: "Bold Itálico" },
+      { value: "Courier", label: "Courier New", variant: "Regular" },
+      { value: "Courier-Bold", label: "Courier New", variant: "Bold" },
+      { value: "Courier-Oblique", label: "Courier New", variant: "Itálico" },
+      { value: "Courier-BoldOblique", label: "Courier New", variant: "Bold Itálico" },
     ],
   },
   {
     group: "Google Fonts",
     fonts: [
-      { value: "Roboto",          label: "Roboto",          variant: "Regular" },
-      { value: "Roboto-Bold",     label: "Roboto",          variant: "Bold" },
-      { value: "Roboto-Italic",   label: "Roboto",          variant: "Itálico" },
-      { value: "OpenSans",        label: "Open Sans",       variant: "Regular" },
-      { value: "OpenSans-Bold",   label: "Open Sans",       variant: "Bold" },
-      { value: "Montserrat",      label: "Montserrat",      variant: "Regular" },
-      { value: "Montserrat-Bold", label: "Montserrat",      variant: "Bold" },
-      { value: "Lato",            label: "Lato",            variant: "Regular" },
-      { value: "Lato-Bold",       label: "Lato",            variant: "Bold" },
-      { value: "Inter",           label: "Inter",           variant: "Regular" },
-      { value: "Inter-Bold",      label: "Inter",           variant: "Bold" },
-      { value: "Raleway",         label: "Raleway",         variant: "Regular" },
-      { value: "Raleway-Bold",    label: "Raleway",         variant: "Bold" },
-      { value: "Playfair",        label: "Playfair Display",variant: "Regular" },
-      { value: "Playfair-Bold",   label: "Playfair Display",variant: "Bold" },
-      { value: "Merriweather",    label: "Merriweather",    variant: "Regular" },
-      { value: "Merriweather-Bold",label:"Merriweather",    variant: "Bold" },
-      { value: "PTSans",          label: "PT Sans",         variant: "Regular" },
-      { value: "PTSans-Bold",     label: "PT Sans",         variant: "Bold" },
-      { value: "SourceSans",      label: "Source Sans 3",   variant: "Regular" },
-      { value: "SourceSans-Bold", label: "Source Sans 3",   variant: "Bold" },
+      { value: "Roboto", label: "Roboto", variant: "Regular" },
+      { value: "Roboto-Bold", label: "Roboto", variant: "Bold" },
+      { value: "Roboto-Italic", label: "Roboto", variant: "Itálico" },
+      { value: "OpenSans", label: "Open Sans", variant: "Regular" },
+      { value: "OpenSans-Bold", label: "Open Sans", variant: "Bold" },
+      { value: "Montserrat", label: "Montserrat", variant: "Regular" },
+      { value: "Montserrat-Bold", label: "Montserrat", variant: "Bold" },
+      { value: "Lato", label: "Lato", variant: "Regular" },
+      { value: "Lato-Bold", label: "Lato", variant: "Bold" },
+      { value: "Inter", label: "Inter", variant: "Regular" },
+      { value: "Inter-Bold", label: "Inter", variant: "Bold" },
+      { value: "Raleway", label: "Raleway", variant: "Regular" },
+      { value: "Raleway-Bold", label: "Raleway", variant: "Bold" },
+      { value: "Playfair", label: "Playfair Display", variant: "Regular" },
+      { value: "Playfair-Bold", label: "Playfair Display", variant: "Bold" },
+      { value: "Merriweather", label: "Merriweather", variant: "Regular" },
+      { value: "Merriweather-Bold", label: "Merriweather", variant: "Bold" },
+      { value: "PTSans", label: "PT Sans", variant: "Regular" },
+      { value: "PTSans-Bold", label: "PT Sans", variant: "Bold" },
+      { value: "SourceSans", label: "Source Sans 3", variant: "Regular" },
+      { value: "SourceSans-Bold", label: "Source Sans 3", variant: "Bold" },
     ],
   },
 ];
@@ -245,22 +264,24 @@ function FontPicker({ value, onChange }: { value: string; onChange: (v: string) 
 // ─── History reducer ──────────────────────────────────────────────────────────
 
 type HA =
-  | { type: "push"; p: FieldPlacement[] }
+  | { type: "push"; s: DocState }
   | { type: "undo" }
   | { type: "redo" }
-  | { type: "reset"; p: FieldPlacement[] };
+  | { type: "reset"; s: DocState };
 
-type HS = { past: FieldPlacement[][]; cur: FieldPlacement[]; future: FieldPlacement[][] };
+type HS = { past: DocState[]; cur: DocState; future: DocState[] };
+
+const EMPTY_DOC: DocState = { placements: [], shapes: [] };
 
 function hReducer(s: HS, a: HA): HS {
   if (a.type === "push")
-    return { past: [...s.past, s.cur].slice(-50), cur: a.p, future: [] };
+    return { past: [...s.past, s.cur].slice(-50), cur: a.s, future: [] };
   if (a.type === "undo" && s.past.length)
     return { past: s.past.slice(0, -1), cur: s.past[s.past.length - 1], future: [s.cur, ...s.future] };
   if (a.type === "redo" && s.future.length)
     return { past: [...s.past, s.cur], cur: s.future[0], future: s.future.slice(1) };
   if (a.type === "reset")
-    return { past: [], cur: a.p, future: [] };
+    return { past: [], cur: a.s, future: [] };
   return s;
 }
 
@@ -408,11 +429,11 @@ function FieldToken({
         transition: "opacity 0.1s, box-shadow 0.15s",
         ...(isSelected
           ? {
-              outline: "1.5px solid #e6b800",
-              outlineOffset: "3px",
-              background: "rgba(230,184,0,0.08)",
-              boxShadow: "0 2px 14px rgba(230,184,0,0.25)",
-            }
+            outline: "1.5px solid #e6b800",
+            outlineOffset: "3px",
+            background: "rgba(230,184,0,0.08)",
+            boxShadow: "0 2px 14px rgba(230,184,0,0.25)",
+          }
           : { outline: "1px dashed transparent" }),
       }}
       className={isSelected ? "" : "hover:outline hover:outline-1 hover:outline-blue-400/50 hover:bg-white/5"}
@@ -428,6 +449,149 @@ function FieldToken({
   );
 }
 
+// ─── ShapeLayer ───────────────────────────────────────────────────────────────
+
+function ShapeLayer({
+  shapes,
+  page,
+  selectedId,
+  containerW,
+  containerH,
+  onSelect,
+  onMove,
+  onResize,
+  toolMode,
+}: {
+  shapes: ShapeAnnotation[];
+  page: number;
+  selectedId: string | null;
+  containerW: number;
+  containerH: number;
+  onSelect: (id: string) => void;
+  onMove: (id: string, dx: number, dy: number) => void;
+  onResize: (id: string, patch: Partial<ShapeAnnotation>) => void;
+  toolMode: ToolMode;
+}) {
+  const dragRef = useRef<{ id: string; startX: number; startY: number; origX: number; origY: number } | null>(null);
+  const resizeRef = useRef<{
+    id: string; pos: string;
+    startX: number; startY: number;
+    origX: number; origY: number; origW: number; origH: number;
+  } | null>(null);
+
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (dragRef.current) {
+        const { id, startX, startY } = dragRef.current;
+        const dxPx = e.clientX - startX;
+        const dyPx = e.clientY - startY;
+        const dx = containerW > 0 ? (dxPx / containerW) * 100 : 0;
+        const dy = containerH > 0 ? (dyPx / containerH) * 100 : 0;
+        onMove(id, dx, dy);
+        dragRef.current.startX = e.clientX;
+        dragRef.current.startY = e.clientY;
+      }
+      if (resizeRef.current) {
+        const { id, pos, startX, startY, origX, origY, origW, origH } = resizeRef.current;
+        const dxPx = e.clientX - startX;
+        const dyPx = e.clientY - startY;
+        const dx = containerW > 0 ? (dxPx / containerW) * 100 : 0;
+        const dy = containerH > 0 ? (dyPx / containerH) * 100 : 0;
+        const patch: Partial<ShapeAnnotation> = {};
+        if (pos.includes("e")) { patch.w = Math.max(1, origW + dx); }
+        if (pos.includes("s")) { patch.h = Math.max(1, origH + dy); }
+        if (pos.includes("w")) { patch.x = Math.min(origX + origW - 1, origX + dx); patch.w = Math.max(1, origW - dx); }
+        if (pos.includes("n")) { patch.y = Math.min(origY + origH - 1, origY + dy); patch.h = Math.max(1, origH - dy); }
+        onResize(id, patch);
+      }
+    }
+    function onMouseUp() {
+      dragRef.current = null;
+      resizeRef.current = null;
+    }
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [containerW, containerH, onMove, onResize]);
+
+  const pageShapes = shapes.filter((s) => s.page === page);
+
+  return (
+    <>
+      {pageShapes.map((shape) => {
+        const isSelected = selectedId === shape.id;
+        const fontDef = cssFontProps(shape.fontFamily ?? "Helvetica");
+        return (
+          <div
+            key={shape.id}
+            style={{
+              position: "absolute",
+              left: `${shape.x}%`, top: `${shape.y}%`,
+              width: `${shape.w}%`, height: `${shape.h}%`,
+              background: shape.kind === "eraser" ? "#fff" : shape.fill,
+              opacity: shape.kind === "textbox" ? 1 : shape.opacity,
+              border: isSelected ? "2px solid #e6b800" : "1.5px solid transparent",
+              cursor: toolMode === "select" ? "move" : "crosshair",
+              boxSizing: "border-box",
+              pointerEvents: toolMode === "select" ? "auto" : "none",
+              display: "flex", alignItems: "center", justifyContent: "flex-start",
+              padding: "2px 4px",
+              overflow: "hidden",
+            }}
+            onMouseDown={(e) => {
+              if (toolMode !== "select") return;
+              e.stopPropagation();
+              onSelect(shape.id);
+              dragRef.current = { id: shape.id, startX: e.clientX, startY: e.clientY, origX: shape.x, origY: shape.y };
+            }}
+          >
+            {shape.kind === "textbox" && (
+              <span style={{
+                fontSize: `${(shape.fontSize ?? 12) * (containerH / 841)}px`,
+                color: shape.color ?? "#000",
+                fontFamily: fontDef.fontFamily,
+                fontWeight: fontDef.fontWeight,
+                fontStyle: fontDef.fontStyle ?? "normal",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                pointerEvents: "none",
+              }}>
+                {shape.text || ""}
+              </span>
+            )}
+            {isSelected && toolMode === "select" && (["nw", "ne", "sw", "se"] as const).map((pos) => (
+              <div
+                key={pos}
+                style={{
+                  position: "absolute", width: 8, height: 8,
+                  background: "#e6b800", border: "1px solid #0e1118", borderRadius: 2,
+                  top: pos.includes("n") ? -4 : "auto",
+                  bottom: pos.includes("s") ? -4 : "auto",
+                  left: pos.includes("w") ? -4 : "auto",
+                  right: pos.includes("e") ? -4 : "auto",
+                  cursor: pos === "nw" || pos === "se" ? "nwse-resize" : "nesw-resize",
+                  zIndex: 30,
+                }}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  resizeRef.current = {
+                    id: shape.id, pos,
+                    startX: e.clientX, startY: e.clientY,
+                    origX: shape.x, origY: shape.y, origW: shape.w, origH: shape.h,
+                  };
+                }}
+              />
+            ))}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 // ─── PdfCanvas ────────────────────────────────────────────────────────────────
 
 function PdfCanvas({
@@ -440,6 +604,15 @@ function PdfCanvas({
   exampleValues,
   onSelectField,
   onScaleChange,
+  shapes,
+  selectedShapeId,
+  toolMode,
+  drawColor,
+  drawOpacity,
+  onSelectShape,
+  onShapeDrawn,
+  onShapeMoved,
+  onShapeResized,
 }: {
   pdfUrl: string;
   currentPage: number;
@@ -450,11 +623,23 @@ function PdfCanvas({
   exampleValues: Record<string, string>;
   onSelectField: (id: string | null) => void;
   onScaleChange?: (scale: number) => void;
-})
- {
+  shapes: ShapeAnnotation[];
+  selectedShapeId: string | null;
+  toolMode: ToolMode;
+  drawColor: string;
+  drawOpacity: number;
+  onSelectShape: (id: string) => void;
+  onShapeDrawn: (shape: ShapeAnnotation) => void;
+  onShapeMoved: (id: string, dx: number, dy: number) => void;
+  onShapeResized: (id: string, patch: Partial<ShapeAnnotation>) => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+  const drawRef = useRef<{ startX: number; startY: number } | null>(null);
+  const [drawPreview, setDrawPreview] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  // Cache do documento pdfjs — evita re-download a cada troca de página
+  const pdfDocCache = useRef<{ url: string; doc: import("pdfjs-dist").PDFDocumentProxy } | null>(null);
   // Natural page height in PDF points at scale=1 — used to scale font sizes correctly
   const [pageNaturalH, setPageNaturalH] = useState(0);
   const [renderError, setRenderError] = useState<string | null>(null);
@@ -473,6 +658,9 @@ function PdfCanvas({
     return () => ro.disconnect();
   }, []);
 
+  // Active pdfjs render task — cancelled when page/url changes before render completes
+  const renderTaskRef = useRef<{ cancel: () => void } | null>(null);
+
   // Render PDF page via pdfjs-dist
   useEffect(() => {
     let cancelled = false;
@@ -485,16 +673,22 @@ function PdfCanvas({
         const pdfjs = await import("pdfjs-dist");
         pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
-        const proxyUrl = `/api/super/pdf-proxy?url=${encodeURIComponent(pdfUrl)}`;
-        const doc = await pdfjs.getDocument(proxyUrl).promise;
-        if (cancelled) return;
+        // Reutiliza documento já carregado se a URL não mudou
+        let doc: import("pdfjs-dist").PDFDocumentProxy;
+        if (pdfDocCache.current?.url === pdfUrl) {
+          doc = pdfDocCache.current.doc;
+        } else {
+          const proxyUrl = `/api/super/pdf-proxy?url=${encodeURIComponent(pdfUrl)}`;
+          doc = await pdfjs.getDocument({ url: proxyUrl, disableAutoFetch: false, disableStream: false }).promise;
+          if (cancelled) return;
+          pdfDocCache.current = { url: pdfUrl, doc };
+        }
 
         const page = await doc.getPage(currentPage);
         if (cancelled) return;
 
         const containerWidth = containerRef.current?.clientWidth ?? 672;
         const viewport = page.getViewport({ scale: 1 });
-        // Store natural page height (in pt) so tokens can scale font sizes to match
         if (!cancelled) {
           setPageNaturalH(viewport.height);
           const renderedH = viewport.height * (containerWidth / viewport.width);
@@ -508,18 +702,34 @@ function PdfCanvas({
         canvas.width = sv.width;
         canvas.height = sv.height;
 
-        await page.render({ canvasContext: canvas.getContext("2d")!, canvas, viewport: sv }).promise;
-      } catch (e) {
-        if (!cancelled) setRenderError(e instanceof Error ? e.message : "Erro ao renderizar PDF");
+        const task = page.render({ canvasContext: canvas.getContext("2d")!, canvas, viewport: sv });
+        renderTaskRef.current = task;
+        await task.promise;
+        renderTaskRef.current = null;
+      } catch (e: any) {
+        // RenderingCancelledException is expected on rapid page switches — not an error
+        if (!cancelled && e?.name !== "RenderingCancelledException") {
+          setRenderError(e instanceof Error ? e.message : "Erro ao renderizar PDF");
+        }
       } finally {
         if (!cancelled) setRendering(false);
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      renderTaskRef.current?.cancel();
+      renderTaskRef.current = null;
+    };
   }, [pdfUrl, currentPage]);
 
   const pagePlacements = placements.filter((p) => p.page === currentPage - 1);
+
+  const cursorStyle =
+    toolMode === "rect" ? "crosshair" :
+    toolMode === "eraser" ? "crosshair" :
+    toolMode === "textbox" ? "text" :
+    "default";
 
   return (
     <div
@@ -531,12 +741,56 @@ function PdfCanvas({
       className="relative bg-white rounded-xl overflow-hidden select-none"
       style={{
         minHeight: 200,
+        cursor: cursorStyle,
         boxShadow: isOver
           ? "0 0 0 2px rgba(230,184,0,0.8), 0 20px 60px rgba(230,184,0,0.18), 0 8px 32px rgba(0,0,0,0.4)"
           : "0 20px 60px rgba(0,0,0,0.35), 0 4px 16px rgba(0,0,0,0.2)",
         transition: "box-shadow 0.2s ease",
       }}
-      onClick={() => onSelectField(null)}
+      onClick={() => { if (toolMode === "select") { onSelectField(null); } }}
+      onPointerDown={(e) => {
+        if (toolMode === "select") return;
+        const rect = containerRef.current!.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width * 100;
+        const y = (e.clientY - rect.top) / rect.height * 100;
+        drawRef.current = { startX: x, startY: y };
+        setDrawPreview({ x, y, w: 0, h: 0 });
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={(e) => {
+        if (!drawRef.current) return;
+        const rect = containerRef.current!.getBoundingClientRect();
+        const cx = Math.max(0, Math.min(100, (e.clientX - rect.left) / rect.width * 100));
+        const cy = Math.max(0, Math.min(100, (e.clientY - rect.top) / rect.height * 100));
+        const { startX, startY } = drawRef.current;
+        setDrawPreview({
+          x: Math.min(startX, cx), y: Math.min(startY, cy),
+          w: Math.abs(cx - startX), h: Math.abs(cy - startY),
+        });
+      }}
+      onPointerUp={(e) => {
+        if (!drawRef.current || !drawPreview) return;
+        if (drawPreview.w > 0.5 && drawPreview.h > 0.5) {
+          const kind = toolMode === "eraser" ? "eraser" : toolMode === "textbox" ? "textbox" : "rect";
+          onShapeDrawn({
+            id: `sh-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            kind,
+            page: currentPage - 1,
+            x: parseFloat(drawPreview.x.toFixed(2)),
+            y: parseFloat(drawPreview.y.toFixed(2)),
+            w: parseFloat(drawPreview.w.toFixed(2)),
+            h: parseFloat(drawPreview.h.toFixed(2)),
+            fill: toolMode === "eraser" ? "#ffffff" : drawColor,
+            opacity: toolMode === "eraser" ? 1 : drawOpacity,
+            text: kind === "textbox" ? "" : undefined,
+            fontSize: kind === "textbox" ? 12 : undefined,
+            fontFamily: kind === "textbox" ? "Helvetica" : undefined,
+            color: kind === "textbox" ? "#000000" : undefined,
+          });
+        }
+        drawRef.current = null;
+        setDrawPreview(null);
+      }}
     >
       {(rendering || !fontsReady) && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-30 rounded-xl gap-2">
@@ -552,6 +806,33 @@ function PdfCanvas({
         </div>
       )}
       <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "auto" }} />
+      {/* Shape layer */}
+      <div className="absolute inset-0" style={{ pointerEvents: "none" }}>
+        <ShapeLayer
+          shapes={shapes}
+          page={currentPage - 1}
+          selectedId={selectedShapeId}
+          containerW={containerSize.w}
+          containerH={containerSize.h}
+          onSelect={onSelectShape}
+          onMove={onShapeMoved}
+          onResize={onShapeResized}
+          toolMode={toolMode}
+        />
+      </div>
+      {/* Draw preview */}
+      {drawPreview && toolMode !== "select" && (
+        <div style={{
+          position: "absolute",
+          left: `${drawPreview.x}%`, top: `${drawPreview.y}%`,
+          width: `${drawPreview.w}%`, height: `${drawPreview.h}%`,
+          background: toolMode === "eraser" ? "#fff" : drawColor,
+          opacity: toolMode === "eraser" ? 0.9 : drawOpacity * 0.8,
+          border: "2px dashed rgba(230,184,0,0.8)",
+          pointerEvents: "none",
+          boxSizing: "border-box",
+        }} />
+      )}
       {/* Token overlay — hidden until fonts are confirmed loaded to prevent wrong-font flash */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -568,7 +849,7 @@ function PdfCanvas({
               containerH={containerSize.h}
               pageNaturalH={pageNaturalH}
               exampleValue={exampleValues[p.key] ?? ""}
-              onClick={() => onSelectField(p.id)}
+              onClick={() => { onSelectField(p.id); }}
             />
           ))}
         </div>
@@ -682,15 +963,34 @@ export default function PdfTemplateEditor() {
   const router = useRouter();
   const id = params.id;
 
-  const [history, dispatch] = useReducer(hReducer, { past: [], cur: [], future: [] });
-  const placements = history.cur;
+  const [history, dispatch] = useReducer(hReducer, { past: [], cur: EMPTY_DOC, future: [] });
+  const placements = history.cur.placements;
+  const shapes = history.cur.shapes;
   const placementsRef = useRef<FieldPlacement[]>([]);
+  const shapesRef = useRef<ShapeAnnotation[]>([]);
   useEffect(() => { placementsRef.current = placements; }, [placements]);
+  useEffect(() => { shapesRef.current = shapes; }, [shapes]);
 
+  function pushDoc(next: DocState | ((prev: DocState) => DocState)) {
+    const s = typeof next === "function" ? next(history.cur) : next;
+    dispatch({ type: "push", s });
+  }
+  function pushPlacements(fn: (p: FieldPlacement[]) => FieldPlacement[]) {
+    pushDoc((prev) => ({ ...prev, placements: fn(prev.placements) }));
+  }
+  function pushShapes(fn: (s: ShapeAnnotation[]) => ShapeAnnotation[]) {
+    pushDoc((prev) => ({ ...prev, shapes: fn(prev.shapes) }));
+  }
+  // Keep existing `push` as alias
   function push(next: FieldPlacement[] | ((prev: FieldPlacement[]) => FieldPlacement[])) {
     const p = typeof next === "function" ? next(placementsRef.current) : next;
-    dispatch({ type: "push", p });
+    pushPlacements(() => p);
   }
+
+  const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
+  const [toolMode, setToolMode] = useState<ToolMode>("select");
+  const [drawColor, setDrawColor] = useState("#ffff00");
+  const [drawOpacity, setDrawOpacity] = useState(1.0);
 
   const [mapping, setMapping] = useState<MappingData | null>(null);
   const [exampleValues, setExampleValues] = useState<Record<string, string>>({});
@@ -698,13 +998,16 @@ export default function PdfTemplateEditor() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedIdRef = useRef<string | null>(null);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
+  const selectedShapeIdRef = useRef<string | null>(null);
+  useEffect(() => { selectedShapeIdRef.current = selectedShapeId; }, [selectedShapeId]);
 
   const [zoom, setZoom] = useState(1.0);
   const [saving, setSaving] = useState(false);
   const [activating, setActivating] = useState(false);
   const [showSavedModal, setShowSavedModal] = useState(false);
-  const [lastSaved, setLastSaved] = useState<string>("[]");
-  const hasUnsaved = JSON.stringify(placements) !== lastSaved && !saving;
+  const [lastSaved, setLastSaved] = useState<string>(JSON.stringify(EMPTY_DOC));
+  const curSerialized = JSON.stringify({ placements, shapes });
+  const hasUnsaved = curSerialized !== lastSaved && !saving;
 
   const [isMobile, setIsMobile] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<null | "fields" | "properties">(null);
@@ -800,9 +1103,18 @@ export default function PdfTemplateEditor() {
       .then((r) => r.json())
       .then((data: MappingData) => {
         setMapping(data);
-        const fields = Array.isArray(data.fields) ? data.fields : [];
-        dispatch({ type: "reset", p: fields });
-        setLastSaved(JSON.stringify(fields));
+        const raw = data.fields as any;
+        let state: DocState;
+        if (Array.isArray(raw)) {
+          state = { placements: raw as FieldPlacement[], shapes: [] };
+        } else {
+          state = {
+            placements: Array.isArray(raw?.placements) ? raw.placements : [],
+            shapes: Array.isArray(raw?.shapes) ? raw.shapes : [],
+          };
+        }
+        dispatch({ type: "reset", s: state });
+        setLastSaved(JSON.stringify(state));
         setExampleValues(buildExampleValues(data.artist));
       });
   }, [id]);
@@ -833,15 +1145,32 @@ export default function PdfTemplateEditor() {
       }
 
       // Escape
-      if (e.key === "Escape") { setSelectedId(null); return; }
+      if (e.key === "Escape") { setSelectedId(null); setSelectedShapeId(null); setToolMode("select"); return; }
+
+      // Tool shortcuts
+      if (!inInput) {
+        if (e.key === "v" || e.key === "V") { setToolMode("select"); return; }
+        if (e.key === "r" || e.key === "R") { setToolMode("rect"); return; }
+        if (e.key === "e" || e.key === "E") { setToolMode("eraser"); return; }
+        if (e.key === "t" || e.key === "T") { setToolMode("textbox"); return; }
+      }
 
       // Delete / Backspace
-      if ((e.key === "Delete" || e.key === "Backspace") && !inInput && selectedIdRef.current) {
-        e.preventDefault();
-        const sid = selectedIdRef.current;
-        push((prev) => prev.filter((p) => p.id !== sid));
-        setSelectedId(null);
-        return;
+      if ((e.key === "Delete" || e.key === "Backspace") && !inInput) {
+        if (selectedIdRef.current) {
+          e.preventDefault();
+          const sid = selectedIdRef.current;
+          push((prev) => prev.filter((p) => p.id !== sid));
+          setSelectedId(null);
+          return;
+        }
+        if (selectedShapeIdRef.current) {
+          e.preventDefault();
+          const ssid = selectedShapeIdRef.current;
+          pushShapes((prev) => prev.filter((s) => s.id !== ssid));
+          setSelectedShapeId(null);
+          return;
+        }
       }
 
       // Arrow nudge (when field selected and not in input)
@@ -911,7 +1240,7 @@ export default function PdfTemplateEditor() {
         page: currentPage - 1,
         x: xPct,
         y: yPct,
-        fontSize: 10,
+        fontSize: 12,
         fontFamily: "Helvetica",
         color: "#000000",
       };
@@ -955,6 +1284,38 @@ export default function PdfTemplateEditor() {
     setSelectedId(dup.id);
   }
 
+  function addShape(s: ShapeAnnotation) {
+    pushShapes((prev) => [...prev, s]);
+    setSelectedShapeId(s.id);
+    setToolMode("select");
+  }
+
+  function updateShape(id: string, patch: Partial<ShapeAnnotation>) {
+    pushShapes((prev) => prev.map((s) => s.id === id ? { ...s, ...patch } : s));
+  }
+
+  function removeShape(id: string) {
+    pushShapes((prev) => prev.filter((s) => s.id !== id));
+    setSelectedShapeId(null);
+  }
+
+  function handleShapeMoved(id: string, dx: number, dy: number) {
+    pushShapes((prev) => prev.map((s) => s.id === id ? {
+      ...s,
+      x: parseFloat(Math.max(0, Math.min(100 - s.w, s.x + dx)).toFixed(2)),
+      y: parseFloat(Math.max(0, Math.min(100 - s.h, s.y + dy)).toFixed(2)),
+    } : s));
+  }
+
+  function handleShapeResized(id: string, patch: Partial<ShapeAnnotation>) {
+    pushShapes((prev) => prev.map((s) => s.id === id ? { ...s, ...patch } : s));
+  }
+
+  function selectShape(id: string) {
+    setSelectedShapeId(id);
+    setSelectedId(null);
+  }
+
   const locate = useCallback((p: FieldPlacement) => {
     const targetPage = p.page + 1;
     if (targetPage !== currentPage) setCurrentPage(targetPage);
@@ -983,7 +1344,7 @@ export default function PdfTemplateEditor() {
       page: currentPage - 1,
       x: 40,
       y: 45,
-      fontSize: 10,
+      fontSize: 12,
       fontFamily: "Helvetica",
       color: "#000000",
     };
@@ -994,7 +1355,7 @@ export default function PdfTemplateEditor() {
   // Warn on browser close/refresh when unsaved
   useEffect(() => {
     function onBeforeUnload(e: BeforeUnloadEvent) {
-      if (JSON.stringify(placementsRef.current) !== lastSaved) {
+      if (JSON.stringify({ placements: placementsRef.current, shapes: shapesRef.current }) !== lastSaved) {
         e.preventDefault();
         e.returnValue = "";
       }
@@ -1010,7 +1371,7 @@ export default function PdfTemplateEditor() {
       const res = await fetch(`/api/super/pdf-templates/${id}/test`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fields: placementsRef.current }),
+        body: JSON.stringify({ fields: placementsRef.current, shapes: shapesRef.current }),
       });
       if (!res.ok) throw new Error("Erro ao gerar PDF");
       const blob = await res.blob();
@@ -1030,10 +1391,10 @@ export default function PdfTemplateEditor() {
       const res = await fetch(`/api/super/pdf-templates/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fields: placementsRef.current }),
+        body: JSON.stringify({ fields: { placements: placementsRef.current, shapes: shapesRef.current } }),
       });
       if (!res.ok) throw new Error();
-      setLastSaved(JSON.stringify(placementsRef.current));
+      setLastSaved(JSON.stringify({ placements: placementsRef.current, shapes: shapesRef.current }));
       setShowSavedModal(true);
     } catch {
       alert("Erro ao salvar. Tente novamente.");
@@ -1048,10 +1409,10 @@ export default function PdfTemplateEditor() {
       await fetch(`/api/super/pdf-templates/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fields: placementsRef.current, isActive: true }),
+        body: JSON.stringify({ fields: { placements: placementsRef.current, shapes: shapesRef.current }, isActive: true }),
       });
       setMapping((m) => m ? { ...m, isActive: true } : m);
-      setLastSaved(JSON.stringify(placementsRef.current));
+      setLastSaved(JSON.stringify({ placements: placementsRef.current, shapes: shapesRef.current }));
     } finally {
       setActivating(false);
       setShowSavedModal(false);
@@ -1059,6 +1420,7 @@ export default function PdfTemplateEditor() {
   }
 
   const selectedPlacement = placements.find((p) => p.id === selectedId) ?? null;
+  const selectedShape = shapes.find((s) => s.id === selectedShapeId) ?? null;
 
   // Placed count per key
   const placedCounts = placements.reduce<Record<string, number>>((acc, p) => {
@@ -1186,8 +1548,8 @@ export default function PdfTemplateEditor() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
               </div>
               <div>
@@ -1207,8 +1569,8 @@ export default function PdfTemplateEditor() {
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gold-500/40 bg-gold-500/5 hover:bg-gold-500/10 text-left transition-colors disabled:opacity-50"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e6b800" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                  <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                  <polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" />
                 </svg>
                 <div>
                   <p className="text-sm font-semibold text-gold-400">{saving ? "Salvando…" : "Salvar e sair"}</p>
@@ -1221,8 +1583,8 @@ export default function PdfTemplateEditor() {
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-stage-500 bg-stage-700/40 hover:bg-stage-700 text-left transition-colors"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                  <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
                 <div>
                   <p className="text-sm font-semibold text-gray-300">Sair sem salvar</p>
@@ -1350,22 +1712,28 @@ export default function PdfTemplateEditor() {
                   <span className="px-1.5 py-0.5 rounded-full bg-stage-600 text-gray-400 text-[10px] font-bold leading-none">{placements.length}</span>
                 </p>
                 {placements.map((p) => (
-                  <button
+                  <div
                     key={p.id}
-                    onClick={() => locate(p)}
-                    title={`Localizar "${p.label}" na pág. ${p.page + 1}`}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-all ${
-                      selectedId === p.id
-                        ? "bg-gold-500/12 border border-gold-500/30 text-gold-400"
-                        : "border border-transparent text-gray-500 hover:bg-stage-700 hover:text-gray-200"
-                    }`}
+                    className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all ${selectedId === p.id
+                      ? "bg-gold-500/12 border border-gold-500/30 text-yellow-400"
+                      : "border border-transparent text-gray-500 hover:bg-stage-700 hover:text-gray-200"
+                      }`}
                   >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 opacity-60">
-                      <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                    <span className="flex-1 truncate text-[11px]">{p.label}</span>
+                    <span
+                      onClick={() => setSelectedId(p.id)}
+                      className="flex-1 truncate text-[11px] cursor-pointer"
+                    >{p.label}</span>
                     <span className="shrink-0 text-[10px] opacity-40">p{p.page + 1}</span>
-                  </button>
+                    <button
+                      onClick={() => locate(p)}
+                      title={`Localizar "${p.label}" na pág. ${p.page + 1}`}
+                      className="p-1 text-gray-600 hover:text-yellow-400 transition-colors shrink-0"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      </svg>
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -1426,6 +1794,75 @@ export default function PdfTemplateEditor() {
               </div>
             </div>
 
+            {/* ── Shape tool bar ───────────────────────────────────────────── */}
+            <div className="flex items-center gap-1.5 px-4 py-2 shrink-0 border-b border-stage-700/30 bg-stage-800/50">
+              {([
+                { mode: "select" as ToolMode, title: "Selecionar (V)", icon: (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 3l14 9-7 1-3 7z" />
+                  </svg>
+                )},
+                { mode: "rect" as ToolMode, title: "Retângulo / cobertura (R)", icon: (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                  </svg>
+                )},
+                { mode: "eraser" as ToolMode, title: "Borracha — cobre com branco (E)", icon: (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 20H7L3 16l11-11 7 7-1 8z" /><line x1="6" y1="14" x2="14" y2="6" />
+                  </svg>
+                )},
+                { mode: "textbox" as ToolMode, title: "Caixa de texto (T)", icon: (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="4 7 4 4 20 4 20 7" /><line x1="9" y1="20" x2="15" y2="20" /><line x1="12" y1="4" x2="12" y2="20" />
+                  </svg>
+                )},
+              ] as { mode: ToolMode; title: string; icon: React.ReactNode }[]).map(({ mode, title, icon }) => (
+                <button
+                  key={mode}
+                  onClick={() => setToolMode(mode)}
+                  title={title}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${toolMode === mode ? "bg-gold-500/20 border border-gold-500/50 text-yellow-400" : "border border-transparent text-gray-500 hover:text-gray-200 hover:border-stage-600"}`}
+                >
+                  {icon}
+                </button>
+              ))}
+
+              <div className="w-px h-5 bg-stage-700 mx-1" />
+
+              {(toolMode === "rect" || toolMode === "textbox") && (
+                <>
+                  <input
+                    type="color"
+                    value={drawColor}
+                    onChange={(e) => setDrawColor(e.target.value)}
+                    title="Cor da forma"
+                    className="w-8 h-8 rounded-lg border border-stage-600 cursor-pointer p-0.5 bg-stage-700"
+                  />
+                  {toolMode === "rect" && (
+                    <div className="flex items-center gap-1.5 ml-1">
+                      <span className="text-[10px] text-gray-600">Opacidade</span>
+                      <input
+                        type="range" min={0.05} max={1} step={0.05}
+                        value={drawOpacity}
+                        onChange={(e) => setDrawOpacity(parseFloat(e.target.value))}
+                        className="w-20 accent-yellow-500"
+                      />
+                      <span className="text-[10px] text-gray-500 tabular-nums w-7">{Math.round(drawOpacity * 100)}%</span>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {toolMode !== "select" && (
+                <span className="ml-auto text-[10px] text-gray-600">
+                  {toolMode === "eraser" ? "Clique e arraste para apagar" :
+                   toolMode === "textbox" ? "Clique e arraste para criar caixa de texto" :
+                   "Clique e arraste para desenhar"}
+                </span>
+              )}
+            </div>
+
             {/* Canvas scroll area */}
             <div ref={canvasScrollRef} className="flex-1 overflow-auto p-4 md:p-6">
               <div
@@ -1439,8 +1876,17 @@ export default function PdfTemplateEditor() {
                   locatingId={locatingId}
                   fontsReady={fontsReady}
                   exampleValues={exampleValues}
-                  onSelectField={setSelectedId}
+                  onSelectField={(id) => { setSelectedId(id); if (id) setSelectedShapeId(null); }}
                   onScaleChange={setRenderScale}
+                  shapes={shapes}
+                  selectedShapeId={selectedShapeId}
+                  toolMode={toolMode}
+                  drawColor={drawColor}
+                  drawOpacity={drawOpacity}
+                  onSelectShape={selectShape}
+                  onShapeDrawn={addShape}
+                  onShapeMoved={handleShapeMoved}
+                  onShapeResized={handleShapeResized}
                 />
               </div>
             </div>
@@ -1452,7 +1898,7 @@ export default function PdfTemplateEditor() {
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-stage-700 border border-stage-600 text-white text-sm font-semibold"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
                 Campo
               </button>
@@ -1462,7 +1908,7 @@ export default function PdfTemplateEditor() {
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gold-500/10 border border-gold-500/30 text-gold-400 text-sm font-semibold"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                   </svg>
                   Editar
                 </button>
@@ -1472,7 +1918,114 @@ export default function PdfTemplateEditor() {
 
           {/* Right — properties panel */}
           <div className="hidden md:block w-52 shrink-0 border-l border-stage-600 bg-stage-800 overflow-y-auto">
-            {selectedPlacement ? (
+            {selectedShape && !selectedPlacement ? (
+              <div className="p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Forma</p>
+                  <button
+                    onClick={() => removeShape(selectedShape.id)}
+                    title="Remover forma (Delete)"
+                    className="p-1 rounded-lg text-red-500/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="rounded-lg bg-stage-700/50 border border-stage-600 px-2.5 py-2">
+                  <p className="text-xs font-semibold text-gray-200 capitalize">{selectedShape.kind === "eraser" ? "Borracha" : selectedShape.kind === "textbox" ? "Caixa de texto" : "Retângulo"}</p>
+                </div>
+
+                {selectedShape.kind === "textbox" && (
+                  <>
+                    <div>
+                      <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">Texto</label>
+                      <textarea
+                        className="input-field text-xs w-full p-1.5 resize-none"
+                        rows={3}
+                        value={selectedShape.text ?? ""}
+                        onChange={(e) => updateShape(selectedShape.id, { text: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">Tamanho</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="range" min={5} max={200} step={0.5}
+                          value={selectedShape.fontSize ?? 12}
+                          onChange={(e) => updateShape(selectedShape.id, { fontSize: Number(e.target.value) })}
+                          className="flex-1 accent-yellow-500"
+                        />
+                        <input
+                          type="number" min={5} max={200} step={0.5}
+                          value={selectedShape.fontSize ?? 12}
+                          onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateShape(selectedShape.id, { fontSize: v }); }}
+                          className="input-field w-14 text-xs text-center p-1"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">Fonte</label>
+                      <FontPicker
+                        value={selectedShape.fontFamily ?? "Helvetica"}
+                        onChange={(v) => updateShape(selectedShape.id, { fontFamily: v })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">Cor do texto</label>
+                      <div className="flex items-center gap-2">
+                        <input type="color" value={selectedShape.color ?? "#000000"}
+                          onChange={(e) => updateShape(selectedShape.id, { color: e.target.value })}
+                          className="w-8 h-8 rounded-lg border border-stage-500 bg-stage-700 cursor-pointer p-0.5 shrink-0" />
+                        <input className="input-field font-mono uppercase text-xs flex-1 p-1.5"
+                          value={selectedShape.color ?? "#000000"} maxLength={7}
+                          onChange={(e) => { const v = e.target.value; if (/^#[0-9a-fA-F]{0,6}$/.test(v)) updateShape(selectedShape.id, { color: v }); }} />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {selectedShape.kind === "rect" && (
+                  <>
+                    <div>
+                      <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">Cor</label>
+                      <div className="flex items-center gap-2">
+                        <input type="color" value={selectedShape.fill}
+                          onChange={(e) => updateShape(selectedShape.id, { fill: e.target.value })}
+                          className="w-8 h-8 rounded-lg border border-stage-500 bg-stage-700 cursor-pointer p-0.5 shrink-0" />
+                        <input className="input-field font-mono uppercase text-xs flex-1 p-1.5"
+                          value={selectedShape.fill} maxLength={7}
+                          onChange={(e) => { const v = e.target.value; if (/^#[0-9a-fA-F]{0,6}$/.test(v)) updateShape(selectedShape.id, { fill: v }); }} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">Opacidade</label>
+                      <div className="flex items-center gap-2">
+                        <input type="range" min={0.05} max={1} step={0.05}
+                          value={selectedShape.opacity}
+                          onChange={(e) => updateShape(selectedShape.id, { opacity: parseFloat(e.target.value) })}
+                          className="flex-1 accent-yellow-500" />
+                        <span className="text-[10px] text-gray-500 w-7 tabular-nums">{Math.round(selectedShape.opacity * 100)}%</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div>
+                  <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">Página</label>
+                  <select
+                    className="input-field text-xs w-full"
+                    value={selectedShape.page}
+                    onChange={(e) => updateShape(selectedShape.id, { page: Number(e.target.value) })}
+                  >
+                    {Array.from({ length: mapping.pageCount }, (_, i) => (
+                      <option key={i} value={i}>Página {i + 1}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : selectedPlacement ? (
               <div className="p-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Propriedades</p>
@@ -1498,17 +2051,17 @@ export default function PdfTemplateEditor() {
                   <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 block">Tamanho</label>
                   <div className="flex items-center gap-2">
                     <input
-                      type="range" min={5} max={48} step={0.5}
+                      type="range" min={5} max={500} step={0.5}
                       value={selectedPlacement.fontSize}
                       onChange={(e) => updatePlacement(selectedPlacement.id, { fontSize: Number(e.target.value) })}
                       className="flex-1 accent-gold-500"
                     />
                     <input
-                      type="number" min={5} max={48} step={0.5}
+                      type="number" min={5} max={500} step={0.5}
                       value={selectedPlacement.fontSize}
                       onChange={(e) => {
                         const v = parseFloat(e.target.value);
-                        if (!isNaN(v)) updatePlacement(selectedPlacement.id, { fontSize: Math.max(5, Math.min(48, v)) });
+                        if (!isNaN(v)) updatePlacement(selectedPlacement.id, { fontSize: Math.max(5, Math.min(200, v)) });
                       }}
                       className="input-field w-14 text-xs text-center p-1"
                     />
@@ -1653,7 +2206,7 @@ export default function PdfTemplateEditor() {
               <p className="text-sm font-bold text-gray-200">Adicionar Campo</p>
               <button onClick={() => setMobilePanel(null)} className="text-gray-500 p-1">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               </button>
             </div>
@@ -1710,12 +2263,12 @@ export default function PdfTemplateEditor() {
                   className="p-2 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                    <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
                   </svg>
                 </button>
                 <button onClick={() => setMobilePanel(null)} className="text-gray-500 p-1">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                 </button>
               </div>
@@ -1726,18 +2279,18 @@ export default function PdfTemplateEditor() {
                 <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5 block">Tamanho</label>
                 <div className="flex items-center gap-3">
                   <input
-                    type="range" min={5} max={48} step={0.5}
+                    type="range" min={5} max={120} step={0.5}
                     value={selectedPlacement.fontSize}
                     onChange={(e) => updatePlacement(selectedPlacement.id, { fontSize: Number(e.target.value) })}
                     className="flex-1 accent-gold-500"
                     style={{ height: "8px" }}
                   />
                   <input
-                    type="number" min={5} max={48} step={0.5}
+                    type="number" min={5} max={120} step={0.5}
                     value={selectedPlacement.fontSize}
                     onChange={(e) => {
                       const v = parseFloat(e.target.value);
-                      if (!isNaN(v)) updatePlacement(selectedPlacement.id, { fontSize: Math.max(5, Math.min(48, v)) });
+                      if (!isNaN(v)) updatePlacement(selectedPlacement.id, { fontSize: Math.max(5, Math.min(120, v)) });
                     }}
                     className="input-field w-16 text-sm text-center py-2"
                   />
@@ -1793,7 +2346,7 @@ export default function PdfTemplateEditor() {
                 className="w-full py-3 rounded-xl border border-stage-500 text-gray-400 text-sm font-semibold active:text-white flex items-center justify-center gap-2 transition-colors"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
                 Duplicar campo
               </button>

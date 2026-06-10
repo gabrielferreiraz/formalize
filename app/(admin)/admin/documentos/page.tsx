@@ -711,7 +711,7 @@ export default function DocumentosPage() {
           onTouchEnd={handleSwipeEnd}
         >
           {/* Header */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid #252d3d", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "calc(12px + env(safe-area-inset-top, 0px)) 16px 12px", borderBottom: "1px solid #252d3d", flexShrink: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <button
                 onClick={() => setMonthCursor(prev => { const d = new Date(prev); d.setMonth(d.getMonth() - 1); return d; })}

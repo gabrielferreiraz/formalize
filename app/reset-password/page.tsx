@@ -72,7 +72,7 @@ function ResetForm() {
       <div style={{ fontSize: 36, marginBottom: 16 }}>⚠️</div>
       <p style={{ fontSize: 16, fontWeight: 700, color: "#e8edf5", marginBottom: 10 }}>Link inválido ou expirado</p>
       <p style={{ fontSize: 13, color: "#4b5563", marginBottom: 24, lineHeight: 1.6 }}>
-        Este link já foi usado ou expirou (válido por 2 horas). Solicite um novo.
+        Este link já foi usado ou expirou. Solicite um novo pelo suporte.
       </p>
       <Link href="/forgot-password" style={{ fontSize: 13, color: "#e6b800", fontWeight: 600, textDecoration: "none" }}>
         Solicitar novo link
