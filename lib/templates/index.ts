@@ -1,4 +1,5 @@
 import { fetchWithCache } from "@/lib/cache";
+import { prisma } from "@/lib/prisma";
 import { buildOrc001 } from "./orcamento/orc-001-classic";
 import { buildOrc002 } from "./orcamento/orc-002-light";
 import { buildOrc003 } from "./orcamento/orc-003-executive";
@@ -11,8 +12,31 @@ import { buildCtr004 } from "./contrato/ctr-004-formal";
 import { buildCtr005 } from "./contrato/ctr-005-dark-gold";
 import { buildCtr006 } from "./contrato/ctr-006-dark-modern";
 import { buildFromClausulas } from "./contrato/build-from-clausulas";
+import { interpolateTemplate } from "./custom-interpolator";
 import type { AssetResult, ArtistTemplateData } from "./types";
 import type { ClausulaContrato } from "@/lib/contrato-clausulas";
+
+// Cache em memória para evitar query no DB a cada documento gerado
+const _customHtmlCache = new Map<string, { html: string | null; ts: number }>();
+const CUSTOM_HTML_TTL = 5 * 60 * 1000;
+
+async function getCustomHtml(slug: string): Promise<string | null> {
+  const cached = _customHtmlCache.get(slug);
+  if (cached && Date.now() - cached.ts < CUSTOM_HTML_TTL) return cached.html;
+  try {
+    const rec = await prisma.systemTemplate.findUnique({ where: { slug }, select: { customHtml: true } });
+    const html = rec?.customHtml ?? null;
+    _customHtmlCache.set(slug, { html, ts: Date.now() });
+    return html;
+  } catch {
+    return null;
+  }
+}
+
+export function invalidateCustomHtmlCache(slug?: string) {
+  if (slug) _customHtmlCache.delete(slug);
+  else _customHtmlCache.clear();
+}
 
 type TemplateBuilder = (
   artist: ArtistTemplateData & Record<string, any>,
@@ -69,6 +93,10 @@ export async function buildTemplate(
 
   if (type === "orcamento") {
     const templateId = artist.orcamentoTemplate || "orc-001";
+    const customHtml = await getCustomHtml(templateId);
+    if (customHtml) {
+      return injectWatermark(interpolateTemplate(customHtml, { artist, data: data as Record<string, any>, logo }));
+    }
     const builder = ORC_BUILDERS[templateId] ?? ORC_BUILDERS["orc-001"];
     return injectWatermark(await builder(artist, data as Record<string, any>, pageSize, logo, background));
   }
@@ -80,6 +108,10 @@ export async function buildTemplate(
   }
 
   const templateId = artist.contratoTemplate || "ctr-001";
+  const customHtml = await getCustomHtml(templateId);
+  if (customHtml) {
+    return injectWatermark(interpolateTemplate(customHtml, { artist, data: data as Record<string, any>, logo }));
+  }
   const builder = CTR_BUILDERS[templateId] ?? CTR_BUILDERS["ctr-001"];
   return injectWatermark(await builder(artist, data as Record<string, any>, pageSize, logo, background));
 }

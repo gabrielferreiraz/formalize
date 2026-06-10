@@ -29,7 +29,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
               <NavLink href="/super-admin">Dashboard</NavLink>
               <NavLink href="/super-admin/artistas">Artistas</NavLink>
               <NavLink href="/super-admin/solicitacoes">Solicitações</NavLink>
-              <NavLink href="/super-admin/pdf-templates">Templates PDF</NavLink>
+              <NavLink href="/super-admin/templates">Templates</NavLink>
               <NavLink href="/super-admin/whatsapp">WhatsApp</NavLink>
             </nav>
           </div>

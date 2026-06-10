@@ -213,6 +213,20 @@ model PdfTemplateMapping {
   @@index([artistId])
 }
 
+/// Templates HTML de sistema — controla visibilidade e permite override de HTML para todos os artistas
+model SystemTemplate {
+  id          String   @id @default(cuid())
+  slug        String   @unique  // "orc-001", "ctr-006" etc.
+  type        String            // "orcamento" | "contrato"
+  name        String
+  description String   @default("")
+  isActive    Boolean  @default(true)
+  customHtml  String?  @db.Text  // HTML override — nulo = usa builder TypeScript
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 /// Requisições de onboarding de novos artistas
 model ArtistRequest {
   id         String @id @default(cuid())

@@ -64,7 +64,7 @@ export default function SuperBottomNav() {
       ),
     },
     {
-      href: "/super-admin/pdf-templates",
+      href: "/super-admin/templates",
       exact: false,
       label: "Templates",
       icon: (
