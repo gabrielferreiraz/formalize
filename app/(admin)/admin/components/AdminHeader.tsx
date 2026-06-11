@@ -22,6 +22,18 @@ const nav = [
 export function AdminHeader({ artistName, logoUrl }: Props) {
   const pathname = usePathname();
   const [showNav, setShowNav] = useState(true);
+  const [currentLogoUrl, setCurrentLogoUrl] = useState(logoUrl);
+
+  useEffect(() => { setCurrentLogoUrl(logoUrl); }, [logoUrl]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const url = (e as CustomEvent<{ url: string }>).detail?.url;
+      if (url) setCurrentLogoUrl(url + "?t=" + Date.now());
+    };
+    window.addEventListener("logo-updated", handler);
+    return () => window.removeEventListener("logo-updated", handler);
+  }, []);
 
   useEffect(() => {
     let lastScrollY = window.scrollY;
@@ -79,13 +91,14 @@ export function AdminHeader({ artistName, logoUrl }: Props) {
       }}>
         {/* Logo / identidade */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {logoUrl ? (
+          {currentLogoUrl ? (
             <Image
-              src={logoUrl}
+              src={currentLogoUrl}
               alt={artistName}
               width={120}
               height={44}
               priority
+              unoptimized
               style={{ width: "auto", height: 38, objectFit: "contain" }}
             />
           ) : (

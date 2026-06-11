@@ -419,9 +419,19 @@ export default function ConfiguracoesPage() {
       const res = await fetch("/api/artist/upload", { method: "POST", body: formData });
       if (res.ok) {
         const { url } = await res.json();
+        const ts = Date.now();
         setData((prev) => (prev ? { ...prev, logoUrl: url } : prev));
-        setUploadTs((prev) => ({ ...prev, logo: Date.now() }));
+        setInitialData((prev) => (prev ? { ...prev, logoUrl: url } : prev));
+        setUploadTs((prev) => ({ ...prev, logo: ts }));
         setMessage({ text: "Logo salva com sucesso!", type: "success" });
+        // Atualiza o header imediatamente via evento
+        window.dispatchEvent(new CustomEvent("logo-updated", { detail: { url } }));
+        // Persiste no banco para que router.refresh() e navegações futuras reflitam a mudança
+        fetch("/api/artist/me", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ logoUrl: url }),
+        }).then(() => router.refresh()).catch(() => {});
       } else {
         setMessage({ text: "Erro ao enviar logo", type: "error" });
       }

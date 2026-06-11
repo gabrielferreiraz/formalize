@@ -435,6 +435,7 @@ export default function FormContrato({
             <div className="relative">
               <input
                 id="contratanteCpfCnpj"
+                inputMode="numeric"
                 className={`input-field ${errors.contratanteCpfCnpj ? "border-red-500" : ""}`}
                 value={values.contratanteCpfCnpj}
                 onChange={(e) => {
@@ -467,7 +468,7 @@ export default function FormContrato({
           {!ehCnpj && (
             <>
               <Field label="RG">
-                <input className="input-field" value={values.contratanteRg}
+                <input className="input-field" inputMode="numeric" value={values.contratanteRg}
                   onChange={(e) => set("contratanteRg", e.target.value)} placeholder="Número do RG" />
               </Field>
               <Field label="Órgão expedidor">
@@ -478,7 +479,7 @@ export default function FormContrato({
           )}
 
           <Field label="Telefone">
-            <input className="input-field" value={values.contratanteTelefone}
+            <input className="input-field" inputMode="tel" value={values.contratanteTelefone}
               onChange={(e) => set("contratanteTelefone", formatarTelefone(e.target.value))}
               placeholder="(00) 00000-0000" />
           </Field>
@@ -490,7 +491,7 @@ export default function FormContrato({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="CEP">
             <div className="relative">
-              <input className="input-field" value={values.cep}
+              <input className="input-field" inputMode="numeric" value={values.cep}
                 onChange={(e) => {
                   const formatted = formatarCEP(e.target.value);
                   set("cep", formatted);
@@ -511,7 +512,7 @@ export default function FormContrato({
           </Field>
 
           <Field label="Número">
-            <input className="input-field" value={values.numero}
+            <input className="input-field" inputMode="numeric" value={values.numero}
               onChange={(e) => set("numero", e.target.value)} placeholder="Nº" />
           </Field>
 
@@ -580,7 +581,7 @@ export default function FormContrato({
           </Field>
 
           <Field label="Horário">
-            <input className="input-field" value={values.horario}
+            <input className="input-field" inputMode="numeric" value={values.horario}
               onChange={(e) => {
                 const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
                 const formatted = digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits;
@@ -615,6 +616,7 @@ export default function FormContrato({
           <Field label="Cachê" error={errors.cache}>
             <div className="relative">
               <input id="cache"
+                inputMode="numeric"
                 className={`input-field text-lg font-semibold ${errors.cache ? "border-red-500" : ""}`}
                 value={values.cache ? formatarMoeda(values.cache) : ""}
                 onChange={(e) => set("cache", e.target.value.replace(/\D/g, ""))}

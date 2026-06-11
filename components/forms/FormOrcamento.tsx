@@ -172,6 +172,7 @@ function AdicionalRow({
           <span className="text-gray-500 font-mono text-sm mr-2">R$</span>
           <input
             type="text"
+            inputMode="numeric"
             className="flex-1 bg-transparent py-3 text-[15px] font-bold text-gray-100 outline-none placeholder-stage-500 font-mono"
             value={valor ? formatarMoeda(valor) : ""}
             onChange={(e) => onValor(e.target.value.replace(/\D/g, ""))}
@@ -452,6 +453,7 @@ export default function FormOrcamento({
             {values.horarioDefinido && (
               <input
                 className="input-field mt-1 animate-fade-in"
+                inputMode="numeric"
                 value={values.horario}
                 onChange={(e) => set("horario", mascaraHorario(e.target.value))}
                 placeholder="HH:MM"
@@ -478,6 +480,7 @@ export default function FormOrcamento({
           <div className="relative">
             <input
               name="cache"
+              inputMode="numeric"
               className={`input-field text-lg font-semibold ${errors.cache ? "border-red-500" : ""}`}
               value={values.cache ? formatarMoeda(values.cache) : ""}
               onChange={(e) => set("cache", e.target.value.replace(/\D/g, ""))}
