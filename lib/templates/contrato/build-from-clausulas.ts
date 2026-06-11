@@ -1,4 +1,4 @@
-import crypto from "crypto";
+﻿import crypto from "crypto";
 import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
 import { interpolarClausula, type ClausulaContrato, type ClausulaVars } from "@/lib/contrato-clausulas";
@@ -68,7 +68,7 @@ export async function buildFromClausulas(
 ): Promise<string> {
   const vars = buildVars(artist, data);
   const primaryColor = artist.primaryColor || "#E8A045";
-  const fontScale = (artist.contratoFontScale || 100) / 71;
+  const fontScale = (artist.contratoFontScale || 100) / 52;
   const logoMime = logo?.mime || "image/png";
   const logoBase64 = logo?.base64 || "";
   const addr = (artist.address as any) || {};

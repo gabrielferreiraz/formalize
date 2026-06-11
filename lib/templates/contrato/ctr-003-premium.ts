@@ -1,4 +1,4 @@
-import crypto from "crypto";
+﻿import crypto from "crypto";
 import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
 
@@ -17,7 +17,7 @@ export async function buildCtr003(
   const bank = (artist.bankInfo as any) || {};
   const logoMime = logo?.mime || "image/png";
   const logoBase64 = logo?.base64 || "";
-  const fontScale = (artist.contratoFontScale || 100) / 71;
+  const fontScale = (artist.contratoFontScale || 100) / 52;
   const logoScale = Number(artist.contratoLogoScale) || 100;
   const logoH = Math.round(88 * logoScale / 100);
 

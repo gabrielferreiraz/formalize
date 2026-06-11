@@ -1,4 +1,4 @@
-import crypto from "crypto";
+﻿import crypto from "crypto";
 import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
 
@@ -64,7 +64,7 @@ export async function buildCtr001(
     : "não informado";
   const horasNum = d.horas || 2;
   const horasFormatado = (horasNum % 1 !== 0) ? `${Math.floor(horasNum)}:30` : `${horasNum}:00`;
-  const fontScale = (artist.contratoFontScale || 100) / 71;
+  const fontScale = (artist.contratoFontScale || 100) / 52;
 
   return `<!DOCTYPE html>
 <html>

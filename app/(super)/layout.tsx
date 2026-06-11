@@ -14,7 +14,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
     <div className="min-h-screen bg-stage-900 text-gray-100 font-body">
       <header
         className="bg-stage-800/80 backdrop-blur border-b border-stage-600 sticky top-0 z-40"
-        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 2px)" }}
       >
         <div className="max-w-6xl mx-auto w-full px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">

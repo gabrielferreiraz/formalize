@@ -1,4 +1,4 @@
-import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
+﻿import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
 
 type ArtistData = ArtistTemplateData & Record<string, any>;
@@ -41,7 +41,7 @@ export async function buildOrc004(
 ): Promise<string> {
   const d = data;
   const primary = artist.primaryColor || "#e6b800";
-  const fontScale = (artist.orcamentoFontScale || 100) / 71;
+  const fontScale = (artist.orcamentoFontScale || 100) / 52;
   const logoScale = Number(artist.orcamentoLogoScale) || 100;
   const logoH = Math.round(72 * logoScale / 100);
   const footerLogoH = Math.round(44 * logoScale / 100);

@@ -1,12 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { IconUpload, IconCheck } from "@/components/ui/icons";
 import { PageTutorial, clearAllTutorials, type TutorialStep } from "@/components/ui/PageTutorial";
+import { LogoCropModal } from "@/components/ui/LogoCropModal";
 
 const CFG_TUTORIAL: TutorialStep[] = [
   {
@@ -311,6 +312,8 @@ export default function ConfiguracoesPage() {
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [uploadTs, setUploadTs] = useState<Record<string, number>>({});
 
+  const [cropFile, setCropFile] = useState<File | null>(null);
+
   const isDirty = data !== null && initialData !== null &&
     JSON.stringify(data) !== JSON.stringify(initialData);
   const [navHidden, setNavHidden] = useState(false);
@@ -397,6 +400,36 @@ export default function ConfiguracoesPage() {
 
   const patchPaper = (patch: Partial<ArtistConfig>) => {
     setData((prev) => (prev ? { ...prev, ...patch } : null));
+  };
+
+  const handleLogoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setCropFile(file);
+    if (e.target) e.target.value = "";
+  };
+
+  const handleLogoCropConfirm = async (blob: Blob) => {
+    setCropFile(null);
+    setUploading((prev) => ({ ...prev, logo: true }));
+    setMessage(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", new File([blob], "logo.png", { type: "image/png" }));
+      formData.append("type", "logo");
+      const res = await fetch("/api/artist/upload", { method: "POST", body: formData });
+      if (res.ok) {
+        const { url } = await res.json();
+        setData((prev) => (prev ? { ...prev, logoUrl: url } : prev));
+        setUploadTs((prev) => ({ ...prev, logo: Date.now() }));
+        setMessage({ text: "Logo salva com sucesso!", type: "success" });
+      } else {
+        setMessage({ text: "Erro ao enviar logo", type: "error" });
+      }
+    } catch {
+      setMessage({ text: "Erro na conexão", type: "error" });
+    } finally {
+      setUploading((prev) => ({ ...prev, logo: false }));
+    }
   };
 
   const handleUpload = async (type: string, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -511,14 +544,61 @@ export default function ConfiguracoesPage() {
           defaultOpen
           filled={!!(data.logoUrl || data.backgroundUrl || data.primaryColor || data.name)}
         >
-          <FileUploadRow
-            label="Logo do Artista"
-            preview={data.logoUrl ? <img src={uploadTs["logo"] ? `${data.logoUrl}?t=${uploadTs["logo"]}` : data.logoUrl} alt="Logo" style={{ maxHeight: 56, maxWidth: "100%", objectFit: "contain" }} /> : undefined}
-            uploaded={!!data.logoUrl}
-            uploading={uploading["logo"]}
-            accept="image/*"
-            onChange={(e) => handleUpload("logo", e)}
-          />
+          <div style={{ padding: 14, background: "#1a1f2e", border: "1px solid #252d3d", borderRadius: 12, marginBottom: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#94a3b8" }}>
+                Logo do Artista
+              </div>
+              {data.logoUrl && (
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "'Inter', sans-serif", fontSize: 10.5, fontWeight: 600, color: "#4ade80", letterSpacing: "0.02em" }}>
+                  <span style={{ width: 14, height: 14, borderRadius: 999, background: "rgba(74,222,128,0.15)", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                    <IconCheck size={10} />
+                  </span>
+                  Enviada
+                </div>
+              )}
+            </div>
+            {data.logoUrl && (
+              <div style={{ marginBottom: 12, borderRadius: 8, overflow: "hidden", border: "1px solid #252d3d", background: "#0e1118", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 68, padding: 8 }}>
+                <img
+                  src={uploadTs["logo"] ? `${data.logoUrl}?t=${uploadTs["logo"]}` : data.logoUrl}
+                  alt="Logo"
+                  style={{ maxHeight: 52, maxWidth: "100%", objectFit: "contain" }}
+                />
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 8 }}>
+              <label style={{
+                flex: 1, height: 40, borderRadius: 10,
+                background: "#141824", border: "1px solid #252d3d",
+                color: uploading["logo"] ? "#6b7280" : "#f1f5f9",
+                fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 600,
+                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+                cursor: uploading["logo"] ? "not-allowed" : "pointer",
+              }}>
+                <IconUpload size={14} />
+                {uploading["logo"] ? "Enviando..." : data.logoUrl ? "Trocar logo" : "Escolher arquivo"}
+                <input type="file" accept="image/*" onChange={handleLogoFileSelect} disabled={uploading["logo"]} style={{ display: "none" }} />
+              </label>
+              {data.logoUrl && (
+                <label style={{
+                  height: 40, padding: "0 14px", borderRadius: 10,
+                  background: "#141824", border: "1px solid rgba(230,184,0,0.25)",
+                  color: "#e6b800",
+                  fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 600,
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  cursor: uploading["logo"] ? "not-allowed" : "pointer",
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  Ajustar
+                  <input type="file" accept="image/*" onChange={handleLogoFileSelect} disabled={uploading["logo"]} style={{ display: "none" }} />
+                </label>
+              )}
+            </div>
+          </div>
           <FileUploadRow
             label="Imagem de Fundo"
             preview={data.backgroundUrl ? (
@@ -780,6 +860,14 @@ export default function ConfiguracoesPage() {
       )}
 
       <PageTutorial pageKey="configuracoes" steps={CFG_TUTORIAL} />
+
+      {mounted && cropFile && (
+        <LogoCropModal
+          file={cropFile}
+          onConfirm={handleLogoCropConfirm}
+          onCancel={() => setCropFile(null)}
+        />
+      )}
     </div>
   );
 }
