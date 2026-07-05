@@ -1,6 +1,7 @@
 ﻿import crypto from "crypto";
 import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
+import { getTextosCategoria } from "@/lib/templates/contrato/artist-texts";
 
 type ArtistData = ArtistTemplateData & Record<string, any>;
 
@@ -514,7 +515,7 @@ const templateContratoLight = `<!DOCTYPE html>
         <div class="header-divider"></div>
         <div class="header-info">
           <div class="header-subtitle">Entretenimento Musical</div>
-          <div class="header-title">Nota Contratual</div>
+          <div class="header-title">Contrato de Prestação de Serviços</div>
         </div>
       </div>
       <div class="header-right">
@@ -565,7 +566,7 @@ const templateContratoLight = `<!DOCTYPE html>
         </div>
         <div class="evento-item">
           <div class="evento-label">Duração</div>
-          <div class="evento-value">{{horas}}h de show{{#if horario}} às {{horario}}h{{/if}}</div>
+          <div class="evento-value">{{horas}}h de {{tipoServico}}{{#if horario}} às {{horario}}h{{/if}}</div>
         </div>
       </div>
 
@@ -614,8 +615,8 @@ const templateContratoLight = `<!DOCTYPE html>
         <div class="clausula">
           <span class="clausula-num">01</span>
           <div class="clausula-corpo">
-            <div class="clausula-titulo">Data do Show</div>
-            <div class="clausula-texto">O contratado se obriga a prestar seu serviço de show musical na seguinte data: <strong>{{dataEvento}}</strong>.</div>
+            <div class="clausula-titulo">Data do Evento</div>
+            <div class="clausula-texto">O CONTRATADO se obriga a prestar serviço de {{tipoServico}} na seguinte data: <strong>{{dataEvento}}</strong>.</div>
           </div>
         </div>
 
@@ -623,7 +624,7 @@ const templateContratoLight = `<!DOCTYPE html>
           <span class="clausula-num">02</span>
           <div class="clausula-corpo">
             <div class="clausula-titulo">Local e Duração</div>
-            <div class="clausula-texto">O contratado desempenhará sua função, na duração de <strong>{{horas}}h de show</strong>{{#if horario}}, às <strong>{{horario}}h</strong>{{/if}}, no Local: <strong>{{local}}</strong>, <strong>{{cidadeEvento}}</strong>.</div>
+            <div class="clausula-texto">O CONTRATADO desempenhará sua função, na duração de <strong>{{horas}}h de {{tipoServico}}</strong>{{#if horario}}, às <strong>{{horario}}h</strong>{{/if}}, no Local: <strong>{{local}}</strong>, <strong>{{cidadeEvento}}</strong>.</div>
           </div>
         </div>
 
@@ -638,8 +639,8 @@ const templateContratoLight = `<!DOCTYPE html>
         <div class="clausula">
           <span class="clausula-num">04</span>
           <div class="clausula-corpo">
-            <div class="clausula-titulo">Formato da Banda</div>
-            <div class="clausula-texto">O artista se apresentará em seu formato de banda completa com os seguintes instrumentos: {{instruments}}.</div>
+            <div class="clausula-titulo">{{clausulaQuatroTitulo}}</div>
+            <div class="clausula-texto">{{clausulaQuatroTexto}}</div>
           </div>
         </div>
 
@@ -652,13 +653,13 @@ const templateContratoLight = `<!DOCTYPE html>
         </div>
 
         <div class="obs"><strong>OBS.</strong> Água mineral e alimentação para <strong>{{pessoasBanda}}</strong> pessoas fica por conta do CONTRATANTE.</div>
-        <div class="obs"><strong>OBS.</strong> Som profissional deverá ser fornecido pelo contratante ou espaço de eventos. Backline com técnico de som será fornecido pelo artista para uso próprio.</div>
+        <div class="obs"><strong>OBS.</strong> {{obsBacklineOuSom}}</div>
 
         <div class="clausula">
           <span class="clausula-num">06</span>
           <div class="clausula-corpo">
             <div class="clausula-titulo">Repertório</div>
-            <div class="clausula-texto">A escolha do repertório ficará a critério do contratado, podendo incluir pedidos com antecedência de até 30 dias.</div>
+            <div class="clausula-texto">{{clausulaSeisTexto}}</div>
           </div>
         </div>
 
@@ -683,8 +684,8 @@ const templateContratoLight = `<!DOCTYPE html>
         <div class="clausula">
           <span class="clausula-num">09</span>
           <div class="clausula-corpo">
-            <div class="clausula-titulo">Comportamento do Público</div>
-            <div class="clausula-texto">O espetáculo será interrompido se constatado comportamento inadequado do público, sendo o espetáculo considerado realizado sem multa ao CONTRATADO.</div>
+            <div class="clausula-titulo">{{clausulaNovaTitle}}</div>
+            <div class="clausula-texto">{{clausulaNovaTexto}}</div>
           </div>
         </div>
 
@@ -793,6 +794,7 @@ export async function buildCtr002(
   _pageSize?: { width: string; height: string },
   logo?: AssetResult | null,
 ): Promise<string> {
+  const textos = getTextosCategoria(artist.categoria);
   const fontScale = (artist.contratoFontScale || 100) / 52;
   const addr = (artist.address as any) || {};
   const bank = (artist.bankInfo as any) || {};
@@ -858,8 +860,15 @@ export async function buildCtr002(
     valorTotalFormatado,
     valorTotalExtenso,
     transporteTexto,
-    pessoasBanda: data.pessoasBanda || 7,
+    pessoasBanda: data.pessoasBanda || textos.pessoasDefault,
     instruments: escapeHtml(artist.instruments || 'Bateria, Percussão, Guitarra, Baixo, Sanfona'),
+    tipoServico: textos.tipoServico,
+    clausulaQuatroTitulo: textos.formatoTitulo,
+    clausulaQuatroTexto: textos.formatoTexto(escapeHtml(artist.instruments || 'Bateria, Percussão, Guitarra, Baixo, Sanfona')),
+    clausulaSeisTexto: textos.repertorioTexto,
+    clausulaNovaTitle: textos.interrupcaoTitulo,
+    clausulaNovaTexto: textos.interrupcaoTexto,
+    obsBacklineOuSom: textos.obsBacklineOuSom,
     cidadeEvento: escapeHtml(data.cidadeEvento || foro),
     foro: escapeHtml(foro),
     clausulasEspeciais: escapeHtml(data.clausulasEspeciais),

@@ -1,6 +1,7 @@
 ﻿import crypto from "crypto";
 import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
+import { getTextosCategoria } from "@/lib/templates/contrato/artist-texts";
 
 type ArtistData = ArtistTemplateData & Record<string, any>;
 
@@ -52,7 +53,8 @@ export async function buildCtr006(
     : "não informado";
   const horasNum = d.horas || 2;
   const horasFormatado = horasNum % 1 !== 0 ? `${Math.floor(horasNum)}:30` : `${horasNum}:00`;
-  const pessoasBanda = d.pessoasBanda || 7;
+  const textos = getTextosCategoria(artist.categoria);
+  const pessoasBanda = d.pessoasBanda || textos.pessoasDefault;
   const dataEventoBr = formatData(d.data);
   const dataAssinaturaBr = d.dataAssinatura ? formatData(d.dataAssinatura) : dataEventoBr;
   const dataAssinatura = new Date().toLocaleString("pt-BR", { timeZone: "America/Campo_Grande" });
@@ -187,9 +189,9 @@ export async function buildCtr006(
     .ass-dig-info { font-size: ${Math.round(8.5*fs)}px; color: #64748b; line-height: 1.55; }
     .ass-dig-codigo { font-family: 'Courier New', monospace; font-size: ${Math.round(7*fs)}px; color: #334155; margin-top: 4px; letter-spacing: 1px; }
 
-    .rodape { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: space-between; }
-    .rodape-frase { font-size: ${Math.round(11*fs)}px; color: #1e293b; font-style: italic; letter-spacing: 1px; }
-    .rodape-hash { font-family: 'Courier New', monospace; font-size: ${Math.round(10*fs)}px; color: #1e293b; }
+    .rodape { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; }
+    .rodape-frase { font-family: 'Space Grotesk', sans-serif; font-size: ${Math.round(11*fs)}px; color: ${primary}88; font-style: italic; letter-spacing: 1px; }
+    .rodape-hash { font-family: 'Courier New', monospace; font-size: ${Math.round(10*fs)}px; color: #334155; }
   </style>
 </head>
 <body>
@@ -210,8 +212,8 @@ export async function buildCtr006(
     </div>
 
     <div class="titulo-wrap">
-      <div class="titulo">Contrato de Prestação de Serviços</div>
-      <div class="subtitulo">Documento com validade jurídica entre as partes identificadas abaixo</div>
+      <div class="titulo">Contrato de Prestação de Serviços Artísticos</div>
+      <div class="subtitulo">Prestação de Serviços Musicais · Entretenimento</div>
     </div>
 
     <div class="corpo">
@@ -233,15 +235,15 @@ export async function buildCtr006(
       </div>
 
       <div class="clausulas-grid">
-        ${cl("Objeto", `O CONTRATADO se obriga a prestar seu serviço de show musical na data: <strong>${escapeHtml(dataEventoBr)}</strong>.`)}
-        ${cl("Local e Duração", `Duração de <strong>${escapeHtml(horasFormatado)} hs de show</strong>${d.horario ? `, às <strong>${escapeHtml(d.horario)}h</strong>` : ""}, no local: <strong>${escapeHtml(d.local || "")}</strong>, <strong>${escapeHtml(cidadeEstadoEvento)}</strong>.`)}
+        ${cl("Objeto", `O CONTRATADO se obriga a prestar serviço de ${textos.tipoServico} na data: <strong>${escapeHtml(dataEventoBr)}</strong>.`)}
+        ${cl("Local e Duração", `Duração de <strong>${escapeHtml(horasFormatado)} hs de ${textos.tipoServico}</strong>${d.horario ? `, às <strong>${escapeHtml(d.horario)}h</strong>` : ""}, no local: <strong>${escapeHtml(d.local || "")}</strong>, <strong>${escapeHtml(cidadeEstadoEvento)}</strong>.`)}
         ${cl("Valor", `Valor contratado: <strong>${escapeHtml(totalFmt)} (${escapeHtml(totalExt)})</strong>${backlineN > 0 ? `, sendo <strong>${escapeHtml(cacheFmt)}</strong> de cachê e <strong>${escapeHtml(backlineFmt!)}</strong> de backline` : ""}.`)}
-        ${cl("Instrumentação", `O artista se apresentará com os instrumentos: ${escapeHtml(instruments)}, conforme mapa de palco em anexo.`)}
+        ${cl(textos.formatoTitulo, textos.formatoTexto(escapeHtml(instruments)))}
         ${cl("Transporte", transporteTexto)}
         ${backlineN > 0 ? cl("Backline", `Backline no valor de <strong>${escapeHtml(backlineFmt!)}</strong> ficará por conta do CONTRATANTE.`) : ""}
         <div class="obs"><strong>OBS.</strong> Água mineral durante a apresentação e alimentação para <strong>${pessoasBanda}</strong> pessoas ficam por conta do CONTRATANTE.</div>
-        <div class="obs"><strong>OBS.</strong> Som profissional para atender o evento deverá ser fornecido pelo contratante ou pelo espaço; backline com técnico de som será fornecido pelo artista para uso próprio.</div>
-        ${cl("Repertório", "O repertório ficará a critério do <strong><em>CONTRATADO, podendo incluir pedidos com antecedência de até 30 dias.</em></strong>")}
+        <div class="obs"><strong>OBS.</strong> ${textos.obsBacklineOuSom}</div>
+        ${cl("Repertório", textos.repertorioTexto)}
         ${cl("Rescisão", `Em caso de rescisão, a parte infratora indenizará a prejudicada conforme abaixo:<div class="paragrafo">§ 1º — Multa de 10% do valor, quando a rescisão se der por escrito até 15 dias antes do evento.</div><div class="paragrafo">§ 2º — Multa de 50% do valor, quando a rescisão ocorrer no dia do evento.</div>`)}
         ${cl("Pagamento", d.formaPagamento
           ? `O CONTRATANTE efetuará o pagamento da seguinte forma: <strong>${escapeHtml(d.formaPagamento)}</strong>.`
@@ -255,7 +257,7 @@ export async function buildCtr006(
           <div class="banco-linha"><strong>Banco:</strong> ${escapeHtml(bank.banco || "")} &nbsp;&nbsp; <strong>Conta:</strong> ${escapeHtml(bank.conta || "")} &nbsp;&nbsp; <strong>Agência:</strong> ${escapeHtml(bank.agencia || "")}</div>
         </div>
 
-        ${cl("Interrupção", "O espetáculo será interrompido se constatado comportamento inadequado do público para com o artista — neste caso o CONTRATADO não terá multa e o espetáculo será considerado realizado.")}
+        ${cl(textos.interrupcaoTitulo, textos.interrupcaoTexto)}
         ${cl("Obrigações do Contratante", "Ficam sob inteira responsabilidade do CONTRATANTE os alvarás, taxas ECAD, diversões públicas e quaisquer outros necessários à realização do evento.")}
         ${cl("Foro", `Fica eleito o foro da Cidade de ${escapeHtml(foro)}, com exclusão de qualquer outro, para questões judiciais oriundas deste contrato.`)}
         ${d.clausulasEspeciais ? cl("Cláusula Especial", escapeHtml(d.clausulasEspeciais)) : ""}

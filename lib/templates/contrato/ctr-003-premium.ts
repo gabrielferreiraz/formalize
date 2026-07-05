@@ -1,6 +1,7 @@
 ﻿import crypto from "crypto";
 import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
+import { getTextosCategoria } from "@/lib/templates/contrato/artist-texts";
 
 type ArtistData = ArtistTemplateData & Record<string, any>;
 
@@ -46,12 +47,13 @@ export async function buildCtr003(
   const cidadeEstadoContratante = d.cidade && d.uf ? `${d.cidade}/${d.uf}` : "";
   const cidadeEstadoEvento = d.cidadeEvento || foro;
   const instruments = artist.instruments || "Bateria, Percussão, Guitarra, Baixo, Sanfona";
+  const textos = getTextosCategoria(artist.categoria);
   const rgTexto = d.contratanteRg
     ? `${d.contratanteRg}${d.contratanteOrgao ? " " + d.contratanteOrgao : ""}`
     : "não informado";
   const horasNum = d.horas || 2;
   const horasFormatado = horasNum % 1 !== 0 ? `${Math.floor(horasNum)}:30` : `${horasNum}:00`;
-  const pessoasBanda = d.pessoasBanda || 7;
+  const pessoasBanda = d.pessoasBanda || textos.pessoasDefault;
   const dataEventoBr = formatData(d.data);
   const dataAssinaturaBr = d.dataAssinatura ? formatData(d.dataAssinatura) : dataEventoBr;
   const dataAssinatura = new Date().toLocaleString("pt-BR", { timeZone: "America/Campo_Grande" });
@@ -66,7 +68,7 @@ export async function buildCtr003(
 <html>
 <head>
   <meta charset="UTF-8">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@400;600;700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
   <style>
     @page { margin: 1mm; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -94,23 +96,27 @@ export async function buildCtr003(
     .header-name { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(17*fs)}px; color: #111; letter-spacing: 0.5px; }
     .header-cnpj { font-size: ${Math.round(13*fs)}px; color: #aaa; margin-top: 2px; }
     .header-right { text-align: right; }
-    .header-doc-label { font-family: 'Montserrat', sans-serif; font-weight: 300; font-size: ${Math.round(12*fs)}px; letter-spacing: 4px; text-transform: uppercase; color: #bbb; margin-bottom: 4px; }
+    .header-doc-label { font-family: 'Montserrat', sans-serif; font-weight: 400; font-size: ${Math.round(10*fs)}px; letter-spacing: 3px; text-transform: uppercase; color: #ccc; margin-bottom: 5px; }
     .header-badge {
-      display: inline-block; padding: 4px 14px;
-      border: 1px solid ${primary}; border-radius: 4px;
-      font-family: 'Montserrat', sans-serif; font-weight: 700;
-      font-size: ${Math.round(13*fs)}px; color: ${primary}; letter-spacing: 2px;
-      text-transform: uppercase;
+      display: inline-block; padding: 5px 16px;
+      border: 1px solid ${primary}44; border-radius: 3px;
+      font-family: 'Cormorant Garamond', serif; font-weight: 700; font-style: italic;
+      font-size: ${Math.round(15*fs)}px; color: ${primary}; letter-spacing: 1px;
     }
 
     .corpo { padding: 16px 44px 24px; flex: 1; }
 
     .titulo {
-      font-family: 'Montserrat', sans-serif; font-weight: 900;
-      font-size: ${Math.round(20*fs)}px; color: #111;
-      text-align: center; letter-spacing: 4px; text-transform: uppercase;
-      margin-bottom: 18px; padding-bottom: 12px;
-      border-bottom: 2px solid ${primary};
+      font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 700;
+      font-size: ${Math.round(22*fs)}px; color: #111;
+      text-align: center; letter-spacing: 2px;
+      margin-bottom: 18px; padding-bottom: 14px;
+      border-bottom: 1px solid #eee; position: relative;
+    }
+    .titulo::after {
+      content: ''; position: absolute; bottom: -1px; left: 50%;
+      transform: translateX(-50%); width: 60px; height: 2px;
+      background: ${primary}; -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
 
     .intro { font-size: ${Math.round(16*fs)}px; color: #333; line-height: 1.9; margin-bottom: 14px; text-align: justify; }
@@ -191,7 +197,7 @@ export async function buildCtr003(
       </div>
 
       <div class="corpo">
-        <div class="titulo">Nota Contratual</div>
+        <div class="titulo">Contrato de Prestação de Serviços Artísticos</div>
 
         <div class="intro">
           Pelo presente instrumento, de um lado denominado <strong>CONTRATANTE</strong>,
@@ -210,19 +216,19 @@ export async function buildCtr003(
 
         <div class="clausula">
           <div class="clausula-titulo">Cláusula Primeira</div>
-          <div class="clausula-texto">O CONTRATADO se obriga a prestar seu serviço de show musical na data: <strong>${escapeHtml(dataEventoBr)}.</strong></div>
+          <div class="clausula-texto">O CONTRATADO se obriga a prestar seu serviço de ${textos.tipoServico} na data: <strong>${escapeHtml(dataEventoBr)}.</strong></div>
         </div>
         <div class="clausula">
           <div class="clausula-titulo">Cláusula Segunda</div>
-          <div class="clausula-texto">Duração de <strong>${escapeHtml(horasFormatado)} hs de show</strong>${d.horario ? `, às <strong>${escapeHtml(d.horario)}h</strong>` : ""}, no local: <strong>${escapeHtml(d.local || "")}</strong>, <strong>${escapeHtml(cidadeEstadoEvento)}</strong>.</div>
+          <div class="clausula-texto">Duração de <strong>${escapeHtml(horasFormatado)} hs de ${textos.tipoServico}</strong>${d.horario ? `, às <strong>${escapeHtml(d.horario)}h</strong>` : ""}, no local: <strong>${escapeHtml(d.local || "")}</strong>, <strong>${escapeHtml(cidadeEstadoEvento)}</strong>.</div>
         </div>
         <div class="clausula">
           <div class="clausula-titulo">Cláusula Terceira</div>
           <div class="clausula-texto">Valor contratado: <strong>${escapeHtml(totalFmt)} (${escapeHtml(totalExt)})</strong>${backlineN > 0 ? `, sendo <strong>${escapeHtml(cacheFmt)}</strong> de cachê e <strong>${escapeHtml(backlineFmt!)}</strong> de backline` : ""}.</div>
         </div>
         <div class="clausula">
-          <div class="clausula-titulo">Cláusula Quarta</div>
-          <div class="clausula-texto">O artista se apresentará com os instrumentos: ${escapeHtml(instruments)}, conforme mapa de palco em anexo.</div>
+          <div class="clausula-titulo">Cláusula Quarta — ${textos.formatoTitulo}</div>
+          <div class="clausula-texto">${textos.formatoTexto(escapeHtml(instruments))}</div>
         </div>
         <div class="clausula">
           <div class="clausula-titulo">Cláusula Quinta</div>
@@ -234,10 +240,10 @@ export async function buildCtr003(
           <div class="clausula-texto">Backline no valor de <strong>${escapeHtml(backlineFmt!)}</strong> ficará por conta do CONTRATANTE.</div>
         </div>` : ""}
         <div class="obs"><strong>OBS.</strong> Água mineral durante a apresentação e alimentação para <strong>${pessoasBanda}</strong> pessoas ficam por conta do CONTRATANTE.</div>
-        <div class="obs"><strong>OBS.</strong> Som profissional para atender o evento deverá ser fornecido pelo contratante ou pelo espaço; backline com técnico de som será fornecido pelo artista para uso próprio.</div>
+        <div class="obs"><strong>OBS.</strong> ${textos.obsBacklineOuSom}</div>
         <div class="clausula">
           <div class="clausula-titulo">Cláusula Sexta</div>
-          <div class="clausula-texto">O repertório ficará a critério do <strong><em>CONTRATADO, podendo incluir pedidos com antecedência de até 30 dias.</em></strong></div>
+          <div class="clausula-texto">${textos.repertorioTexto}</div>
         </div>
         <div class="clausula">
           <div class="clausula-titulo">Cláusula Sétima — Rescisão</div>
@@ -261,8 +267,8 @@ export async function buildCtr003(
         </div>
 
         <div class="clausula">
-          <div class="clausula-titulo">Cláusula Nona</div>
-          <div class="clausula-texto">O espetáculo será interrompido se constatado comportamento inadequado do público para com o artista — neste caso o CONTRATADO não terá multa e o espetáculo será considerado realizado.</div>
+          <div class="clausula-titulo">Cláusula Nona — ${textos.interrupcaoTitulo}</div>
+          <div class="clausula-texto">${textos.interrupcaoTexto}</div>
         </div>
         <div class="clausula">
           <div class="clausula-titulo">Cláusula Décima</div>

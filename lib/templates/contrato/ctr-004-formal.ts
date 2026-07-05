@@ -1,6 +1,7 @@
 ﻿import crypto from "crypto";
 import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
+import { getTextosCategoria } from "@/lib/templates/contrato/artist-texts";
 
 type ArtistData = ArtistTemplateData & Record<string, any>;
 
@@ -46,12 +47,13 @@ export async function buildCtr004(
   const cidadeEstadoContratante = d.cidade && d.uf ? `${d.cidade}/${d.uf}` : "";
   const cidadeEstadoEvento = d.cidadeEvento || foro;
   const instruments = artist.instruments || "Bateria, Percussão, Guitarra, Baixo, Sanfona";
+  const textos = getTextosCategoria(artist.categoria);
   const rgTexto = d.contratanteRg
     ? `${d.contratanteRg}${d.contratanteOrgao ? " " + d.contratanteOrgao : ""}`
     : "não informado";
   const horasNum = d.horas || 2;
   const horasFormatado = horasNum % 1 !== 0 ? `${Math.floor(horasNum)}:30` : `${horasNum}:00`;
-  const pessoasBanda = d.pessoasBanda || 7;
+  const pessoasBanda = d.pessoasBanda || textos.pessoasDefault;
   const dataEventoBr = formatData(d.data);
   const dataAssinaturaBr = d.dataAssinatura ? formatData(d.dataAssinatura) : dataEventoBr;
   const dataAssinatura = new Date().toLocaleString("pt-BR", { timeZone: "America/Campo_Grande" });
@@ -78,31 +80,34 @@ export async function buildCtr004(
 
     .pagina { width: 100%; min-height: 100vh; display: flex; flex-direction: column; background: #fff; }
 
-    /* ── Header band ── */
+    /* ── Header ── */
+    .header-top-rule { height: 4px; background: ${primary}; width: 100%; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .header-band {
-      background: ${primary}; padding: 14px 20px 12px;
+      background: #fff; padding: 16px 20px 14px;
       display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #eee;
     }
     .header-band-left { display: flex; align-items: center; gap: 14px; }
     .header-logo { height: ${logoH}px; max-width: 280px; object-fit: contain; }
     .header-logo-placeholder { width: 1px; }
-    .header-artist { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(18*fs)}px; color: #111; letter-spacing: 0.5px; }
-    .header-cnpj { font-size: ${Math.round(13*fs)}px; color: #111; opacity: 0.65; margin-top: 2px; }
+    .header-artist { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(16*fs)}px; color: #111; letter-spacing: 0.3px; }
+    .header-cnpj { font-size: ${Math.round(11*fs)}px; color: #aaa; margin-top: 2px; }
     .header-doc {
-      font-family: 'Montserrat', sans-serif; font-weight: 900;
-      font-size: ${Math.round(13*fs)}px; letter-spacing: 3px; text-transform: uppercase;
-      color: #111;
+      font-family: 'Montserrat', sans-serif; font-weight: 700;
+      font-size: ${Math.round(11*fs)}px; letter-spacing: 3px; text-transform: uppercase;
+      color: ${primary};
     }
 
     /* ── Sub-header ── */
     .sub-header {
-      background: #111; padding: 10px 20px;
+      background: #f8f8f8; padding: 8px 20px;
       display: flex; align-items: center; justify-content: center;
+      border-bottom: 1px solid #eee;
     }
     .sub-header-title {
-      font-family: 'Montserrat', sans-serif; font-weight: 300;
-      font-size: ${Math.round(13*fs)}px; letter-spacing: 6px;
-      text-transform: uppercase; color: #888;
+      font-family: 'Montserrat', sans-serif; font-weight: 500;
+      font-size: ${Math.round(11*fs)}px; letter-spacing: 5px;
+      text-transform: uppercase; color: #aaa;
     }
 
     /* ── Body ── */
@@ -218,6 +223,7 @@ export async function buildCtr004(
 </head>
 <body>
   <div class="pagina">
+    <div class="header-top-rule"></div>
     <div class="header-band">
       <div class="header-band-left">
         ${logo ? `<img class="header-logo" src="data:${logoMime};base64,${logoBase64}" />` : `<div class="header-logo-placeholder"></div>`}
@@ -229,7 +235,7 @@ export async function buildCtr004(
       <div class="header-doc">Contrato</div>
     </div>
     <div class="sub-header">
-      <div class="sub-header-title">Prestação de Serviços Musicais</div>
+      <div class="sub-header-title">Prestação de Serviços Artísticos</div>
     </div>
 
     <div class="corpo">
@@ -248,11 +254,11 @@ export async function buildCtr004(
         têm entre si o seguinte:
       </div>
 
-      ${sec("01", "Data do Show")}
-      <div class="sec-body">O CONTRATADO se obriga a prestar serviço de show musical em: <strong>${escapeHtml(dataEventoBr)}</strong>.</div>
+      ${sec("01", "Data do Evento")}
+      <div class="sec-body">O CONTRATADO se obriga a prestar serviço de ${textos.tipoServico} em: <strong>${escapeHtml(dataEventoBr)}</strong>.</div>
 
       ${sec("02", "Local e Duração")}
-      <div class="sec-body">Show com duração de <strong>${escapeHtml(horasFormatado)}hs</strong>${d.horario ? `, às <strong>${escapeHtml(d.horario)}h</strong>` : ""}, no local: <strong>${escapeHtml(d.local || "")}</strong>, <strong>${escapeHtml(cidadeEstadoEvento)}</strong>.</div>
+      <div class="sec-body">Duração de <strong>${escapeHtml(horasFormatado)}hs de ${textos.tipoServico}</strong>${d.horario ? `, às <strong>${escapeHtml(d.horario)}h</strong>` : ""}, no local: <strong>${escapeHtml(d.local || "")}</strong>, <strong>${escapeHtml(cidadeEstadoEvento)}</strong>.</div>
 
       ${sec("03", "Valor Contratado")}
       <div class="sec-body">Valor de <strong>${escapeHtml(totalFmt)} (${escapeHtml(totalExt)})</strong>${backlineN > 0 ? `, sendo <strong>${escapeHtml(cacheFmt)}</strong> de cachê e <strong>${escapeHtml(backlineFmt!)}</strong> de backline` : ""}.</div>
@@ -268,8 +274,8 @@ export async function buildCtr004(
         </div>
       </div>
 
-      ${sec("04", "Formação")}
-      <div class="sec-body">O artista se apresentará com: ${escapeHtml(instruments)}, conforme mapa de palco em anexo.</div>
+      ${sec("04", textos.formatoTitulo)}
+      <div class="sec-body">${textos.formatoTexto(escapeHtml(instruments))}</div>
 
       ${sec("05", "Deslocamento")}
       <div class="sec-body">${transporteTexto}</div>
@@ -277,10 +283,10 @@ export async function buildCtr004(
       ${backlineN > 0 ? `${sec("", "Backline")}<div class="sec-body">Backline no valor de <strong>${escapeHtml(backlineFmt!)}</strong> ficará por conta do CONTRATANTE.</div>` : ""}
 
       <div class="obs"><strong>OBS.</strong> Água mineral e alimentação para <strong>${pessoasBanda}</strong> pessoas ficam por conta do CONTRATANTE.</div>
-      <div class="obs"><strong>OBS.</strong> Som profissional para o evento deverá ser fornecido pelo contratante; backline com técnico de som será fornecido pelo artista para uso próprio.</div>
+      <div class="obs"><strong>OBS.</strong> ${textos.obsBacklineOuSom}</div>
 
       ${sec("06", "Repertório")}
-      <div class="sec-body">O repertório ficará a critério do <strong><em>CONTRATADO, com pedidos aceitos com até 30 dias de antecedência.</em></strong></div>
+      <div class="sec-body">${textos.repertorioTexto}</div>
 
       ${sec("07", "Rescisão")}
       <div class="sec-body">Em caso de rescisão, a parte infratora indenizará a prejudicada:</div>
@@ -300,8 +306,8 @@ export async function buildCtr004(
         <div class="banco-linha"><strong>Banco:</strong> ${escapeHtml(bank.banco || "")} &nbsp; <strong>Conta:</strong> ${escapeHtml(bank.conta || "")} &nbsp; <strong>Agência:</strong> ${escapeHtml(bank.agencia || "")}</div>
       </div>
 
-      ${sec("09", "Interrupção do Show")}
-      <div class="sec-body">O show será interrompido se constatado comportamento inadequado do público — neste caso o CONTRATADO não terá multa e o show será considerado realizado.</div>
+      ${sec("09", textos.interrupcaoTitulo)}
+      <div class="sec-body">${textos.interrupcaoTexto}</div>
 
       ${sec("10", "Responsabilidades")}
       <div class="sec-body">Ficam sob responsabilidade do CONTRATANTE alvarás, taxas ECAD, diversões públicas e demais exigências legais para realização do evento.</div>

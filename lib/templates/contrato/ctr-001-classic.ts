@@ -1,6 +1,7 @@
 ﻿import crypto from "crypto";
 import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
+import { getTextosCategoria } from "@/lib/templates/contrato/artist-texts";
 
 type ArtistData = ArtistTemplateData & Record<string, any>;
 
@@ -42,8 +43,6 @@ export async function buildCtr001(
     ? "O deslocamento do artista e equipe já está incluso no valor do cachê, conforme combinado."
     : `O deslocamento do artista e equipe será cobrado à parte no valor de <strong>${transporteFormatado}</strong>, conforme combinado.`;
 
-  const pessoasBanda = d.pessoasBanda || 7;
-
   const nomeSlug = (d.contratanteNome || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
   const dataEventoBr = formatData(d.data);
   const hashContrato = crypto.createHash("sha256")
@@ -59,6 +58,8 @@ export async function buildCtr001(
   const cidadeEstadoContratante = d.cidade && d.uf ? `${d.cidade}/${d.uf}` : "";
   const cidadeEstadoEvento = d.cidadeEvento || foro;
   const instruments = artist.instruments || "Bateria, Percussão, Guitarra, Baixo, Sanfona";
+  const textos = getTextosCategoria(artist.categoria);
+  const pessoasBanda = d.pessoasBanda || textos.pessoasDefault;
   const rgTexto = d.contratanteRg
     ? `${d.contratanteRg}${d.contratanteOrgao ? " " + d.contratanteOrgao : ""}`
     : "não informado";
@@ -70,63 +71,84 @@ export async function buildCtr001(
 <html>
 <head>
   <meta charset="UTF-8">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     @page { margin: 25mm; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; background: #ffffff; font-family: 'Open Sans', sans-serif; }
+    html, body { width: 100%; background: #ffffff; font-family: 'Inter', sans-serif; }
     .pagina { width: 100%; min-height: 100vh; position: relative; display: flex; flex-direction: column; background: #ffffff; }
-    .marca-dagua { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; opacity: 0.04; z-index: 0; pointer-events: none; }
-    .header { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%); padding: 20px 20px 16px; text-align: center; flex-shrink: 0; position: relative; z-index: 1; }
-    .header img { height: ${logoH}px; max-width: 280px; object-fit: contain; display: block; margin: 0 auto 12px; }
-    .header-subtitulo { font-family: 'Montserrat', sans-serif; font-weight: 400; font-size: ${16 * fontScale}px; color: #888888; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 14px; }
-    .header-linha { width: 60%; height: 2px; background: linear-gradient(to right, transparent, ${primaryColor}, transparent); margin: 0 auto; }
-    .corpo { position: relative; z-index: 1; padding: 20px 20px 30px; flex: 1; }
-    .titulo { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${34 * fontScale}px; color: #111111; text-align: center; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 26px; padding-bottom: 16px; position: relative; }
-    .titulo::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 140px; height: 3px; background: linear-gradient(to right, transparent, ${primaryColor}, transparent); }
-    .intro { font-size: ${19 * fontScale}px; color: #222222; line-height: 1.8; margin-bottom: 20px; text-align: justify; }
-    .intro strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111111; }
-    .clausula { margin-bottom: 18px; break-inside: avoid; }
-    .clausula-titulo { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${19 * fontScale}px; color: ${primaryColor}; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
-    .clausula-titulo::before { content: ''; width: 6px; height: 6px; background: ${primaryColor}; border-radius: 50%; flex-shrink: 0; }
-    .clausula-texto { font-size: ${19 * fontScale}px; color: #333333; line-height: 1.8; text-align: justify; padding-left: 14px; }
-    .clausula-texto strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111111; }
-    .paragrafo { font-size: ${18 * fontScale}px; color: #444444; line-height: 1.8; margin-top: 6px; padding-left: 28px; text-align: justify; }
-    .obs { font-size: ${19 * fontScale}px; color: #333333; line-height: 1.8; margin-bottom: 12px; text-align: justify; padding: 10px 14px; background: #fafafa; border-left: 3px solid ${primaryColor}; border-radius: 3px; break-inside: avoid; }
-    .obs strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: ${primaryColor}; }
-    .secao-bancaria { background: #f5f5f5; border-left: 5px solid ${primaryColor}; border-radius: 6px; padding: 18px 24px; margin: 18px 0; break-inside: avoid; }
-    .banco-titulo { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${19 * fontScale}px; color: #111111; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
-    .banco-linha { font-size: ${19 * fontScale}px; color: #333333; line-height: 1.9; }
-    .banco-linha strong { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #111111; }
-    .assinaturas { margin-top: 24px; padding-top: 14px; border-top: 1px solid #eeeeee; break-inside: avoid; }
-    .local-data { font-size: ${17 * fontScale}px; color: #444444; margin-bottom: 18px; text-align: center; font-style: italic; }
+    .topo-regua { height: 4px; background: ${primaryColor}; width: 100%; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .marca-dagua { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 65%; opacity: 0.035; z-index: 0; pointer-events: none; }
+    .header { background: #ffffff; padding: 20px 20px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eeeeee; position: relative; z-index: 1; }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .header-logo { height: ${logoH}px; max-width: 260px; object-fit: contain; display: block; }
+    .header-vdivider { width: 1px; height: 38px; background: #e0e0e0; }
+    .header-artist { font-family: 'Inter', sans-serif; font-weight: 700; font-size: ${Math.round(15 * fontScale)}px; color: #111; letter-spacing: -0.2px; }
+    .header-sub { font-size: ${Math.round(9 * fontScale)}px; color: #aaa; letter-spacing: 3px; text-transform: uppercase; margin-top: 3px; font-weight: 500; }
+    .header-right { text-align: right; }
+    .header-doc-label { font-size: ${Math.round(9 * fontScale)}px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #ccc; margin-bottom: 3px; }
+    .header-date { font-size: ${Math.round(11 * fontScale)}px; font-weight: 600; color: #555; }
+    .corpo { position: relative; z-index: 1; padding: 24px 20px 30px; flex: 1; }
+    .titulo-area { text-align: center; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid #eeeeee; }
+    .titulo { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: ${Math.round(24 * fontScale)}px; color: #111111; letter-spacing: -0.3px; line-height: 1.2; margin-bottom: 10px; }
+    .titulo-regua { width: 60px; height: 2px; background: ${primaryColor}; margin: 0 auto 8px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .titulo-cat { font-size: ${Math.round(9 * fontScale)}px; color: #aaa; letter-spacing: 4px; text-transform: uppercase; font-weight: 500; }
+    .intro { font-size: ${Math.round(15 * fontScale)}px; color: #333333; line-height: 1.85; margin-bottom: 14px; text-align: justify; }
+    .intro strong { font-weight: 700; color: #111111; }
+    .clausula { margin-bottom: 12px; break-inside: avoid; }
+    .clausula-titulo { font-family: 'Inter', sans-serif; font-weight: 700; font-size: ${Math.round(11 * fontScale)}px; color: #111; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; text-transform: uppercase; letter-spacing: 1.5px; }
+    .clausula-titulo::before { content: ''; width: 18px; height: 2px; background: ${primaryColor}; flex-shrink: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .clausula-texto { font-size: ${Math.round(15 * fontScale)}px; color: #444444; line-height: 1.85; text-align: justify; padding-left: 28px; }
+    .clausula-texto strong { font-weight: 700; color: #111111; }
+    .paragrafo { font-size: ${Math.round(14 * fontScale)}px; color: #555555; line-height: 1.8; margin-top: 5px; padding-left: 42px; text-align: justify; }
+    .obs { font-size: ${Math.round(14 * fontScale)}px; color: #444; line-height: 1.8; margin-bottom: 10px; text-align: justify; padding: 10px 16px; background: #f8f8f8; border-left: 3px solid ${primaryColor}; break-inside: avoid; border-radius: 0 4px 4px 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .obs strong { font-weight: 700; color: ${primaryColor}; }
+    .secao-bancaria { background: #f7f7f7; border-radius: 8px; border: 1px solid #eeeeee; padding: 16px 20px; margin: 16px 0; break-inside: avoid; }
+    .banco-titulo { font-family: 'Inter', sans-serif; font-weight: 700; font-size: ${Math.round(10 * fontScale)}px; color: #999; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
+    .banco-linha { font-size: ${Math.round(14 * fontScale)}px; color: #444; line-height: 2; }
+    .banco-linha strong { font-weight: 700; color: #111; }
+    .assinaturas { margin-top: 26px; padding-top: 16px; border-top: 1px solid #eeeeee; break-inside: avoid; }
+    .local-data { font-size: ${Math.round(12 * fontScale)}px; color: #888; margin-bottom: 22px; text-align: center; font-style: italic; }
     .linha-assinatura { display: flex; justify-content: space-between; gap: 60px; margin-bottom: 18px; break-inside: avoid; align-items: flex-end; }
     .assinatura-bloco { flex: 1; text-align: center; }
-    .assinatura-linha { border-top: 1.5px solid #333333; margin-bottom: 8px; }
-    .assinatura-label { font-size: ${16 * fontScale}px; color: #777777; margin-top: 5px; text-transform: uppercase; letter-spacing: 2px; }
-    .testemunhas-titulo { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${17 * fontScale}px; color: #111111; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
-    .testemunhas-linha { display: flex; align-items: center; gap: 12px; margin-top: 10px; break-inside: avoid; }
-    .test-num { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${17 * fontScale}px; color: #111111; white-space: nowrap; }
-    .test-linha { flex: 1; border-top: 1.5px solid #333333; }
-    .rodape { padding: 14px 20px; text-align: center; position: relative; z-index: 1; }
-    .rodape-linha { width: 60%; height: 2px; background: linear-gradient(to right, transparent, ${primaryColor}, transparent); margin: 0 auto 14px; }
-    .rodape-frase { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${17 * fontScale}px; color: ${primaryColor}; letter-spacing: 3px; font-style: italic; }
-    .ass-dig-bloco { margin: 0 auto 5px; padding: 6px 8px; border: 1.5px solid ${primaryColor}; border-radius: 5px; background: #fffbf5; text-align: center; max-width: 180px; }
-    .ass-dig-titulo { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: ${8 * fontScale}px; color: ${primaryColor}; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; border-bottom: 1px solid ${primaryColor}33; padding-bottom: 3px; }
-    .ass-dig-info { font-size: ${8.5 * fontScale}px; color: #444444; line-height: 1.55; }
-    .ass-dig-codigo { font-family: 'Courier New', monospace; font-size: ${7 * fontScale}px; color: #aaaaaa; margin-top: 4px; letter-spacing: 1px; }
+    .assinatura-linha { border-top: 1px solid #333333; margin-bottom: 8px; }
+    .assinatura-label { font-size: ${Math.round(9 * fontScale)}px; color: #999; margin-top: 4px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
+    .testemunhas-titulo { font-family: 'Inter', sans-serif; font-weight: 700; font-size: ${Math.round(10 * fontScale)}px; color: #999; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 2px; }
+    .testemunhas-linha { display: flex; align-items: center; gap: 12px; margin-top: 8px; break-inside: avoid; }
+    .test-num { font-weight: 700; font-size: ${Math.round(12 * fontScale)}px; color: #333; white-space: nowrap; }
+    .test-linha { flex: 1; border-top: 1px solid #333; }
+    .rodape { padding: 14px 20px; text-align: center; position: relative; z-index: 1; border-top: 1px solid #eeeeee; }
+    .rodape-frase { font-family: 'Playfair Display', serif; font-weight: 400; font-style: italic; font-size: ${Math.round(13 * fontScale)}px; color: ${primaryColor}; letter-spacing: 0.5px; }
+    .ass-dig-bloco { margin: 0 auto 5px; padding: 6px 8px; border: 1px solid ${primaryColor}44; border-radius: 4px; background: #fafafa; text-align: center; max-width: 180px; }
+    .ass-dig-titulo { font-family: 'Inter', sans-serif; font-weight: 700; font-size: ${Math.round(7 * fontScale)}px; color: ${primaryColor}; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; border-bottom: 1px solid ${primaryColor}22; padding-bottom: 3px; }
+    .ass-dig-info { font-size: ${Math.round(8 * fontScale)}px; color: #555; line-height: 1.55; }
+    .ass-dig-codigo { font-family: 'Courier New', monospace; font-size: ${Math.round(6.5 * fontScale)}px; color: #bbb; margin-top: 4px; letter-spacing: 1px; }
   </style>
 </head>
 <body>
   <div class="pagina">
     ${logo ? `<img class="marca-dagua" src="data:${logoMime};base64,${logoBase64}" />` : ""}
+    <div class="topo-regua"></div>
     <div class="header">
-      ${logo ? `<img src="data:${logoMime};base64,${logoBase64}" />` : ""}
-      <div class="header-subtitulo">Entretenimento Musical</div>
-      <div class="header-linha"></div>
+      <div class="header-left">
+        ${logo ? `<img class="header-logo" src="data:${logoMime};base64,${logoBase64}" />` : ""}
+        ${logo ? `<div class="header-vdivider"></div>` : ""}
+        <div>
+          <div class="header-artist">${escapeHtml(artist.name)}</div>
+          <div class="header-sub">Entretenimento Musical</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-doc-label">Documento</div>
+        <div class="header-date">${escapeHtml(dataAssinaturaBr)}</div>
+      </div>
     </div>
     <div class="corpo">
-      <div class="titulo">Nota Contratual</div>
+      <div class="titulo-area">
+        <div class="titulo">Contrato de Prestação de Serviços Artísticos</div>
+        <div class="titulo-regua"></div>
+        <div class="titulo-cat">Entretenimento Musical</div>
+      </div>
       <div class="intro">
         Pelo presente instrumento e na melhor forma de direito, de um lado doravante denominado
         simplesmente <strong>CONTRATANTE</strong>, <strong>${escapeHtml(d.contratanteNome || "")}</strong>,
@@ -144,11 +166,11 @@ export async function buildCtr001(
       </div>
       <div class="clausula">
         <div class="clausula-titulo">Cláusula Primeira:</div>
-        <div class="clausula-texto">O contratado se obriga a prestar seu serviço de show musical na seguinte data: <strong>${escapeHtml(dataEventoBr)}.</strong></div>
+        <div class="clausula-texto">O CONTRATADO se obriga a prestar seu serviço de ${textos.tipoServico} musical na seguinte data: <strong>${escapeHtml(dataEventoBr)}.</strong></div>
       </div>
       <div class="clausula">
         <div class="clausula-titulo">Cláusula Segunda:</div>
-        <div class="clausula-texto">O contratado desempenhará sua função, na duração de <strong>${escapeHtml(horasFormatado)} hs de show</strong>${d.horario ? `, às <strong>${escapeHtml(d.horario)}h</strong>` : ""}, no Local: <strong>${escapeHtml(d.local || "")}</strong>, <strong>${escapeHtml(cidadeEstadoEvento)}</strong></div>
+        <div class="clausula-texto">O CONTRATADO desempenhará sua função, na duração de <strong>${escapeHtml(horasFormatado)} hs de ${textos.tipoServico}</strong>${d.horario ? `, às <strong>${escapeHtml(d.horario)}h</strong>` : ""}, no Local: <strong>${escapeHtml(d.local || "")}</strong>, <strong>${escapeHtml(cidadeEstadoEvento)}</strong></div>
       </div>
       <div class="clausula">
         <div class="clausula-titulo">Cláusula Terceira:</div>
@@ -156,7 +178,7 @@ export async function buildCtr001(
       </div>
       <div class="clausula">
         <div class="clausula-titulo">Cláusula Quarta:</div>
-        <div class="clausula-texto">O artista se apresentará em seu formato de banda completa com os seguintes instrumentos: ${escapeHtml(instruments)}, conforme o mapa de palco em anexo na última página.</div>
+        <div class="clausula-texto">${textos.formatoTexto(escapeHtml(instruments))}</div>
       </div>
       <div class="clausula">
         <div class="clausula-titulo">Cláusula Quinta:</div>
@@ -168,10 +190,10 @@ export async function buildCtr001(
         <div class="clausula-texto">Backline no valor de <strong>${escapeHtml(backlineFormatado!)}</strong> ficará por conta do CONTRATANTE.</div>
       </div>` : ""}
       <div class="obs"><strong>OBS.</strong> Água mineral durante a apresentação e alimentação para <strong>${pessoasBanda}</strong> pessoas fica por conta do CONTRATANTE.</div>
-      <div class="obs"><strong>OBS.</strong> Som profissional para atender o evento, durante o tempo determinado de apresentação deverá ser fornecido pelo contratante ou pelo espaço de eventos, porém backline com técnico de som será fornecido pelo artista, para uso do próprio durante a sua apresentação.</div>
+      <div class="obs"><strong>OBS.</strong> ${textos.obsBacklineOuSom}</div>
       <div class="clausula">
         <div class="clausula-titulo">Cláusula Sexta:</div>
-        <div class="clausula-texto">A escolha do repertório a ser executado ficará a critério do <strong><em>Contratado podendo incluir pedido da contratante com antecedência de até 30 dias da data prevista para o evento.</em></strong></div>
+        <div class="clausula-texto">${textos.repertorioTexto}</div>
       </div>
       <div class="clausula">
         <div class="clausula-titulo">Cláusula Sétima:</div>
@@ -195,7 +217,7 @@ export async function buildCtr001(
       </div>
       <div class="clausula">
         <div class="clausula-titulo">Cláusula Nona:</div>
-        <div class="clausula-texto">O espetáculo será interrompido a qualquer momento se ficar constatado o comportamento inadequado do público presente para com o artista e sua banda, ficando bem evidenciado, neste caso, que o CONTRATADO não terá nenhuma responsabilidade ou multa, sendo o espetáculo considerado realizado.</div>
+        <div class="clausula-texto">${textos.interrupcaoTexto}</div>
       </div>
       <div class="clausula">
         <div class="clausula-titulo">Cláusula Décima:</div>
@@ -243,7 +265,6 @@ export async function buildCtr001(
         </div>
       </div>
       <div class="rodape">
-        <div class="rodape-linha"></div>
         <div class="rodape-frase">${escapeHtml(d.fraseRodape || "Depois do Sim, é hora do Show")}</div>
       </div>
     </div>
@@ -253,3 +274,4 @@ export async function buildCtr001(
 }
 
 // ── Templates Light ──────────────────────────────────────────────────────────
+
