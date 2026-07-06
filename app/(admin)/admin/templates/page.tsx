@@ -344,7 +344,7 @@ export default function TemplatesPage() {
                         }}>✓</div>
                       )}
                     </>
-                  ) : tpl.id === "ctr-003" ? (
+                  ) : tpl.id === "ctr-003" || tpl.id === "orc-006" ? (
                     <>
                       <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 5, background: tpl.previewAccent }} />
                       <div style={{ position: "absolute", top: 14, left: 18, right: 12 }}>
@@ -361,6 +361,41 @@ export default function TemplatesPage() {
                       {isActive && (
                         <div style={{
                           position: "absolute", top: 10, right: 10,
+                          width: 22, height: 22, borderRadius: "50%",
+                          background: primaryColor, color: "#111",
+                          fontSize: 12, fontWeight: 700,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>✓</div>
+                      )}
+                    </>
+                  ) : tpl.id === "orc-007" ? (
+                    <>
+                      <div style={{ position: "absolute", top: 8, left: 10, right: 10, height: 30, background: `linear-gradient(135deg, #1e293b 0%, #0f172a 100%)`, borderRadius: 6, display: "flex", alignItems: "center", padding: "0 10px", justifyContent: "space-between" }}>
+                        <div style={{ height: 12, width: 40, background: "#ffffff22", borderRadius: 2 }} />
+                        <div style={{ height: 14, width: 34, background: tpl.previewAccent, borderRadius: 4 }} />
+                      </div>
+                      <div style={{ position: "absolute", top: 46, left: 10, right: 10 }}>
+                        <div style={{ background: "#fff", borderRadius: 4, padding: "8px 10px", marginBottom: 4, borderLeft: `3px solid ${tpl.previewAccent}` }}>
+                          <div style={{ height: 6, width: "70%", background: "#11111115", borderRadius: 2, marginBottom: 3 }} />
+                          <div style={{ height: 6, width: "50%", background: "#11111110", borderRadius: 2 }} />
+                        </div>
+                        <div style={{ background: "#fff", borderRadius: 4, padding: "8px 10px", marginBottom: 4 }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              <div style={{ fontSize: 12 }}>🎤</div>
+                              <div style={{ height: 6, width: 50, background: "#11111115", borderRadius: 2 }} />
+                            </div>
+                            <div style={{ height: 8, width: 36, background: `${tpl.previewAccent}44`, borderRadius: 2 }} />
+                          </div>
+                        </div>
+                        <div style={{ background: `linear-gradient(135deg, #1e293b 0%, #0f172a 100%)`, borderRadius: 6, padding: "10px 12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ height: 8, width: 30, background: "#ffffff33", borderRadius: 2 }} />
+                          <div style={{ height: 14, width: 60, background: "#fff", borderRadius: 3 }} />
+                        </div>
+                      </div>
+                      {isActive && (
+                        <div style={{
+                          position: "absolute", top: 8, right: 8,
                           width: 22, height: 22, borderRadius: "50%",
                           background: primaryColor, color: "#111",
                           fontSize: 12, fontWeight: 700,

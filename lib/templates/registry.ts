@@ -12,11 +12,11 @@ export const ORCAMENTO_TEMPLATES: TemplateInfo[] = [
   {
     id: "orc-001",
     type: "orcamento",
-    name: "Classic",
-    description: "Fundo escuro com foto e destaque na cor do artista",
-    style: "dark",
-    previewBg: "#111111",
-    previewAccent: "#E8A045",
+    name: "Minimalista",
+    description: "Design limpo e geométrico com fonte Inter — moderno e profissional",
+    style: "light",
+    previewBg: "#ffffff",
+    previewAccent: "#000000",
   },
   {
     id: "orc-002",
@@ -30,11 +30,11 @@ export const ORCAMENTO_TEMPLATES: TemplateInfo[] = [
   {
     id: "orc-003",
     type: "orcamento",
-    name: "Executivo",
-    description: "Branco corporativo com cards estruturados — sem foto",
+    name: "Profissional",
+    description: "Modelo profissional com tabela de itens, termos de validade e área para assinatura",
     style: "light",
-    previewBg: "#f2f2ee",
-    previewAccent: "#E8A045",
+    previewBg: "#f8f8f6",
+    previewAccent: "#8da4b5",
   },
   {
     id: "orc-004",
@@ -53,6 +53,24 @@ export const ORCAMENTO_TEMPLATES: TemplateInfo[] = [
     style: "dark",
     previewBg: "#0e0e12",
     previewAccent: "#c9a227",
+  },
+  {
+    id: "orc-006",
+    type: "orcamento",
+    name: "Premium",
+    description: "Barra lateral colorida com tipografia premium — elegante e refinado",
+    style: "light",
+    previewBg: "#f8f8f6",
+    previewAccent: "#E8A045",
+  },
+  {
+    id: "orc-007",
+    type: "orcamento",
+    name: "Transport",
+    description: "Estilo industrial com ícones — perfeito para eventos com logística pesada",
+    style: "light",
+    previewBg: "#f1f5f9",
+    previewAccent: "#2563eb",
   },
 ];
 

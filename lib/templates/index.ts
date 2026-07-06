@@ -5,6 +5,8 @@ import { buildOrc002 } from "./orcamento/orc-002-light";
 import { buildOrc003 } from "./orcamento/orc-003-executive";
 import { buildOrc004 } from "./orcamento/orc-004-prestige";
 import { buildOrc005 } from "./orcamento/orc-005-dark";
+import { buildOrc006 } from "./orcamento/orc-006-premium";
+import { buildOrc007 } from "./orcamento/orc-007-transport";
 import { buildCtr001 } from "./contrato/ctr-001-classic";
 import { buildCtr002 } from "./contrato/ctr-002-light";
 import { buildCtr003 } from "./contrato/ctr-003-premium";
@@ -52,6 +54,8 @@ const ORC_BUILDERS: Record<string, TemplateBuilder> = {
   "orc-003": buildOrc003,
   "orc-004": buildOrc004,
   "orc-005": buildOrc005,
+  "orc-006": buildOrc006,
+  "orc-007": buildOrc007,
 };
 
 const CTR_BUILDERS: Record<string, TemplateBuilder> = {

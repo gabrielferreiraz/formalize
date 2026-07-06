@@ -1,39 +1,7 @@
-﻿import { escapeHtml, formatData, valorPorExtenso, formatMoeda } from "@/lib/templates/utils";
+import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
 
 type ArtistData = ArtistTemplateData & Record<string, any>;
-
-function parseMoney(raw: string | number | undefined): number {
-  if (!raw) return 0;
-  return (parseFloat(String(raw)) || 0) / 100;
-}
-
-function moneyRow(
-  label: string,
-  raw: string | undefined,
-  valor: string | undefined,
-  primary: string,
-  fontScale: number
-): string {
-  if (!raw || raw === "nao") return "";
-  const n = raw === "valor" ? parseMoney(valor) : 0;
-  const fmt =
-    raw === "valor" && n > 0
-      ? n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 })
-      : raw === "incluso"
-      ? "Incluso"
-      : null;
-  if (!fmt) return "";
-  const ext = n > 0 ? valorPorExtenso(n) : null;
-  return `
-    <div class="row">
-      <span class="row-label">${label}</span>
-      <div class="row-right">
-        <span class="row-val${n > 0 ? " money" : ""}">${fmt}</span>
-        ${ext ? `<span class="row-ext">${ext}</span>` : ""}
-      </div>
-    </div>`;
-}
 
 export async function buildOrc003(
   artist: ArtistData,
@@ -43,147 +11,394 @@ export async function buildOrc003(
   _background?: AssetResult | null,
 ): Promise<string> {
   const d = data;
-  const primary = artist.primaryColor || "#e6b800";
-  const fontScale = (artist.orcamentoFontScale || 100) / 52;
-  const logoScale = Number(artist.orcamentoLogoScale) || 100;
-  const logoH = Math.round(72 * logoScale / 100);
-  const logoMime = logo?.mime || "image/png";
-  const logoBase64 = logo?.base64 || "";
-
-  const cache = parseMoney(d.cache);
-  const cacheFmt = cache.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
-  const cacheExt = valorPorExtenso(cache);
-
-  const backlineN = d.backline === "valor" ? parseMoney(d.backlineValor) : 0;
-  const transporteN = d.transporte === "valor" ? parseMoney(d.transporteValor) : 0;
-  const alimentacaoN = d.alimentacao === "valor" ? parseMoney(d.alimentacaoValor) : 0;
-  const hospedagemN = d.hospedagem === "valor" ? parseMoney(d.hospedagemValor) : 0;
-  const total = cache + backlineN + transporteN + alimentacaoN + hospedagemN;
-  const totalFmt = total.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
-  const totalExt = valorPorExtenso(total);
-
-  const socials = [
-    artist.instagram ? `<a href="${artist.instagram}" style="text-decoration:none;color:${primary};font-family:'Montserrat',sans-serif;font-size:${Math.round(13*fontScale)}px;font-weight:600;">IG</a>` : "",
-    artist.spotify ? `<a href="${artist.spotify}" style="text-decoration:none;color:${primary};font-family:'Montserrat',sans-serif;font-size:${Math.round(13*fontScale)}px;font-weight:600;">SP</a>` : "",
-    artist.youtube ? `<a href="${artist.youtube}" style="text-decoration:none;color:${primary};font-family:'Montserrat',sans-serif;font-size:${Math.round(13*fontScale)}px;font-weight:600;">YT</a>` : "",
-  ].filter(Boolean).join('<span style="color:#999;margin:0 6px;">·</span>');
-
+  const primaryColor = "#000000";
+  
+  const valorCache = (parseFloat(d.cache) || 0) / 100;
+  const valorCacheFormatado = valorCache.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
+  
+  const backlineRaw = d.backline;
+  const backlineNumerico = (backlineRaw === "valor") ? (parseFloat(d.backlineValor) || 0) / 100 : 0;
+  const backlineFormatado = (backlineRaw === "valor" && backlineNumerico > 0)
+    ? backlineNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })
+    : (backlineRaw === 'incluso' ? 'Incluso' : null);
+  
+  const transporteRaw = d.transporte;
+  const transporteNumerico = (transporteRaw === "valor") ? (parseFloat(d.transporteValor) || 0) / 100 : 0;
+  const transporteFormatado = (transporteRaw === "valor" && transporteNumerico > 0)
+    ? transporteNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })
+    : (transporteRaw === 'incluso' ? 'Incluso' : null);
+  
+  const alimentacaoRaw = d.alimentacao;
+  const alimentacaoNumerico = (alimentacaoRaw === "valor") ? (parseFloat(d.alimentacaoValor) || 0) / 100 : 0;
+  const alimentacaoFormatado = (alimentacaoRaw === "valor" && alimentacaoNumerico > 0)
+    ? alimentacaoNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })
+    : (alimentacaoRaw === 'incluso' ? 'Incluso' : null);
+  
+  const hospedagemRaw = d.hospedagem;
+  const hospedagemNumerico = (hospedagemRaw === "valor") ? (parseFloat(d.hospedagemValor) || 0) / 100 : 0;
+  const hospedagemFormatado = (hospedagemRaw === "valor" && hospedagemNumerico > 0)
+    ? hospedagemNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })
+    : (hospedagemRaw === 'incluso' ? 'Incluso' : null);
+  
+  const total = valorCache + backlineNumerico + transporteNumerico + alimentacaoNumerico + hospedagemNumerico;
+  const totalFormatado = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
+  
+  const logoMime = logo?.mime || 'image/png';
+  const logoBase64 = logo?.base64 || '';
+  
+  const dataGerada = new Date();
+  const dataGeradaFormatada = dataGerada.toLocaleDateString('pt-BR');
+  
+  const localCompleto = [d.local, d.cidade].filter(Boolean).join(' - ');
+  
+  const itensTabela = [
+    { 
+      numero: '01', 
+      descricao: `<strong>Apresentação Musical (Cachê)</strong><br><span style="font-size: 12px; color: #888;">Show completo no formato combinado.</span>`, 
+      duracao: `${d.horas || "2"}h`, 
+      valor: valorCacheFormatado 
+    }
+  ];
+  
+  if (backlineFormatado) {
+    itensTabela.push({
+      numero: '02',
+      descricao: '<strong>Backline</strong>',
+      duracao: '-',
+      valor: backlineFormatado
+    });
+  }
+  
+  if (transporteFormatado) {
+    const num = String(itensTabela.length + 1).padStart(2, '0');
+    itensTabela.push({
+      numero: num,
+      descricao: '<strong>Transporte e Deslocamento</strong>',
+      duracao: '-',
+      valor: transporteFormatado
+    });
+  }
+  
+  if (alimentacaoFormatado) {
+    const num = String(itensTabela.length + 1).padStart(2, '0');
+    itensTabela.push({
+      numero: num,
+      descricao: '<strong>Alimentação (Camarim)</strong>',
+      duracao: '-',
+      valor: alimentacaoFormatado
+    });
+  }
+  
+  if (hospedagemFormatado) {
+    const num = String(itensTabela.length + 1).padStart(2, '0');
+    itensTabela.push({
+      numero: num,
+      descricao: '<strong>Hospedagem da Equipe</strong>',
+      duracao: '-',
+      valor: hospedagemFormatado
+    });
+  }
+  
   return `<!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;900&family=Open+Sans:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orçamento de Apresentação</title>
   <style>
-    @page { size: 21cm 29.7cm; margin: 0 !important; }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { width: 21cm; }
-    body { width: 21cm; min-height: 29.7cm; background: #f2f2ee; font-family: 'Open Sans', sans-serif; display: flex; flex-direction: column; }
+    /* Configurações de impressão e página */
+    @page {
+      size: A4;
+      margin: 0;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-    .wrap { flex: 1; padding: 24px 50px 16px; display: flex; flex-direction: column; gap: 12px; }
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #333333;
+      background-color: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
 
-    /* ── Header ── */
-    .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 18px; border-bottom: 2px solid ${primary}; }
-    .header-logo { height: ${logoH}px; max-width: 280px; object-fit: contain; }
-    .header-right { text-align: right; }
-    .header-doc { font-family: 'Montserrat', sans-serif; font-weight: 300; font-size: ${Math.round(12*fontScale)}px; letter-spacing: 4px; text-transform: uppercase; color: #aaa; margin-bottom: 3px; }
-    .header-name { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: ${Math.round(17*fontScale)}px; color: #111; letter-spacing: 0.5px; }
-    .header-cnpj { font-family: 'Open Sans', sans-serif; font-size: ${Math.round(12*fontScale)}px; color: #aaa; margin-top: 2px; }
+    /* O container que simula a folha A4 */
+    .page {
+      background-color: #ffffff;
+      width: 210mm;
+      min-height: 297mm;
+      padding: 50mm 20mm 30mm 20mm;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
+    }
 
-    /* ── Cards ── */
-    .card { background: #fff; border-radius: 8px; border: 1px solid #e4e4de; overflow: hidden; }
-    .card-head { padding: 8px 18px; background: #f8f8f4; border-bottom: 1px solid #e8e8e2; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(12*fontScale)}px; letter-spacing: 3px; text-transform: uppercase; color: #999; }
-    .row { display: flex; align-items: baseline; justify-content: space-between; padding: 10px 18px; border-bottom: 1px solid #f2f2ee; gap: 12px; }
-    .row:last-child { border-bottom: none; }
-    .row-label { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: ${Math.round(13*fontScale)}px; letter-spacing: 0.5px; text-transform: uppercase; color: #888; flex-shrink: 0; }
-    .row-right { display: flex; flex-direction: column; align-items: flex-end; }
-    .row-val { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(16*fontScale)}px; color: #111; }
-    .row-val.money { color: ${primary}; }
-    .row-ext { font-family: 'Open Sans', sans-serif; font-size: ${Math.round(12*fontScale)}px; color: #bbb; font-style: italic; margin-top: 1px; }
+    /* Detalhes artísticos nos cantos */
+    .page::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 15mm;
+      background-color: ${primaryColor};
+    }
 
-    /* ── Total bar ── */
-    .total-bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: #111; border-radius: 8px; }
-    .total-label { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(13*fontScale)}px; letter-spacing: 3px; text-transform: uppercase; color: #fff; }
-    .total-right { text-align: right; }
-    .total-val { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: ${Math.round(26*fontScale)}px; color: ${primary}; }
-    .total-ext { font-family: 'Open Sans', sans-serif; font-size: ${Math.round(12*fontScale)}px; color: #666; font-style: italic; margin-top: 2px; }
+    /* Cabeçalho do Documento */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 40px;
+    }
 
-    /* ── Obs ── */
-    .obs { background: #fff; border-radius: 8px; border: 1px solid #e4e4de; padding: 12px 18px; }
-    .obs-label { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(12*fontScale)}px; letter-spacing: 3px; text-transform: uppercase; color: #999; margin-bottom: 6px; }
-    .obs-text { font-size: ${Math.round(13*fontScale)}px; color: #666; line-height: 1.8; }
+    .header-left h1 {
+      font-size: 32px;
+      color: #4a5c6a;
+      letter-spacing: 2px;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+    }
 
-    /* ── Footer ── */
-    .footer { background: #111; padding: 14px 50px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-    .footer-left { display: flex; flex-direction: column; gap: 2px; }
-    .footer-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: ${Math.round(13*fontScale)}px; color: #fff; }
-    .footer-web { font-family: 'Montserrat', sans-serif; font-size: ${Math.round(12*fontScale)}px; color: ${primary}; margin-top: 1px; }
-    .footer-socials { display: flex; align-items: center; gap: 4px; }
+    .info-block {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #555;
+    }
+
+    .info-block strong {
+      color: #333;
+    }
+
+    .header-right {
+      text-align: right;
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .logo img {
+      max-height: 60px;
+      max-width: 150px;
+      object-fit: contain;
+    }
+
+    .meta-info {
+      display: grid;
+      grid-template-columns: auto auto;
+      gap: 5px 15px;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .meta-label {
+      color: #777;
+      font-weight: bold;
+    }
+
+    /* Tabela de Orçamento */
+    .invoice-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 40px;
+      font-size: 14px;
+    }
+
+    .invoice-table th {
+      background-color: ${primaryColor};
+      color: #ffffff;
+      text-align: left;
+      padding: 12px 15px;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+
+    .invoice-table td {
+      padding: 15px;
+      border-bottom: 1px solid #eeeeee;
+      color: #555;
+    }
+
+    .text-center { text-align: center !important; }
+    .text-right { text-align: right !important; }
+
+    /* Linha de Total */
+    .summary-section {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 50px;
+    }
+
+    .terms-conditions {
+      width: 50%;
+      font-size: 12px;
+      color: #777;
+    }
+
+    .terms-conditions h3 {
+      color: #4a5c6a;
+      font-size: 14px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .totals-box {
+      width: 35%;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .total-row.grand-total {
+      background-color: ${primaryColor};
+      color: #ffffff;
+      font-weight: bold;
+      padding: 12px 15px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    /* Rodapé de Pagamento e Assinatura */
+    .footer-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: 12px;
+    }
+
+    .payment-info {
+      line-height: 1.6;
+      color: #555;
+    }
+
+    .payment-info h3 {
+      color: #4a5c6a;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .signature-line {
+      width: 200px;
+      border-top: 1px solid #333;
+      text-align: center;
+      padding-top: 8px;
+      margin-top: 40px;
+      color: #555;
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
+
+  <div class="page">
+    <!-- Cabeçalho -->
     <div class="header">
-      ${logo ? `<img class="header-logo" src="data:${logoMime};base64,${logoBase64}" />` : `<div style="width:1px"></div>`}
-      <div class="header-right">
-        <div class="header-doc">Proposta Comercial</div>
-        <div class="header-name">${escapeHtml(artist.name)}</div>
-        ${artist.cnpj ? `<div class="header-cnpj">CNPJ ${escapeHtml(artist.cnpj)}</div>` : ""}
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-head">Evento</div>
-      ${d.contratante ? `<div class="row"><span class="row-label">Para</span><div class="row-right"><span class="row-val">${escapeHtml(d.contratante)}</span></div></div>` : ""}
-      <div class="row"><span class="row-label">Evento</span><div class="row-right"><span class="row-val">${escapeHtml(d.evento || "")}</span></div></div>
-      <div class="row"><span class="row-label">Data</span><div class="row-right"><span class="row-val">${formatData(d.data)}</span></div></div>
-      ${d.horario ? `<div class="row"><span class="row-label">Horário</span><div class="row-right"><span class="row-val">${escapeHtml(d.horario)}h</span></div></div>` : ""}
-      <div class="row"><span class="row-label">Local</span><div class="row-right"><span class="row-val">${escapeHtml(d.local || "")}</span></div></div>
-      ${d.cidade ? `<div class="row"><span class="row-label">Cidade</span><div class="row-right"><span class="row-val">${escapeHtml(d.cidade)}</span></div></div>` : ""}
-      <div class="row"><span class="row-label">Duração</span><div class="row-right"><span class="row-val">${d.horas || "2"}h de show</span></div></div>
-    </div>
-
-    <div class="card">
-      <div class="card-head">Valores</div>
-      <div class="row">
-        <span class="row-label">Cachê (${d.horas || "2"}h)</span>
-        <div class="row-right">
-          <span class="row-val money">${cacheFmt}</span>
-          <span class="row-ext">${cacheExt}</span>
+      <div class="header-left">
+        <h1>Orçamento</h1>
+        <div class="info-block">
+          ${d.contratante ? `<strong>Orçamento para:</strong><br>${escapeHtml(d.contratante)}` : ""}
         </div>
       </div>
-      ${moneyRow("Backline", d.backline, d.backlineValor, primary, fontScale)}
-      ${moneyRow("Transporte", d.transporte, d.transporteValor, primary, fontScale)}
-      ${moneyRow("Alimentação", d.alimentacao, d.alimentacaoValor, primary, fontScale)}
-      ${moneyRow("Hospedagem", d.hospedagem, d.hospedagemValor, primary, fontScale)}
-    </div>
-
-    <div class="total-bar">
-      <span class="total-label">Total</span>
-      <div class="total-right">
-        <div class="total-val">${totalFmt}</div>
-        <div class="total-ext">${totalExt}</div>
+      
+      <div class="header-right">
+        <div class="logo">
+          ${logo ? `<img src="data:${logoMime};base64,${logoBase64}" alt="Logo" />` : ""}
+        </div>
+        <div class="meta-info">
+          <span class="meta-label">Data gerada:</span>
+          <span>${dataGeradaFormatada}</span>
+          <span class="meta-label">Data do Evento:</span>
+          <span>${formatData(d.data)}</span>
+          ${d.tipoEvento ? `<span class="meta-label">Tipo:</span><span>${escapeHtml(d.tipoEvento)}</span>` : ""}
+          ${localCompleto ? `<span class="meta-label">Local:</span><span>${escapeHtml(localCompleto)}</span>` : ""}
+        </div>
       </div>
     </div>
 
-    ${d.formaPagamento ? `
-    <div class="card">
-      <div class="card-head">Pagamento</div>
-      <div class="row"><span class="row-label">Forma</span><div class="row-right"><span class="row-val" style="font-size:${Math.round(12*fontScale)}px">${escapeHtml(d.formaPagamento)}</span></div></div>
-    </div>` : ""}
+    <!-- Tabela de Serviços e Logística -->
+    <table class="invoice-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Descrição / Serviço</th>
+          <th class="text-center">Duração</th>
+          <th class="text-right">Valor Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itensTabela.map(item => `
+          <tr>
+            <td>${item.numero}</td>
+            <td>${item.descricao}</td>
+            <td class="text-center">${item.duracao}</td>
+            <td class="text-right">${item.valor}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
 
-    <div class="obs">
-      <div class="obs-label">Observações</div>
-      <div class="obs-text">Proposta válida por 30 dias. A data ficará reservada por até uma semana após o envio — passado esse prazo, verificar disponibilidade.</div>
+    <!-- Resumo Financeiro -->
+    <div class="summary-section">
+      <div class="terms-conditions">
+        <h3>Termos e Validade</h3>
+        <p>O valor apresentado engloba o cachê da apresentação e as despesas listadas como "Inclusas" na tabela acima. Este orçamento possui validade comercial de 7 dias a partir da data de emissão.</p>
+      </div>
+      
+      <div class="totals-box">
+        <div class="total-row">
+          <span>Subtotal</span>
+          <span>${totalFormatado}</span>
+        </div>
+        <div class="total-row">
+          <span>Taxas Extras</span>
+          <span>R$ 0,00</span>
+        </div>
+        <div class="total-row grand-total">
+          <span>TOTAL</span>
+          <span>${totalFormatado}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rodapé e Assinatura -->
+    <div class="footer-section">
+      <div class="payment-info">
+        <h3>Informações de Pagamento</h3>
+        ${d.formaPagamento ? `<strong>Método:</strong> ${escapeHtml(d.formaPagamento)}<br>` : ""}
+        ${artist.pixKey ? `<strong>Chave PIX:</strong> ${escapeHtml(artist.pixKey)}<br>` : ""}
+        ${artist.bankInfo?.banco ? `<strong>Instituição:</strong> ${escapeHtml(artist.bankInfo.banco)}<br>` : ""}
+        <strong>Favorecido:</strong> ${escapeHtml(artist.legalName || artist.name || "")}
+      </div>
+
+      <div class="signature">
+        <div class="signature-line">
+          Assinatura Autorizada (Artista)
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="footer">
-    <div class="footer-left">
-      <div class="footer-name">${escapeHtml(artist.name)}</div>
-      ${artist.website ? `<div class="footer-web">${escapeHtml(artist.website)}</div>` : ""}
-    </div>
-    <div class="footer-socials">${socials}</div>
-  </div>
 </body>
 </html>`;
 }
