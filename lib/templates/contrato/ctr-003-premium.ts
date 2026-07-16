@@ -1,4 +1,4 @@
-﻿import crypto from "crypto";
+import crypto from "crypto";
 import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
 import { getTextosCategoria } from "@/lib/templates/contrato/artist-texts";

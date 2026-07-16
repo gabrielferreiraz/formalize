@@ -18,19 +18,19 @@ export async function buildCtr001(
   const logoMime = logo?.mime || "image/png";
   const logoBase64 = logo?.base64 || "";
   const logoScale = Number(artist.contratoLogoScale) || 100;
-  const logoH = Math.round(100 * logoScale / 100);
+  const logoH = Math.round(50 * logoScale / 100);
+  const fontScale = (artist.contratoFontScale || 100) / 100;
+  const fs = fontScale;
 
   const valorCache = (parseFloat(d.cache) || 0) / 100;
   const valorCacheFormatado = valorCache.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
 
-  const backlineRaw = d.backline;
-  const backlineNumerico = backlineRaw === "valor" ? (parseFloat(d.backlineValor) || 0) / 100 : 0;
+  const backlineNumerico = d.backline === "valor" ? (parseFloat(d.backlineValor) || 0) / 100 : 0;
   const backlineFormatado = backlineNumerico > 0
     ? backlineNumerico.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 })
     : null;
 
-  const transporteRaw = d.transporte;
-  const transporteNumerico = transporteRaw === "valor" ? (parseFloat(d.transporteValor) || 0) / 100 : 0;
+  const transporteNumerico = d.transporte === "valor" ? (parseFloat(d.transporteValor) || 0) / 100 : 0;
   const transporteFormatado = transporteNumerico > 0
     ? transporteNumerico.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 })
     : null;
@@ -39,11 +39,11 @@ export async function buildCtr001(
   const valorTotalFormatado = valorTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
   const valorTotalExtenso = valorPorExtenso(valorTotal);
 
-  const transporteTexto = (transporteRaw === "incluso" || !transporteRaw)
+  const transporteTexto = (d.transporte === "incluso" || !d.transporte)
     ? "O deslocamento do artista e equipe já está incluso no valor do cachê, conforme combinado."
     : `O deslocamento do artista e equipe será cobrado à parte no valor de <strong>${transporteFormatado}</strong>, conforme combinado.`;
 
-  const nomeSlug = (d.contratanteNome || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+  const nomeSlug = (d.contratanteNome || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().trim();
   const dataEventoBr = formatData(d.data);
   const hashContrato = crypto.createHash("sha256")
     .update(nomeSlug + dataEventoBr + valorTotalFormatado + Date.now().toString())
@@ -65,213 +65,283 @@ export async function buildCtr001(
     : "não informado";
   const horasNum = d.horas || 2;
   const horasFormatado = (horasNum % 1 !== 0) ? `${Math.floor(horasNum)}:30` : `${horasNum}:00`;
-  const fontScale = (artist.contratoFontScale || 100) / 52;
+
+  const baseFontSize = Math.round(9.5 * fs);
 
   return `<!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    @page { margin: 25mm; }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; background: #ffffff; font-family: 'Inter', sans-serif; }
-    .pagina { width: 100%; min-height: 100vh; position: relative; display: flex; flex-direction: column; background: #ffffff; }
-    .topo-regua { height: 4px; background: ${primaryColor}; width: 100%; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .marca-dagua { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 65%; opacity: 0.035; z-index: 0; pointer-events: none; }
-    .header { background: #ffffff; padding: 20px 20px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eeeeee; position: relative; z-index: 1; }
-    .header-left { display: flex; align-items: center; gap: 16px; }
-    .header-logo { height: ${logoH}px; max-width: 260px; object-fit: contain; display: block; }
-    .header-vdivider { width: 1px; height: 38px; background: #e0e0e0; }
-    .header-artist { font-family: 'Inter', sans-serif; font-weight: 700; font-size: ${Math.round(15 * fontScale)}px; color: #111; letter-spacing: -0.2px; }
-    .header-sub { font-size: ${Math.round(9 * fontScale)}px; color: #aaa; letter-spacing: 3px; text-transform: uppercase; margin-top: 3px; font-weight: 500; }
-    .header-right { text-align: right; }
-    .header-doc-label { font-size: ${Math.round(9 * fontScale)}px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #ccc; margin-bottom: 3px; }
-    .header-date { font-size: ${Math.round(11 * fontScale)}px; font-weight: 600; color: #555; }
-    .corpo { position: relative; z-index: 1; padding: 24px 20px 30px; flex: 1; }
-    .titulo-area { text-align: center; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid #eeeeee; }
-    .titulo { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: ${Math.round(24 * fontScale)}px; color: #111111; letter-spacing: -0.3px; line-height: 1.2; margin-bottom: 10px; }
-    .titulo-regua { width: 60px; height: 2px; background: ${primaryColor}; margin: 0 auto 8px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .titulo-cat { font-size: ${Math.round(9 * fontScale)}px; color: #aaa; letter-spacing: 4px; text-transform: uppercase; font-weight: 500; }
-    .intro { font-size: ${Math.round(15 * fontScale)}px; color: #333333; line-height: 1.85; margin-bottom: 14px; text-align: justify; }
-    .intro strong { font-weight: 700; color: #111111; }
-    .clausula { margin-bottom: 12px; break-inside: avoid; }
-    .clausula-titulo { font-family: 'Inter', sans-serif; font-weight: 700; font-size: ${Math.round(11 * fontScale)}px; color: #111; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; text-transform: uppercase; letter-spacing: 1.5px; }
-    .clausula-titulo::before { content: ''; width: 18px; height: 2px; background: ${primaryColor}; flex-shrink: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .clausula-texto { font-size: ${Math.round(15 * fontScale)}px; color: #444444; line-height: 1.85; text-align: justify; padding-left: 28px; }
-    .clausula-texto strong { font-weight: 700; color: #111111; }
-    .paragrafo { font-size: ${Math.round(14 * fontScale)}px; color: #555555; line-height: 1.8; margin-top: 5px; padding-left: 42px; text-align: justify; }
-    .obs { font-size: ${Math.round(14 * fontScale)}px; color: #444; line-height: 1.8; margin-bottom: 10px; text-align: justify; padding: 10px 16px; background: #f8f8f8; border-left: 3px solid ${primaryColor}; break-inside: avoid; border-radius: 0 4px 4px 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .obs strong { font-weight: 700; color: ${primaryColor}; }
-    .secao-bancaria { background: #f7f7f7; border-radius: 8px; border: 1px solid #eeeeee; padding: 16px 20px; margin: 16px 0; break-inside: avoid; }
-    .banco-titulo { font-family: 'Inter', sans-serif; font-weight: 700; font-size: ${Math.round(10 * fontScale)}px; color: #999; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
-    .banco-linha { font-size: ${Math.round(14 * fontScale)}px; color: #444; line-height: 2; }
-    .banco-linha strong { font-weight: 700; color: #111; }
-    .assinaturas { margin-top: 26px; padding-top: 16px; border-top: 1px solid #eeeeee; break-inside: avoid; }
-    .local-data { font-size: ${Math.round(12 * fontScale)}px; color: #888; margin-bottom: 22px; text-align: center; font-style: italic; }
-    .linha-assinatura { display: flex; justify-content: space-between; gap: 60px; margin-bottom: 18px; break-inside: avoid; align-items: flex-end; }
-    .assinatura-bloco { flex: 1; text-align: center; }
-    .assinatura-linha { border-top: 1px solid #333333; margin-bottom: 8px; }
-    .assinatura-label { font-size: ${Math.round(9 * fontScale)}px; color: #999; margin-top: 4px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
-    .testemunhas-titulo { font-family: 'Inter', sans-serif; font-weight: 700; font-size: ${Math.round(10 * fontScale)}px; color: #999; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 2px; }
-    .testemunhas-linha { display: flex; align-items: center; gap: 12px; margin-top: 8px; break-inside: avoid; }
-    .test-num { font-weight: 700; font-size: ${Math.round(12 * fontScale)}px; color: #333; white-space: nowrap; }
-    .test-linha { flex: 1; border-top: 1px solid #333; }
-    .rodape { padding: 14px 20px; text-align: center; position: relative; z-index: 1; border-top: 1px solid #eeeeee; }
-    .rodape-frase { font-family: 'Playfair Display', serif; font-weight: 400; font-style: italic; font-size: ${Math.round(13 * fontScale)}px; color: ${primaryColor}; letter-spacing: 0.5px; }
-    .ass-dig-bloco { margin: 0 auto 5px; padding: 6px 8px; border: 1px solid ${primaryColor}44; border-radius: 4px; background: #fafafa; text-align: center; max-width: 180px; }
-    .ass-dig-titulo { font-family: 'Inter', sans-serif; font-weight: 700; font-size: ${Math.round(7 * fontScale)}px; color: ${primaryColor}; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; border-bottom: 1px solid ${primaryColor}22; padding-bottom: 3px; }
-    .ass-dig-info { font-size: ${Math.round(8 * fontScale)}px; color: #555; line-height: 1.55; }
-    .ass-dig-codigo { font-family: 'Courier New', monospace; font-size: ${Math.round(6.5 * fontScale)}px; color: #bbb; margin-top: 4px; letter-spacing: 1px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrato - ${escapeHtml(artist.name)}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        @media screen {
+            body {
+                background-color: #9c8e82;
+                display: flex; justify-content: center; align-items: flex-start;
+                padding: 40px 20px; min-height: 100vh;
+            }
+            .sheet {
+                width: 210mm; min-height: 297mm;
+                box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            }
+        }
+
+        @media print {
+            @page { size: A4; margin: 0; }
+            body { background-color: transparent; padding: 0; }
+            .sheet { width: 100%; height: 100vh; box-shadow: none; margin: 0; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+
+        .sheet {
+            background-color: #f5f5f5;
+            color: #2b2b2b;
+            font-family: 'Inter', sans-serif;
+            font-size: ${baseFontSize}px;
+            line-height: 1.4;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .content-wrapper {
+            padding: 40px 50px 60px 50px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-block {
+            position: absolute; top: 0; left: 0;
+            background-color: #2d2d2d; color: #ffffff;
+            width: 320px; padding: 30px 40px 20px 50px;
+            border-bottom-right-radius: 60px; z-index: 2;
+        }
+        .header-block h1 { font-size: ${Math.round(22 * fs)}px; font-weight: 300; margin-bottom: 2px; letter-spacing: 1px; }
+        .header-block h1 span { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700; }
+        .header-block p { font-size: ${Math.round(9 * fs)}px; font-weight: 600; letter-spacing: 2px; color: #a3a3a3; text-transform: uppercase; }
+        .header-logo { height: ${logoH}px; max-width: 180px; object-fit: contain; display: block; margin-bottom: 10px; }
+
+        .contract-body { margin-top: ${140 + logoH}px; flex-grow: 1; }
+
+        .parties-info {
+            background: #e5e5e5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: justify;
+        }
+        .parties-info p { margin-bottom: 8px; }
+        .parties-info p:last-child { margin-bottom: 0; }
+
+        .clauses-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px 25px;
+        }
+
+        .clause-full { grid-column: 1 / -1; }
+
+        .clause { margin-bottom: 8px; text-align: justify; }
+        .clause h4 {
+            font-size: ${Math.round(10 * fs)}px; font-weight: 700; color: #111;
+            margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+        }
+        .clause h4 span {
+            background: #2d2d2d; color: #fff; padding: 2px 5px;
+            border-radius: 3px; font-size: ${Math.round(8 * fs)}px; font-weight: 600;
+        }
+
+        .clause-obs { color: #d97706; font-weight: 500; font-style: italic; margin-top: 4px; }
+
+        .info-box {
+            border: 1px solid #d4d4d8; border-radius: 6px; padding: 10px;
+            background: #fafafa; margin-top: 5px;
+        }
+        .info-box.flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .info-box p { margin-bottom: 3px; }
+        .info-box p:last-child { margin-bottom: 0; }
+        .price-total { font-weight: 700; font-size: ${Math.round(11 * fs)}px; border-top: 1px solid #d4d4d8; padding-top: 4px; margin-top: 4px; display: flex; justify-content: space-between; }
+
+        .signatures-wrapper {
+            display: flex; justify-content: space-between; margin-top: 30px;
+            padding: 0 20px;
+        }
+        .sig-box { width: 45%; text-align: center; }
+        .sig-line { width: 100%; height: 1px; background-color: #2b2b2b; margin-bottom: 8px; }
+        .sig-box p { font-weight: 600; font-size: ${Math.round(10 * fs)}px; color: #111; }
+        .sig-box span { font-size: ${Math.round(8 * fs)}px; color: #71717a; }
+
+        .ass-dig-bloco { margin: 0 auto 5px; padding: 6px 8px; border: 1px solid #2d2d2d44; border-radius: 4px; background: #fafafa; text-align: center; max-width: 180px; }
+        .ass-dig-titulo { font-family: 'Inter', sans-serif; font-weight: 700; font-size: ${Math.round(7 * fs)}px; color: #2d2d2d; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; border-bottom: 1px solid #2d2d2d22; padding-bottom: 3px; }
+        .ass-dig-info { font-size: ${Math.round(8 * fs)}px; color: #555; line-height: 1.55; }
+        .ass-dig-codigo { font-family: 'Courier New', monospace; font-size: ${Math.round(6.5 * fs)}px; color: #bbb; margin-top: 4px; letter-spacing: 1px; }
+
+        .footer-block {
+            position: absolute; bottom: 0; right: 0;
+            background-color: #2d2d2d; color: #ffffff;
+            padding: 12px 50px 12px 30px; border-top-left-radius: 20px;
+            display: flex; gap: 20px; font-size: ${Math.round(9 * fs)}px; font-weight: 500; z-index: 2;
+        }
+        .footer-block span { display: flex; align-items: center; gap: 5px; color: #d1d5db; }
+    </style>
 </head>
 <body>
-  <div class="pagina">
-    ${logo ? `<img class="marca-dagua" src="data:${logoMime};base64,${logoBase64}" />` : ""}
-    <div class="topo-regua"></div>
-    <div class="header">
-      <div class="header-left">
-        ${logo ? `<img class="header-logo" src="data:${logoMime};base64,${logoBase64}" />` : ""}
-        ${logo ? `<div class="header-vdivider"></div>` : ""}
-        <div>
-          <div class="header-artist">${escapeHtml(artist.name)}</div>
-          <div class="header-sub">Entretenimento Musical</div>
+
+    <div class="sheet">
+        <div class="content-wrapper">
+
+            <div class="header-block">
+                ${logoBase64 ? `<img class="header-logo" src="data:${logoMime};base64,${logoBase64}" />` : ""}
+                <h1>Contrato <span>${escapeHtml(artist.name)}</span></h1>
+                <p>Prestação de Serviços Artísticos</p>
+            </div>
+
+            <div class="contract-body">
+
+                <div class="parties-info">
+                    <p>Pelo presente instrumento, de um lado denominado <strong>CONTRATANTE</strong>, <strong>${escapeHtml(d.contratanteNome || "")}</strong>, CPF/CNPJ: <strong>${escapeHtml(d.contratanteCpfCnpj || "")}</strong>, RG: <strong>${escapeHtml(rgTexto)}</strong>, residente na Rua: <strong>${escapeHtml(d.logradouro || "")}</strong>, Nº <strong>${escapeHtml(d.numero || "")}</strong>, <strong>${escapeHtml(d.bairro || "")}</strong>, CEP: <strong>${escapeHtml(d.cep || "")}</strong>, <strong>${escapeHtml(cidadeEstadoContratante)}</strong>${d.contratanteTelefone ? `, Tel: <strong>${escapeHtml(d.contratanteTelefone)}</strong>` : ""}.</p>
+                    <p>De outro lado, <strong>"${escapeHtml(artist.name)}"</strong>, denominado <strong>CONTRATADO</strong>, empresa brasileira, CNPJ: <strong>${escapeHtml(artist.cnpj || "")}</strong>, com escritório na ${escapeHtml(enderecoArtista)}, têm entre si o seguinte:</p>
+                </div>
+
+                <div class="clauses-grid">
+
+                    <!-- Coluna Esquerda -->
+                    <div>
+                        <div class="clause">
+                            <h4><span>01</span> DATA DO EVENTO</h4>
+                            <p>O CONTRATADO se obriga a prestar serviço de ${textos.tipoServico} em: <strong>${escapeHtml(dataEventoBr)}</strong>.</p>
+                        </div>
+
+                        <div class="clause">
+                            <h4><span>02</span> LOCAL E DURAÇÃO</h4>
+                            <p>Duração de <strong>${escapeHtml(horasFormatado)}hs de ${textos.tipoServico}</strong>${d.horario ? `, às <strong>${escapeHtml(d.horario)}h</strong>` : ""}, no local: <strong>${escapeHtml(d.local || "")}</strong>, <strong>${escapeHtml(cidadeEstadoEvento)}</strong>.</p>
+                        </div>
+
+                        <div class="clause">
+                            <h4><span>03</span> VALOR CONTRATADO</h4>
+                            <p>Valor de <strong>${escapeHtml(valorTotalFormatado)}</strong> (${escapeHtml(valorTotalExtenso)}).</p>
+                            <div class="info-box">
+                                <div style="display: flex; justify-content: space-between; color: #52525b; font-size: ${Math.round(8 * fs)}px; margin-bottom: 4px;"><span>COMPOSIÇÃO DO VALOR</span></div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Cachê (${horasFormatado}h)</span> <span>${escapeHtml(valorCacheFormatado)}</span></div>
+                                ${backlineNumerico > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Backline</span> <span>${escapeHtml(backlineFormatado!)}</span></div>` : ""}
+                                ${transporteNumerico > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Transporte</span> <span>${escapeHtml(transporteFormatado!)}</span></div>` : ""}
+                                <div class="price-total"><span>TOTAL</span> <span>${escapeHtml(valorTotalFormatado)}</span></div>
+                            </div>
+                        </div>
+
+                        <div class="clause">
+                            <h4><span>04</span> ${textos.formatoTitulo}</h4>
+                            <p>${textos.formatoTexto(escapeHtml(instruments))}</p>
+                        </div>
+
+                        <div class="clause">
+                            <h4><span>10</span> RESPONSABILIDADES</h4>
+                            <p>Ficam sob responsabilidade do CONTRATANTE alvarás, taxas ECAD, diversões públicas e demais exigências legais para realização do evento.</p>
+                        </div>
+                    </div>
+
+                    <!-- Coluna Direita -->
+                    <div>
+                        <div class="clause">
+                            <h4><span>05</span> DESLOCAMENTO</h4>
+                            <p>${transporteTexto}</p>
+                            <p class="clause-obs">OBS. Água mineral e alimentação para <strong>${pessoasBanda}</strong> pessoas ficam por conta do CONTRATANTE.</p>
+                            <p class="clause-obs">OBS. ${textos.obsBacklineOuSom}</p>
+                        </div>
+
+                        <div class="clause">
+                            <h4><span>06</span> REPERTÓRIO</h4>
+                            <p>${textos.repertorioTexto}</p>
+                        </div>
+
+                        <div class="clause">
+                            <h4><span>07</span> RESCISÃO</h4>
+                            <p>Em caso de rescisão, a parte infratora indenizará a prejudicada:</p>
+                            <ul style="margin-left: 15px; margin-top: 4px;">
+                                <li>§ 1º — Multa de 10% do valor, rescisão por escrito até 15 dias antes do evento.</li>
+                                <li>§ 2º — Multa de 50% do valor, rescisão no dia do evento.</li>
+                            </ul>
+                        </div>
+
+                        <div class="clause">
+                            <h4><span>09</span> ${textos.interrupcaoTitulo}</h4>
+                            <p>${textos.interrupcaoTexto}</p>
+                        </div>
+                    </div>
+
+                    <!-- Cláusula Larga Embaixo -->
+                    <div class="clause clause-full">
+                        <h4><span>08</span> PAGAMENTO</h4>
+                        <p>O CONTRATANTE efetuará o pagamento da seguinte forma: <strong>${d.formaPagamento ? escapeHtml(d.formaPagamento) : "50% na assinatura e 50% uma semana antes do evento."}</strong></p>
+                        <div class="info-box flex-between">
+                            <div>
+                                <p style="color: #71717a; font-size: ${Math.round(8 * fs)}px; margin-bottom: 2px;">DADOS BANCÁRIOS</p>
+                                <p><strong>Titular:</strong> ${escapeHtml(bank.titular || artist.legalName || artist.name || "")}</p>
+                                <p><strong>PIX:</strong> ${escapeHtml(bank.pix || artist.pixKey || artist.cnpj || "")}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <p><strong>Banco:</strong> ${escapeHtml(bank.banco || "")}</p>
+                                <p><strong>Conta:</strong> ${escapeHtml(bank.conta || "")}</p>
+                                <p><strong>Agência:</strong> ${escapeHtml(bank.agencia || "")}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="clause clause-full">
+                        <h4><span>11</span> FORO</h4>
+                        <p>Fica eleito o foro da cidade de ${escapeHtml(foro)} para questões oriundas deste contrato.</p>
+                    </div>
+
+                    ${d.clausulasEspeciais ? `
+                    <div class="clause clause-full">
+                        <h4><span>12</span> CLÁUSULA ESPECIAL</h4>
+                        <p>${escapeHtml(d.clausulasEspeciais)}</p>
+                    </div>` : ""}
+                    ${d.observacoes ? `
+                    <div class="clause clause-full">
+                        <p style="color: #d97706; font-weight: 500; font-style: italic;"><strong>OBS:</strong> ${escapeHtml(d.observacoes)}</p>
+                    </div>` : ""}
+
+                </div>
+
+                <!-- Assinaturas -->
+                <div class="signatures-wrapper">
+                    <div class="sig-box">
+                        ${d.assinarDigitalmente !== false ? `<div style="height: 70px;"></div>` : ""}
+                        <div class="sig-line"></div>
+                        <p>${escapeHtml((d.contratanteNome || "Contratante").toUpperCase())}</p>
+                        <span>CONTRATANTE</span>
+                    </div>
+                    <div class="sig-box">
+                        ${d.assinarDigitalmente !== false ? `
+                        <div class="ass-dig-bloco">
+                            <div class="ass-dig-titulo">Certificado</div>
+                            <div class="ass-dig-info"><strong>${escapeHtml(artist.legalName || artist.name)}</strong></div>
+                            <div class="ass-dig-info">CNPJ: ${escapeHtml(artist.cnpj || "")}</div>
+                            <div class="ass-dig-info">${escapeHtml(dataAssinatura)}</div>
+                            <div class="ass-dig-codigo">${hashContrato}</div>
+                        </div>` : ""}
+                        <div class="sig-line"></div>
+                        <p>${escapeHtml(artist.name.toUpperCase())}${artist.legalName && artist.legalName !== artist.name ? ` (${escapeHtml(artist.legalName)})` : ""}</p>
+                        <span>CONTRATADO</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="footer-block">
+                <span>${escapeHtml(addr.cidade || "Campo Grande")}/${escapeHtml(addr.estado || "MS")}, ${new Date().getFullYear()}</span>
+            </div>
+
         </div>
-      </div>
-      <div class="header-right">
-        <div class="header-doc-label">Documento</div>
-        <div class="header-date">${escapeHtml(dataAssinaturaBr)}</div>
-      </div>
     </div>
-    <div class="corpo">
-      <div class="titulo-area">
-        <div class="titulo">Contrato de Prestação de Serviços Artísticos</div>
-        <div class="titulo-regua"></div>
-        <div class="titulo-cat">Entretenimento Musical</div>
-      </div>
-      <div class="intro">
-        Pelo presente instrumento e na melhor forma de direito, de um lado doravante denominado
-        simplesmente <strong>CONTRATANTE</strong>, <strong>${escapeHtml(d.contratanteNome || "")}</strong>,
-        inscrita no CPF/CNPJ: <strong>${escapeHtml(d.contratanteCpfCnpj || "")}</strong>
-        e RG: <strong>${escapeHtml(rgTexto)}</strong>,
-        residente e domiciliado na Rua: <strong>${escapeHtml(d.logradouro || "")}</strong>,
-        <strong>Nº ${escapeHtml(d.numero || "")}</strong>, <strong>${escapeHtml(d.bairro || "")}</strong>,
-        CEP: <strong>${escapeHtml(d.cep || "")}</strong>, <strong>${escapeHtml(cidadeEstadoContratante)}</strong>${d.contratanteTelefone ? `, Tel: <strong>${escapeHtml(d.contratanteTelefone)}</strong>` : ""}
-      </div>
-      <div class="intro">
-        De outro lado o <strong>"${escapeHtml(artist.name)}"</strong>, denominado <strong>CONTRATADO</strong>,
-        <em>empresa brasileira com CNPJ: ${escapeHtml(artist.cnpj || "")},
-        escritório localizado na ${escapeHtml(enderecoArtista)},</em>
-        têm entre si, junto e contratado o seguinte:
-      </div>
-      <div class="clausula">
-        <div class="clausula-titulo">Cláusula Primeira:</div>
-        <div class="clausula-texto">O CONTRATADO se obriga a prestar seu serviço de ${textos.tipoServico} musical na seguinte data: <strong>${escapeHtml(dataEventoBr)}.</strong></div>
-      </div>
-      <div class="clausula">
-        <div class="clausula-titulo">Cláusula Segunda:</div>
-        <div class="clausula-texto">O CONTRATADO desempenhará sua função, na duração de <strong>${escapeHtml(horasFormatado)} hs de ${textos.tipoServico}</strong>${d.horario ? `, às <strong>${escapeHtml(d.horario)}h</strong>` : ""}, no Local: <strong>${escapeHtml(d.local || "")}</strong>, <strong>${escapeHtml(cidadeEstadoEvento)}</strong></div>
-      </div>
-      <div class="clausula">
-        <div class="clausula-titulo">Cláusula Terceira:</div>
-        <div class="clausula-texto">No valor do contrato estipula-se a importância de <strong>${escapeHtml(valorTotalFormatado)} (${escapeHtml(valorTotalExtenso)})</strong> para a apresentação de <strong>${escapeHtml(String(horasNum))}</strong> horas com local citado acima${backlineNumerico > 0 ? `, sendo <strong>${escapeHtml(valorCacheFormatado)}</strong> de cachê e <strong>${escapeHtml(backlineFormatado!)}</strong> de backline` : ""}.</div>
-      </div>
-      <div class="clausula">
-        <div class="clausula-titulo">Cláusula Quarta:</div>
-        <div class="clausula-texto">${textos.formatoTexto(escapeHtml(instruments))}</div>
-      </div>
-      <div class="clausula">
-        <div class="clausula-titulo">Cláusula Quinta:</div>
-        <div class="clausula-texto">${transporteTexto}</div>
-      </div>
-      ${backlineNumerico > 0 ? `
-      <div class="clausula">
-        <div class="clausula-titulo">Backline:</div>
-        <div class="clausula-texto">Backline no valor de <strong>${escapeHtml(backlineFormatado!)}</strong> ficará por conta do CONTRATANTE.</div>
-      </div>` : ""}
-      <div class="obs"><strong>OBS.</strong> Água mineral durante a apresentação e alimentação para <strong>${pessoasBanda}</strong> pessoas fica por conta do CONTRATANTE.</div>
-      <div class="obs"><strong>OBS.</strong> ${textos.obsBacklineOuSom}</div>
-      <div class="clausula">
-        <div class="clausula-titulo">Cláusula Sexta:</div>
-        <div class="clausula-texto">${textos.repertorioTexto}</div>
-      </div>
-      <div class="clausula">
-        <div class="clausula-titulo">Cláusula Sétima:</div>
-        <div class="clausula-texto">Em caso de rescisão desta Nota Contratual, a parte infratora indenizará a parte prejudicada da seguinte forma;</div>
-        <div class="paragrafo">§ 1º - Multa de 10% (dez por cento) do valor contratado, quando a rescisão se der por escrito, até 15 (quinze) dias antes da data do referido serviço a ser prestado;</div>
-        <div class="paragrafo">§ 2º - Multa de 50% (cinquenta por cento) do valor contratado, quando a rescisão se der por escrito, no dia do evento.</div>
-      </div>
-      <div class="clausula">
-        <div class="clausula-titulo">Cláusula Oitava:</div>
-        <div class="clausula-texto">${d.formaPagamento
-          ? `O Contratante efetuará o pagamento da seguinte forma: <strong>${escapeHtml(d.formaPagamento)}</strong>, em moeda corrente vigente neste país.`
-          : "O Contratante efetuará o pagamento de 30% do valor de entrada na assinatura do contrato e o restante será pago até a semana que antecede o evento, em moeda corrente vigente neste país."
-        }</div>
-      </div>
-      <div class="secao-bancaria">
-        <div class="banco-titulo">Dados Bancários</div>
-        <div class="banco-linha"><strong>Titular:</strong> ${escapeHtml(bank.titular || artist.legalName || artist.name || "")}</div>
-        <div class="banco-linha"><strong>Pix:</strong> ${escapeHtml(bank.pix || artist.pixKey || "")}</div>
-        <div class="banco-linha"><strong>Banco:</strong> ${escapeHtml(bank.banco || "")}</div>
-        <div class="banco-linha"><strong>Conta:</strong> ${escapeHtml(bank.conta || "")} &nbsp;&nbsp; <strong>Agência:</strong> ${escapeHtml(bank.agencia || "")}</div>
-      </div>
-      <div class="clausula">
-        <div class="clausula-titulo">Cláusula Nona:</div>
-        <div class="clausula-texto">${textos.interrupcaoTexto}</div>
-      </div>
-      <div class="clausula">
-        <div class="clausula-titulo">Cláusula Décima:</div>
-        <div class="clausula-texto">Ficam sob inteira responsabilidade do CONTRATANTE, os alvarás do juizado de menores, taxas de cobrança do ECAD, diversões Públicas e quaisquer outros que se fizeram necessário à realização do espetáculo.</div>
-      </div>
-      <div class="clausula">
-        <div class="clausula-titulo">Cláusula Décima Primeira:</div>
-        <div class="clausula-texto">As partes aqui contratadas elegem desde já, o foro da Cidade de ${escapeHtml(foro)}, com exclusão de qualquer outro, por mais privilegiado que seja para questões judiciais que se originaram desta Nota Contratual.</div>
-      </div>
-      ${d.clausulasEspeciais ? `
-      <div class="clausula">
-        <div class="clausula-titulo">Cláusula Especial:</div>
-        <div class="clausula-texto">${escapeHtml(d.clausulasEspeciais)}</div>
-      </div>` : ""}
-      ${d.riderTecnico ? `
-      <div class="obs"><strong>Rider Técnico:</strong> ${escapeHtml(d.riderTecnico)}</div>` : ""}
-      ${d.observacoes ? `
-      <div class="obs"><strong>OBS.</strong> ${escapeHtml(d.observacoes)}</div>` : ""}
-      <div class="assinaturas">
-        <div class="local-data">${escapeHtml(foro)}, ${escapeHtml(dataAssinaturaBr)}</div>
-        <div class="linha-assinatura">
-          <div class="assinatura-bloco">
-            <div class="assinatura-linha"></div>
-            <div class="assinatura-label">Contratante</div>
-          </div>
-          <div class="assinatura-bloco">
-            ${d.assinarDigitalmente !== false ? `
-            <div class="ass-dig-bloco">
-              <div class="ass-dig-titulo">Certificado de Assinatura</div>
-              <div class="ass-dig-info"><strong>${escapeHtml(artist.legalName || artist.name)}</strong></div>
-              <div class="ass-dig-info">CNPJ: ${escapeHtml(artist.cnpj || "")}</div>
-              <div class="ass-dig-info">${escapeHtml(dataAssinatura)}</div>
-              <div class="ass-dig-codigo">${hashContrato}</div>
-            </div>` : ""}
-            <div class="assinatura-linha"></div>
-            <div class="assinatura-label">Contratado</div>
-          </div>
-        </div>
-        <div class="testemunhas-titulo">TESTEMUNHAS:</div>
-        <div class="testemunhas-linha">
-          <span class="test-num">1º</span>
-          <div class="test-linha"></div>
-          <span class="test-num">2º</span>
-          <div class="test-linha"></div>
-        </div>
-      </div>
-      <div class="rodape">
-        <div class="rodape-frase">${escapeHtml(d.fraseRodape || "Depois do Sim, é hora do Show")}</div>
-      </div>
-    </div>
-  </div>
+
 </body>
 </html>`;
 }
-
-// ── Templates Light ──────────────────────────────────────────────────────────
-
