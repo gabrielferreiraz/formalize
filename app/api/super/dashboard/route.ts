@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   // pagedArtists: full detail with users — only current page.
   const [allArtistsSummary, pagedArtists, monthlyDocs, globalDocTotals] = await Promise.all([
     prisma.artist.findMany({
-      select: { id: true, status: true, source: true, planStartDate: true, billingCycleMonths: true },
+      select: { id: true, status: true, source: true, planStartDate: true, billingCycleMonths: true, createdAt: true },
     }),
 
     prisma.artist.findMany({
@@ -121,6 +121,8 @@ export async function GET(req: NextRequest) {
 
   const totalBudgets = globalDocTotals.find((r) => r.type === "BUDGET")?._count ?? 0;
   const totalContracts = globalDocTotals.find((r) => r.type === "CONTRACT")?._count ?? 0;
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000);
+  const newLast30d = allArtistsSummary.filter((a) => a.createdAt >= thirtyDaysAgo).length;
 
   return NextResponse.json({
     artists: artistsWithBilling,
@@ -134,6 +136,7 @@ export async function GET(req: NextRequest) {
       billingNext7,
       fromLP,
       fromManual,
+      newLast30d,
     },
     pagination: {
       page,

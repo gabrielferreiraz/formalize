@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hash } from "bcryptjs";
 import { requestLogger, getRequestId } from "@/lib/logger";
+import { BCRYPT_COST } from "@/lib/password";
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const hashed = await hash(newPassword, 12);
+    const hashed = await hash(newPassword, BCRYPT_COST);
 
     await prisma.$transaction([
       prisma.user.update({

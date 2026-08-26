@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import { sendWhatsAppTextMessage, formatWhatsAppNumber } from "@/lib/whatsapp";
+import { BCRYPT_COST } from "@/lib/password";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -38,7 +39,7 @@ export async function PATCH(req: NextRequest) {
     if (!request) return NextResponse.json({ error: "Solicitação não encontrada" }, { status: 404 });
 
     // Random unguessable password — artist will never use it, they set their own via the magic link
-    const hashedPassword = await bcrypt.hash(randomBytes(32).toString("hex"), 12);
+    const hashedPassword = await bcrypt.hash(randomBytes(32).toString("hex"), BCRYPT_COST);
 
     let firstLoginToken: { token: string } | null = null;
 

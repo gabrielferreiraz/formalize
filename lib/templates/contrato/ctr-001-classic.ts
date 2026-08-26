@@ -251,7 +251,7 @@ export async function buildCtr001(
                         <div class="clause">
                             <h4><span>05</span> DESLOCAMENTO</h4>
                             <p>${transporteTexto}</p>
-                            <p class="clause-obs">OBS. Água mineral e alimentação para <strong>${pessoasBanda}</strong> pessoas ficam por conta do CONTRATANTE.</p>
+                            <p class="clause-obs">OBS. Água mineral e alimentação para <strong>${escapeHtml(String(pessoasBanda))}</strong> pessoas ficam por conta do CONTRATANTE.</p>
                             <p class="clause-obs">OBS. ${textos.obsBacklineOuSom}</p>
                         </div>
 

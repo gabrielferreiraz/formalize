@@ -13,8 +13,7 @@ type Artist = {
   whatsapp: string | null; email: string | null; instagram: string | null;
   spotify: string | null; x: string | null; youtube: string | null; website: string | null;
   pixKey: string | null; legalName: string | null; cnpj: string | null;
-  basePdfUrl: string | null; baseContractPdfUrl: string | null;
-  paperWidth: string | null; paperHeight: string | null; instruments: string | null;
+  instruments: string | null;
   status: "ACTIVE" | "SUSPENDED" | "CANCELLED";
   bankInfo: Record<string, string> | null;
   address: Record<string, string> | null;
@@ -47,8 +46,6 @@ function TabDados({ artist, onSaved }: { artist: Artist; onSaved: () => void }) 
     instagram: artist.instagram ?? "", spotify: artist.spotify ?? "",
     x: artist.x ?? "", youtube: artist.youtube ?? "", website: artist.website ?? "",
     pixKey: artist.pixKey ?? "", legalName: artist.legalName ?? "", cnpj: artist.cnpj ?? "",
-    basePdfUrl: artist.basePdfUrl ?? "", baseContractPdfUrl: artist.baseContractPdfUrl ?? "",
-    paperWidth: artist.paperWidth ?? "", paperHeight: artist.paperHeight ?? "",
     instruments: artist.instruments ?? "", status: artist.status,
   });
   const [saving, setSaving] = useState(false);
@@ -138,16 +135,6 @@ function TabDados({ artist, onSaved }: { artist: Artist; onSaved: () => void }) 
           <F label="Nome legal" k="legalName" />
           <F label="CNPJ" k="cnpj" />
           <F label="Chave Pix" k="pixKey" />
-        </div>
-      </section>
-
-      <section className="card space-y-4">
-        <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">PDFs e Documentos</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <F label="Base PDF (orçamento)" k="basePdfUrl" />
-          <F label="Base PDF (contrato)" k="baseContractPdfUrl" />
-          <F label="Largura do papel (cm)" k="paperWidth" placeholder="34.44" />
-          <F label="Altura do papel (cm)" k="paperHeight" placeholder="48.71" />
           <div className="sm:col-span-2">
             <F label="Instrumentos" k="instruments" placeholder="Bateria, Guitarra, Baixo..." />
           </div>
@@ -451,13 +438,6 @@ function TabUsuarios({ artist, onRefresh }: { artist: Artist; onRefresh: () => v
 
             {/* Password reset panel */}
             {resetId === u.id && (() => {
-              const appUrl = process.env.NEXT_PUBLIC_ROOT_DOMAIN
-                ? `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`
-                : "https://app.formalize.com.br";
-              const waPhone = (artist.whatsapp ?? "").replace(/\D/g, "");
-              const waMsg1 = `Olá! Sua senha no *Formalize* foi redefinida.\n\nAcesse pelo link:\n${appUrl}/login\n\nSeu e-mail de login: *${u.email}*\n\nVou enviar sua nova senha temporária na próxima mensagem.\n\n📲 *Lembre-se:* instale o app tocando em "Adicionar à tela inicial" para acesso rápido!`;
-              const waMsg2 = `🔑 Sua nova senha temporária:\n\n*${resetPass}*\n\nNo próximo login você será solicitado a criar uma senha nova.`;
-
               if (resetDone) {
                 return (
                   <div className="space-y-2 pt-2 border-t border-stage-700 animate-fade-in">
@@ -467,7 +447,7 @@ function TabUsuarios({ artist, onRefresh }: { artist: Artist; onRefresh: () => v
                     {whatsappStatus && (
                       whatsappStatus.sent ? (
                         <p className="text-xs font-semibold text-green-400 bg-green-500/10 border border-green-500/30 rounded-xl px-3 py-2">
-                          ✓ Mensagem enviada automaticamente via WhatsApp
+                          ✓ Link de redefinição enviado automaticamente via WhatsApp
                         </p>
                       ) : (
                         <p className="text-xs font-semibold text-red-400 bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2">
@@ -478,12 +458,12 @@ function TabUsuarios({ artist, onRefresh }: { artist: Artist; onRefresh: () => v
 
                     <div className="bg-stage-700 border border-stage-600 rounded-xl p-3 flex items-center justify-between gap-2">
                       <div>
-                        <p className="text-xs text-gray-500">Nova senha temporária</p>
+                        <p className="text-xs text-gray-500">Senha temporária (fallback manual — não é enviada pelo WhatsApp)</p>
                         <p className="text-sm font-mono text-gray-200">{resetPass}</p>
                       </div>
                       <CopyBtn text={resetPass} />
                     </div>
-                    
+
                     {/* Manual buttons (fallback if WhatsApp failed) */}
                     
                     <button type="button" onClick={closeReset}

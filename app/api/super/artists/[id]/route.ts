@@ -43,8 +43,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   const allowed = [
     "name", "status", "logoUrl", "backgroundUrl", "primaryColor", "secondaryColor",
     "whatsapp", "email", "instagram", "spotify", "x", "youtube", "website",
-    "pixKey", "legalName", "cnpj", "basePdfUrl", "baseContractPdfUrl",
-    "paperWidth", "paperHeight", "instruments",
+    "pixKey", "legalName", "cnpj", "instruments",
     "planLabel", "billingCycleMonths", "planStartDate",
   ] as const;
 

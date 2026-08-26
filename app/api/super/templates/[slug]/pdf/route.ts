@@ -21,8 +21,6 @@ const DEMO_ARTIST = {
   spotify: null, x: null, youtube: null, website: null,
   pixKey: "12.345.678/0001-90",
   address: null, bankInfo: null,
-  paperWidth: "21.0", paperHeight: "29.7",
-  contractPaperWidth: "21.0", contractPaperHeight: "29.7",
   orcamentoFontScale: 100, contratoFontScale: 100,
   orcamentoLogoScale: 100, contratoLogoScale: 100,
   orcamentoTemplate: "orc-001", contratoTemplate: "ctr-001",
@@ -84,13 +82,9 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
     type,
     artistOverride,
     type === "orcamento" ? DEMO_ORC : DEMO_CTR,
-    { width: "21.0", height: "29.7" },
   );
 
-  const pdfBuffer = await sendToGotenberg(html, {
-    paperWidth: "21.0",
-    paperHeight: "29.7",
-  });
+  const pdfBuffer = await sendToGotenberg(html);
 
   return new NextResponse(new Uint8Array(pdfBuffer), {
     status: 200,

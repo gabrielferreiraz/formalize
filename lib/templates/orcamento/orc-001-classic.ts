@@ -109,42 +109,40 @@ export async function buildOrc001(
     /* Importando fonte limpa e geométrica */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
 
-    @page {
-      size: A4;
-      margin: 0;
-    }
-
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
 
+    /* ── Base: mobile primeiro ─────────────────────────────────── */
     body {
       font-family: 'Inter', Arial, sans-serif;
       background-color: #ffffff;
       color: #000000;
-      font-size: 12px;
-      padding: 60px;
+      font-size: 14px;
+      padding: 24px 20px;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
     }
 
     /* Topo: Logo e Social */
     .top-bar {
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 60px;
+      gap: 8px;
+      margin-bottom: 32px;
     }
 
     .logo-box {
       background-color: #000000;
       color: #ffffff;
-      padding: 8px 16px;
+      padding: 8px 14px;
       font-weight: 600;
       letter-spacing: 2px;
       font-size: 11px;
@@ -161,48 +159,45 @@ export async function buildOrc001(
     /* Título Principal e Mês */
     .title-section {
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: flex-end;
-      margin-bottom: 50px;
+      gap: 8px;
+      margin-bottom: 28px;
     }
 
     .title-section h1 {
-      font-size: 42px;
+      font-size: 32px;
       font-weight: 800;
-      letter-spacing: -1.5px;
+      letter-spacing: -1px;
       line-height: 1;
     }
 
     .title-section h2 {
-      font-size: 18px;
+      font-size: 14px;
       font-weight: 700;
     }
 
     /* Informações do Cliente e Número */
     .info-section {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 40px;
+      margin-bottom: 28px;
     }
 
     .client-info p {
-      margin-bottom: 4px;
+      margin-bottom: 5px;
       color: #333333;
-      font-size: 11px;
+      font-size: 13px;
+      line-height: 1.5;
     }
 
-    .invoice-number {
-      font-size: 32px;
-      font-weight: 400;
-      color: #333;
-    }
-
-    /* Tabela Minimalista */
+    /* ── Tabela de itens ──────────────────────────────────────────
+       Em tela larga (tablet/desktop) é uma tabela normal. No celular
+       vira uma lista de cards — 5 colunas espremidas ficam ilegíveis
+       numa tela de ~380px, então mostramos só o que importa: descrição
+       e valor. ── */
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 0;
     }
 
     th {
@@ -219,42 +214,104 @@ export async function buildOrc001(
     }
 
     td {
-      padding: 16px 15px;
-      font-size: 11px;
+      padding: 14px 15px;
+      font-size: 13px;
     }
 
-    /* Linhas alternadas bem sutis */
     tbody tr:nth-child(odd) {
       background-color: #F8F9FA;
     }
 
     td.bold-text {
       font-weight: 700;
-      font-size: 12px;
+    }
+
+    @media screen and (max-width: 640px) {
+      thead { display: none; }
+      table, tbody, tr { display: block; width: 100%; }
+      tbody tr {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 4px;
+        border-bottom: 1px solid #eee;
+      }
+      tbody tr:nth-child(odd) { background: none; }
+      /* Nº, Preço unitário e Qt. somem no celular — redundantes com a
+         descrição/total quando é sempre "1 item". */
+      td:nth-child(1), td:nth-child(3), td:nth-child(4) { display: none; }
+      td:nth-child(2) {
+        padding: 0;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      td:nth-child(5) {
+        padding: 0;
+        font-size: 15px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
     }
 
     /* Bloco de Total Final */
     .total-wrapper {
       display: flex;
       justify-content: flex-end;
-      margin-top: 5px;
+      margin-top: 12px;
     }
 
     .total-box {
       background-color: #000000;
       color: #ffffff;
-      padding: 12px 25px;
+      padding: 12px 22px;
       font-weight: 700;
       font-size: 14px;
-      min-width: 150px;
+      min-width: 130px;
       text-align: right;
     }
 
     /* Rodapé fixo no layout flex */
     .footer {
-      margin-top: auto; /* Empurra pro final da página */
+      margin-top: auto;
+      padding-top: 24px;
       font-weight: 700;
-      font-size: 11px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    /* ── Tela larga: volta ao respiro original de folha ──────────── */
+    @media screen and (min-width: 640px) {
+      body { padding: 60px; font-size: 12px; }
+      .top-bar { margin-bottom: 60px; }
+      .title-section { margin-bottom: 50px; }
+      .title-section h1 { font-size: 42px; letter-spacing: -1.5px; }
+      .title-section h2 { font-size: 18px; }
+      .info-section { margin-bottom: 40px; }
+      .client-info p { font-size: 11px; }
+      td { font-size: 11px; }
+      td.bold-text { font-size: 12px; }
+      .footer { font-size: 11px; padding-top: 0; }
+    }
+
+    /* ── Impressão: sempre a folha A4 original, sem exceção ──────── */
+    @media print {
+      @page { size: A4; margin: 0; }
+      body { padding: 60px; font-size: 12px; }
+      .top-bar { margin-bottom: 60px; }
+      .title-section { margin-bottom: 50px; }
+      .title-section h1 { font-size: 42px; letter-spacing: -1.5px; }
+      .title-section h2 { font-size: 18px; }
+      .info-section { margin-bottom: 40px; }
+      .client-info p { font-size: 11px; }
+      thead { display: table-header-group; }
+      table, tbody, tr { display: table; width: 100%; }
+      tbody tr { display: table-row; }
+      td { display: table-cell; font-size: 11px; padding: 16px 15px; }
+      td:nth-child(1), td:nth-child(3), td:nth-child(4) { display: table-cell; }
+      td.bold-text { font-size: 12px; }
+      tr, .total-wrapper, .footer { break-inside: avoid; }
+      .footer { font-size: 11px; padding-top: 0; }
     }
   </style>
 </head>

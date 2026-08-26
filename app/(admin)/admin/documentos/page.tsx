@@ -15,8 +15,8 @@ const DOCS_TUTORIAL: TutorialStep[] = [
   },
   {
     icon: "📅",
-    title: "Lista ou Calendário",
-    body: "Alterne entre visualizar seus documentos em lista ou como um calendário mensal de eventos.",
+    title: "Calendário ou Lista",
+    body: "Sua agenda abre direto no calendário mensal. Prefere ver tudo em lista? É só alternar aqui.",
     targetId: "tut-docs-toggle",
   },
 ];
@@ -196,7 +196,7 @@ const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 export default function DocumentosPage() {
   const router = useRouter();
-  const [view, setView] = useState<"list" | "calendar">("list");
+  const [view, setView] = useState<"list" | "calendar">("calendar");
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<"all" | "BUDGET" | "CONTRACT">("all");
   const [monthCursor, setMonthCursor] = useState(() => new Date());
@@ -207,6 +207,7 @@ export default function DocumentosPage() {
   const [dayModal, setDayModal] = useState<{ day: string; docs: Doc[] } | null>(null);
   const [regenerating, setRegenerating] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [openingWeb, setOpeningWeb] = useState(false);
 
   // Bloquear scroll quando houver modal aberto
   useEffect(() => {
@@ -348,6 +349,20 @@ export default function DocumentosPage() {
     }
   }
 
+  async function openWebView(doc: Doc) {
+    if (openingWeb) return;
+    setOpeningWeb(true);
+    try {
+      const res = await fetch(`/api/documents/${doc.id}/share`, { method: "POST" });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json.url) {
+        window.open(json.url, "_blank");
+      }
+    } finally {
+      setOpeningWeb(false);
+    }
+  }
+
   const monthLabel = formatMonthLabel(monthCursor);
   const gridDays = useMemo(() => {
     const firstOfMonth = new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1);
@@ -422,7 +437,7 @@ export default function DocumentosPage() {
             fontSize: 28,
             color: "#f1f5f9",
             letterSpacing: "-0.02em",
-          }}>Documentos</h1>
+          }}>Agenda</h1>
           <div style={{ marginTop: 4, fontFamily: "'Inter', sans-serif", fontSize: 13, color: "#94a3b8" }}>
             <span style={{ color: "#f5c842", fontWeight: 700 }}>{total}</span>
             {" "}gerados · {new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(monthCursor).replace(/^\w/, c => c.toUpperCase())}
@@ -469,10 +484,10 @@ export default function DocumentosPage() {
 
       {/* ── View toggle ── */}
       <div id="tut-docs-toggle" style={{ display: "flex", gap: 4, padding: 4, background: "#141824", border: "1px solid #252d3d", borderRadius: 12, marginBottom: 20 }}>
-        {(["list", "calendar"] as const).map(v => {
-          const on = view === (v === "list" ? "list" : "calendar");
+        {(["calendar", "list"] as const).map(v => {
+          const on = view === v;
           return (
-            <button key={v} onClick={() => setView(v === "list" ? "list" : "calendar")} style={{
+            <button key={v} onClick={() => setView(v)} style={{
               flex: 1, height: 36, borderRadius: 8, border: "none",
               background: on ? "#e6b800" : "transparent",
               color: on ? "#0e1118" : "#94a3b8",
@@ -543,7 +558,7 @@ export default function DocumentosPage() {
       {loading && docs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <div className="w-8 h-8 border-2 border-gold-500/20 border-t-gold-500 rounded-full animate-spin" />
-          <p className="text-sm text-gray-500 font-medium">Carregando documentos...</p>
+          <p className="text-sm text-gray-500 font-medium">Carregando agenda...</p>
         </div>
       ) : view === "calendar" ? (
         <div
@@ -930,6 +945,16 @@ export default function DocumentosPage() {
                   >
                     Fechar
                   </button>
+                  {selectedDoc.type !== "GENERIC_EVENT" && (
+                    <button
+                      type="button"
+                      onClick={() => void openWebView(selectedDoc)}
+                      disabled={openingWeb}
+                      className="px-4 py-2 text-xs font-semibold rounded-xl border border-blue-500/40 text-blue-300 hover:bg-blue-500/10 transition-colors disabled:opacity-40"
+                    >
+                      {openingWeb ? "Abrindo..." : "Ver página web"}
+                    </button>
+                  )}
                   {selectedDoc.type !== "GENERIC_EVENT" && (
                     <button
                       type="button"

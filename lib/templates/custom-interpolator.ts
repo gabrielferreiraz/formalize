@@ -1,4 +1,4 @@
-import { valorPorExtenso } from "./utils";
+import { valorPorExtenso, escapeHtml } from "./utils";
 import type { ArtistTemplateData, AssetResult } from "./types";
 
 function fmt(centavos: number) {
@@ -89,5 +89,7 @@ export function interpolateTemplate(html: string, ctx: InterpolateContext): stri
     hashContrato: d.hashContrato || "",
   };
 
-  return html.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`);
+  return html.replace(/\{\{(\w+)\}\}/g, (_, key) =>
+    key === "logoImg" ? (vars[key] ?? `{{${key}}}`) : escapeHtml(vars[key] ?? `{{${key}}}`)
+  );
 }

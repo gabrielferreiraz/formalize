@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import bcrypt from "bcryptjs";
+import { BCRYPT_COST } from "@/lib/password";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 });
   }
 
-  const hashedPassword = await bcrypt.hash(password, 12);
+  const hashedPassword = await bcrypt.hash(password, BCRYPT_COST);
 
   try {
     const artist = await prisma.artist.create({

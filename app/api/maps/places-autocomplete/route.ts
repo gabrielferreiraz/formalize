@@ -1,5 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Simple in-memory rate limit: 60 requests per IP per 15 min (typeahead fires per keystroke)
+const ipMap = new Map<string, { count: number; resetAt: number }>();
+function rateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = ipMap.get(ip);
+  if (!entry || entry.resetAt < now) {
+    ipMap.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 });
+    return true;
+  }
+  if (entry.count >= 60) return false;
+  entry.count++;
+  return true;
+}
+
 const GOOGLE_PLACES_URL = "https://maps.googleapis.com/maps/api/place/autocomplete/json";
 // Campo Grande - MS (viés geográfico para priorizar resultados locais)
 const CG_MS_COORDS = "-20.4697,-54.6201";
@@ -16,6 +30,11 @@ function isAddressLikeQuery(query: string): boolean {
 }
 
 export async function GET(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (!rateLimit(ip)) {
+    return NextResponse.json({ error: "Muitas requisições. Aguarde alguns minutos." }, { status: 429 });
+  }
+
   const query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
   if (!query || query.length < 2) {
     return NextResponse.json({ predictions: [] });

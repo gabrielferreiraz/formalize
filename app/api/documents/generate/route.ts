@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendToGotenberg, mergePdfs } from "@/lib/gotenberg";
+import { sendToGotenberg } from "@/lib/gotenberg";
 import { uploadToR2, getPublicUrl, getKeyFromUrl, deleteFromR2 } from "@/lib/r2";
 import { buildTemplate } from "@/lib/templates";
 import { getPresetClausulas } from "@/lib/contrato-clausulas";
@@ -61,20 +61,12 @@ export async function POST(req: NextRequest) {
       bankInfo: true,
       address: true,
       instruments: true,
-      basePdfUrl: true,
-      baseContractPdfUrl: true,
-      paperWidth: true,
-      paperHeight: true,
-      contractPaperWidth: true,
-      contractPaperHeight: true,
       orcamentoFontScale: true,
       contratoFontScale: true,
       orcamentoLogoScale: true,
       contratoLogoScale: true,
       orcamentoTemplate: true,
       contratoTemplate: true,
-      usarBasePdfOrcamento: true,
-      usarBasePdfContrato: true,
     },
   });
 
@@ -101,19 +93,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const basePdfUrl = isContrato ? artist.baseContractPdfUrl : artist.basePdfUrl;
-    const effectivePaperWidth = isContrato
-      ? (artist.contractPaperWidth ?? "21.0")
-      : (artist.paperWidth ?? "21.0");
-    const effectivePaperHeight = isContrato
-      ? (artist.contractPaperHeight ?? "29.7")
-      : (artist.paperHeight ?? "29.7");
-    const pageSize = { width: effectivePaperWidth, height: effectivePaperHeight };
-
-    // Busca todos os assets em paralelo (basePdf + logo + background)
-    log.debug({ hasBasePdf: !!basePdfUrl, hasLogo: !!artist.logoUrl }, "fetching assets");
-    const [basePdfResult, logoResult, backgroundResult] = await Promise.all([
-      basePdfUrl ? fetchWithCache(basePdfUrl) : Promise.resolve(null),
+    // Busca assets em paralelo (logo + background)
+    log.debug({ hasLogo: !!artist.logoUrl }, "fetching assets");
+    const [logoResult, backgroundResult] = await Promise.all([
       artist.logoUrl ? fetchWithCache(artist.logoUrl) : Promise.resolve(null),
       artist.backgroundUrl ? fetchWithCache(artist.backgroundUrl) : Promise.resolve(null),
     ]);
@@ -165,36 +147,21 @@ export async function POST(req: NextRequest) {
       );
       pdfBuffer = Buffer.from(overlaid);
     } else {
-      // ── Standard flow: HTML → Gotenberg → optional base PDF merge ──
+      // ── Standard flow: HTML → Gotenberg (A4) ──
       log.debug({ template }, "building HTML template");
-      const html = await buildTemplate(type, artistWithOverride, buildData, pageSize, preloaded);
+      const html = await buildTemplate(type, artistWithOverride, buildData, undefined, preloaded);
 
       const tGotenberg = Date.now();
-      log.debug({ paperWidth: effectivePaperWidth, paperHeight: effectivePaperHeight }, "sending to Gotenberg");
+      log.debug("sending to Gotenberg");
 
-      let dynamicPdf: Buffer;
       try {
-        dynamicPdf = await sendToGotenberg(html, {
-          paperWidth: effectivePaperWidth,
-          paperHeight: effectivePaperHeight,
-        });
+        pdfBuffer = await sendToGotenberg(html);
       } catch (err) {
         log.error({ err, durationMs: Date.now() - tGotenberg }, "Gotenberg conversion failed");
         throw err;
       }
 
       log.info({ durationMs: Date.now() - tGotenberg }, "Gotenberg conversion completed");
-
-      const usarBase = type === "orcamento" ? artist.usarBasePdfOrcamento : artist.usarBasePdfContrato;
-      if (usarBase && basePdfResult) {
-        log.debug("merging with base PDF");
-        const A4 = { width: 595.28, height: 841.89 };
-        pdfBuffer = isContrato
-          ? await mergePdfs([dynamicPdf, basePdfResult.buffer], A4)
-          : await mergePdfs([basePdfResult.buffer, dynamicPdf]);
-      } else {
-        pdfBuffer = dynamicPdf;
-      }
     }
 
     const d = data as Record<string, string>;

@@ -299,14 +299,6 @@ export function PageTutorial({ pageKey, steps, accentColor = "#e6b800" }: Props)
           strokeDasharray="5 4"
           style={{ animation: "beamFlow 1s linear infinite" }}
         />
-        {/* Dot at card connection */}
-        <circle
-          cx={above ? (cardLeft + cw / 2) : (cardLeft + cw / 2)}
-          cy={above ? cardTop + CARD_H : cardTop}
-          r="3"
-          fill={accentColor}
-          style={{ animation: "dotPulse 1.8s ease-in-out infinite" }}
-        />
       </svg>
 
       {/* Tooltip card */}
@@ -422,10 +414,6 @@ export function PageTutorial({ pageKey, steps, accentColor = "#e6b800" }: Props)
         @keyframes beamFlow {
           from { stroke-dashoffset: 0; }
           to   { stroke-dashoffset: -18; }
-        }
-        @keyframes dotPulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50%       { opacity: 0.5; transform: scale(0.6); }
         }
         @keyframes tutIn {
           from { opacity: 0; transform: translateY(var(--slide-from, 12px)) scale(0.94); }

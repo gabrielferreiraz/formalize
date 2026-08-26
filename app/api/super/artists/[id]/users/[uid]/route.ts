@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { hash } from "bcryptjs";
 import { sendWhatsAppTextMessage, formatWhatsAppNumber } from "@/lib/whatsapp";
 import { requestLogger } from "@/lib/logger";
+import { BCRYPT_COST } from "@/lib/password";
+
+const TOKEN_TTL_HOURS = 2;
 
 type Ctx = { params: Promise<{ id: string; uid: string }> };
 
@@ -31,7 +34,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   const data: Record<string, unknown> = {};
   if (body.name !== undefined) data.name = body.name;
   if (body.email !== undefined) data.email = body.email;
-  if (body.password) data.password = await hash(body.password, 12);
+  if (body.password) data.password = await hash(body.password, BCRYPT_COST);
   if (typeof body.active === "boolean") data.active = body.active;
   if (typeof body.forcePasswordChange === "boolean") data.forcePasswordChange = body.forcePasswordChange;
 
@@ -39,11 +42,19 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     return NextResponse.json({ error: "Nenhum campo para atualizar" }, { status: 400 });
   }
 
-  const updated = await prisma.user.update({
-    where: { id: uid },
-    data,
-    select: USER_SELECT,
-  });
+  let updated;
+  try {
+    updated = await prisma.user.update({
+      where: { id: uid },
+      data,
+      select: USER_SELECT,
+    });
+  } catch (err: any) {
+    if (err?.code === "P2002") {
+      return NextResponse.json({ error: "E-mail já cadastrado" }, { status: 409 });
+    }
+    throw err;
+  }
 
   // Helper function to add delays
     const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -63,14 +74,25 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
           ? `https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`
           : process.env.NEXTAUTH_URL || "http://localhost:3000";
 
+        // Nunca envia a senha em texto puro pelo WhatsApp — gera um link de
+        // reset de uso único (mesmo fluxo self-service de forgot-password) e
+        // deixa o próprio usuário definir a senha final.
+        await prisma.passwordResetToken.deleteMany({
+          where: { email: user.email, usedAt: null },
+        });
+        const resetToken = await prisma.passwordResetToken.create({
+          data: {
+            email: user.email,
+            expiresAt: new Date(Date.now() + TOKEN_TTL_HOURS * 60 * 60 * 1000),
+          },
+        });
+        const resetLink = `${appUrl}/reset-password?token=${resetToken.token}`;
+
         // Mensagem 1: Aviso inicial
-        const waMsg1 = `Olá! Sua senha no Formalize foi redefinida.`;
-        
-        // Mensagem 2: Dados de acesso
-        const waMsg2 = `Acesse: ${appUrl}/login\nE-mail: ${user.email}`;
-        
-        // Mensagem 3: Apenas a senha (fácil de copiar no mobile)
-        const waMsg3 = `${body.password}`;
+        const waMsg1 = `Olá! Sua senha no Formalize foi redefinida por um administrador.`;
+
+        // Mensagem 2: Link para o usuário definir a própria senha nova
+        const waMsg2 = `🔑 Clique no link abaixo para criar sua nova senha:\n${resetLink}\n\n_(Válido por ${TOKEN_TTL_HOURS} horas)_`;
 
         const formattedNumber = formatWhatsAppNumber(artist.whatsapp);
 
@@ -84,19 +106,10 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
           // Delay 1.5s para simular "digitando"
           await delay(1500);
 
-          // Envia segunda mensagem
-          await sendWhatsAppTextMessage({
-            number: formattedNumber,
-            message: waMsg2,
-          });
-
-          // Delay 1.5s para simular "digitando"
-          await delay(1500);
-
-          // Envia terceira mensagem (apenas a senha)
+          // Envia segunda mensagem (link de reset)
           const result = await sendWhatsAppTextMessage({
             number: formattedNumber,
-            message: waMsg3,
+            message: waMsg2,
           });
 
           if (result) {

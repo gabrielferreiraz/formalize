@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
-import { IconDoc, IconPen, IconFolder, IconCog, IconLogout } from "@/components/ui/icons";
+import { IconDoc, IconPen, IconCal, IconCog, IconLogout } from "@/components/ui/icons";
 
 interface Props {
   artistName: string;
@@ -15,7 +15,7 @@ interface Props {
 const nav = [
   { id: "orc",  label: "Orçamento",  href: "/admin/orcamento",    icon: <IconDoc size={22} /> },
   { id: "ctr",  label: "Contrato",   href: "/admin/contrato",      icon: <IconPen size={22} /> },
-  { id: "docs", label: "Documentos", href: "/admin/documentos",    icon: <IconFolder size={22} /> },
+  { id: "docs", label: "Agenda",     href: "/admin/documentos",    icon: <IconCal size={22} /> },
   { id: "cfg",  label: "Config.",    href: "/admin/configuracoes", icon: <IconCog size={22} /> },
 ];
 

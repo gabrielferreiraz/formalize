@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import { hash } from "bcryptjs";
+import { BCRYPT_COST } from "../lib/password";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
 const adapter = new PrismaPg(pool);
@@ -11,7 +12,7 @@ async function main() {
   // ── SUPER_ADMIN ────────────────────────────────────────────────────────────
   const superEmail = "admin@formalize.com";
   const superPass = "Admin@123";
-  const superHashed = await hash(superPass, 12);
+  const superHashed = await hash(superPass, BCRYPT_COST);
 
   const existingSuper = await prisma.user.findFirst({
     where: { email: superEmail, role: "SUPER_ADMIN" },
@@ -42,10 +43,6 @@ async function main() {
     x: "https://twitter.com/twittdogivago",
     youtube: "https://www.youtube.com/@givagooficial7794",
     logoUrl: "https://pub-8b013d06768841f7a14bf65b8219e6f6.r2.dev/assets/givago/logo.png",
-    basePdfUrl: "https://pub-8b013d06768841f7a14bf65b8219e6f6.r2.dev/assets/givago/base.pdf",
-    baseContractPdfUrl: "https://pub-8b013d06768841f7a14bf65b8219e6f6.r2.dev/assets/givago/base-contrato.pdf",
-    paperWidth: "34.44",
-    paperHeight: "48.71",
     instruments: "Bateria, Percussão, Guitarra, Baixo, Sanfona",
     website: "www.givagooficial.com.br",
     legalName: "Victor Givago Barbosa Caneppele",
@@ -76,7 +73,7 @@ async function main() {
   // ── ARTIST_ADMIN vinculado ao artista ──────────────────────────────────────
   const artistEmail = "givago@formalize.com";
   const artistPass = "Givago@123";
-  const artistHashed = await hash(artistPass, 12);
+  const artistHashed = await hash(artistPass, BCRYPT_COST);
 
   const existingArtist = await prisma.user.findFirst({
     where: { email: artistEmail, artistId: artist.id },

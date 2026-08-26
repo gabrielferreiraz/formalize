@@ -50,12 +50,6 @@ model Artist {
   customDomain String?     @unique
   logoUrl      String?
   backgroundUrl String?
-  basePdfUrl          String?
-  baseContractPdfUrl  String?
-  paperWidth          String?   // cm, ex: "34.44" — orçamento
-  paperHeight         String?   // cm — orçamento
-  contractPaperWidth  String?   // cm — contrato (null = A4 largura)
-  contractPaperHeight String?   // cm — contrato (null = A4 altura)
   instruments         String?   // ex: "Bateria, Percussão, Guitarra, Baixo, Sanfona"
 
   primaryColor   String  @default("#000000")
@@ -82,8 +76,6 @@ model Artist {
   contratoLogoScale  Int @default(100)
   orcamentoTemplate  String @default("orc-001")
   contratoTemplate   String @default("ctr-001")
-  usarBasePdfOrcamento Boolean @default(true)
-  usarBasePdfContrato  Boolean @default(true)
 
   onboardingDone Boolean @default(false)
   categoria      String? // "banda" | "solo" | "dj" | "dupla" | "cantor" | "outros"
@@ -109,7 +101,7 @@ model Artist {
 
 model User {
   id       String   @id @default(cuid())
-  email    String
+  email    String   @unique
   password String
   name     String?
   role     UserRole @default(ARTIST_ADMIN)
@@ -122,7 +114,6 @@ model User {
 
   createdAt DateTime @default(now())
 
-  @@unique([email, artistId])
   @@index([artistId])
 }
 
@@ -143,6 +134,13 @@ model Document {
 
   sentAt    DateTime?
   createdAt DateTime  @default(now())
+
+  /// Página web pública (/ver/[token]) — token opaco gerado sob demanda, nunca o id do documento
+  publicToken String?   @unique
+  viewedAt    DateTime?
+  viewCount   Int       @default(0)
+  /// Reservado para a Fase 2 (aprovação de orçamento pelo contratante)
+  approvedAt  DateTime?
 
   @@index([artistId])
   @@index([artistId, type])

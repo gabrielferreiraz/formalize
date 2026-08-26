@@ -73,9 +73,13 @@ export async function buildOrc005(
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;900&family=Open+Sans:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <style>
     @page { size: 21cm 29.7cm; margin: 0 !important; }
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { width: 21cm; }
     body { width: 21cm; min-height: 29.7cm; background: #0e0e12; font-family: 'Open Sans', sans-serif; display: flex; flex-direction: column; }

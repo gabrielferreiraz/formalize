@@ -7,9 +7,13 @@ const templateOrcamentoLight = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     @page { size: 21cm 29.7cm; margin: 0; }
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 21cm; height: 29.7cm; background: #f8f8f6; font-family: 'Inter', sans-serif; }
 

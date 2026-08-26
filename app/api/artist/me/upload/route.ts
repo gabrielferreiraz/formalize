@@ -16,36 +16,19 @@ const ASSET_MAP: Record<string, { key: (id: string) => string; field: string; mi
     field: "backgroundUrl",
     mime: "image/jpeg",
   },
-  basePdf: {
-    key: (id) => `assets/${id}/base.pdf`,
-    field: "basePdfUrl",
-    mime: "application/pdf",
-  },
-  baseContractPdf: {
-    key: (id) => `assets/${id}/base-contrato.pdf`,
-    field: "baseContractPdfUrl",
-    mime: "application/pdf",
-  },
 };
 
 const ALLOWED_MIMES: Record<string, string[]> = {
-  logo:            ["image/png", "image/jpeg", "image/webp", "image/svg+xml"],
+  logo:            ["image/png", "image/jpeg", "image/webp"],
   background:      ["image/png", "image/jpeg", "image/webp"],
-  basePdf:         ["application/pdf"],
-  baseContractPdf: ["application/pdf"],
 };
 
 const MAX_BYTES: Record<string, number> = {
   logo:            5  * 1024 * 1024,
   background:      10 * 1024 * 1024,
-  basePdf:         20 * 1024 * 1024,
-  baseContractPdf: 20 * 1024 * 1024,
 };
 
-function hasValidMagicBytes(buffer: Buffer, type: string): boolean {
-  if (type === "basePdf" || type === "baseContractPdf") {
-    return buffer.length >= 4 && buffer.subarray(0, 4).toString("ascii") === "%PDF";
-  }
+function hasValidMagicBytes(buffer: Buffer): boolean {
   if (buffer.length < 12) return false;
   // PNG: 89 50 4E 47
   if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) return true;
@@ -53,9 +36,6 @@ function hasValidMagicBytes(buffer: Buffer, type: string): boolean {
   if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return true;
   // WebP: RIFF....WEBP
   if (buffer.subarray(0, 4).toString("ascii") === "RIFF" && buffer.subarray(8, 12).toString("ascii") === "WEBP") return true;
-  // SVG (text): starts with <svg or <?xml
-  const head = buffer.subarray(0, 64).toString("utf8").trimStart().toLowerCase();
-  if (head.startsWith("<svg") || head.startsWith("<?xml")) return true;
   return false;
 }
 
@@ -117,7 +97,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // Validate magic bytes — prevents spoofed MIME types from reaching R2
-    if (!hasValidMagicBytes(buffer, type)) {
+    if (!hasValidMagicBytes(buffer)) {
       log.warn({ type, fileSizeBytes: buffer.length }, "magic bytes validation failed");
       return NextResponse.json(
         { error: "O arquivo enviado não é válido ou está corrompido." },

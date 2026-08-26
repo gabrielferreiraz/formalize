@@ -20,18 +20,18 @@ export default async function AdminLayout({
 }) {
   const session = await getServerSession(authOptions);
 
-  logger.info(
+  logger.debug(
     { hasSession: !!session, role: session?.user.role, userId: session?.user.id, artistId: session?.user.artistId, forcePasswordChange: session?.user.forcePasswordChange, active: session?.user.active, action: "admin.layout" },
-    "[DEBUG] admin layout — session check"
+    "admin layout — session check"
   );
 
   if (!session || session.user.role !== "ARTIST_ADMIN") {
-    logger.info({ hasSession: !!session, role: session?.user.role, action: "admin.layout" }, "[DEBUG] admin layout — redirecting to /login (no session or wrong role)");
+    logger.debug({ hasSession: !!session, role: session?.user.role, action: "admin.layout" }, "admin layout — redirecting to /login (no session or wrong role)");
     redirect("/login");
   }
 
   if (session.user.active === false) {
-    logger.info({ userId: session.user.id, action: "admin.layout" }, "[DEBUG] admin layout — redirecting to /login?error=conta_suspensa (inactive)");
+    logger.debug({ userId: session.user.id, action: "admin.layout" }, "admin layout — redirecting to /login?error=conta_suspensa (inactive)");
     redirect("/login?error=conta_suspensa");
   }
 
@@ -39,7 +39,7 @@ export default async function AdminLayout({
   const pathname = headersList.get("x-pathname") || "";
   const requestId = headersList.get("x-request-id") || undefined;
 
-  logger.info({ pathname, requestId, userId: session.user.id, action: "admin.layout" }, "[DEBUG] admin layout — pathname from header");
+  logger.debug({ pathname, requestId, userId: session.user.id, action: "admin.layout" }, "admin layout — pathname from header");
 
   const artist = session.user.artistId
     ? await prisma.artist
@@ -66,9 +66,9 @@ export default async function AdminLayout({
         })
     : null;
 
-  logger.info(
+  logger.debug(
     { artistFound: !!artist, artistId: session.user.artistId, onboardingDone: artist?.onboardingDone, action: "admin.layout" },
-    "[DEBUG] admin layout — artist fetch result"
+    "admin layout — artist fetch result"
   );
 
   // Force password change — naked shell, no chrome, SessionProvider needed for useSession()
@@ -76,30 +76,30 @@ export default async function AdminLayout({
     // Only redirect if we HAVE a pathname and we KNOW it's not the right page.
     // This prevents infinite loops if the header is missing or delayed.
     if (pathname && !pathname.startsWith("/admin/trocar-senha")) {
-      logger.info({ userId: session.user.id, pathname, action: "admin.layout" }, "[DEBUG] admin layout — forcePasswordChange: ForceRedirect to /admin/trocar-senha");
+      logger.debug({ userId: session.user.id, pathname, action: "admin.layout" }, "admin layout — forcePasswordChange: ForceRedirect to /admin/trocar-senha");
       // ForceRedirect uses window.location.replace (hard navigation) to bypass Next.js router
       // soft-navigation redirect loop — redirect() from Server Component causes router to loop
       // on history.replaceState without ever mounting the target page.
       return <ForceRedirect to="/admin/trocar-senha" />;
     }
-    logger.info({ userId: session.user.id, pathname, action: "admin.layout" }, "[DEBUG] admin layout — forcePasswordChange: rendering trocar-senha (or already on it)");
+    logger.debug({ userId: session.user.id, pathname, action: "admin.layout" }, "admin layout — forcePasswordChange: rendering trocar-senha (or already on it)");
     return <SessionWrapper>{children}</SessionWrapper>;
   }
 
   // First-time onboarding — full-screen takeover, no chrome needed
   if (artist && !artist.onboardingDone) {
     if (pathname && !pathname.startsWith("/admin/onboarding")) {
-      logger.info({ userId: session.user.id, artistId: session.user.artistId, pathname, onboardingDone: artist.onboardingDone, action: "admin.layout" }, "[DEBUG] admin layout — onboarding not done: ForceRedirect to /admin/onboarding");
+      logger.debug({ userId: session.user.id, artistId: session.user.artistId, pathname, onboardingDone: artist.onboardingDone, action: "admin.layout" }, "admin layout — onboarding not done: ForceRedirect to /admin/onboarding");
       // ForceRedirect uses window.location.replace (hard navigation) to bypass Next.js router
       // soft-navigation redirect loop — redirect() from Server Component causes router to loop
       // on history.replaceState without ever mounting the target page.
       return <ForceRedirect to="/admin/onboarding" />;
     }
-    logger.info({ userId: session.user.id, artistId: session.user.artistId, pathname, action: "admin.layout" }, "[DEBUG] admin layout — onboarding not done: rendering onboarding page");
+    logger.debug({ userId: session.user.id, artistId: session.user.artistId, pathname, action: "admin.layout" }, "admin layout — onboarding not done: rendering onboarding page");
     return <SessionWrapper>{children}</SessionWrapper>;
   }
 
-  logger.info({ userId: session.user.id, artistId: session.user.artistId, onboardingDone: artist?.onboardingDone, pathname, action: "admin.layout" }, "[DEBUG] admin layout — normal render with full chrome");
+  logger.debug({ userId: session.user.id, artistId: session.user.artistId, onboardingDone: artist?.onboardingDone, pathname, action: "admin.layout" }, "admin layout — normal render with full chrome");
 
   const initialArtist = artist
     ? {

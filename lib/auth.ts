@@ -1,9 +1,10 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { compare } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { BCRYPT_COST, getBcryptCost } from "@/lib/password";
 
 // Rate limiting — simple in-memory store (replace with Redis when scaling horizontally)
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -68,7 +69,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Muitas tentativas. Tente novamente em 15 minutos.");
         }
 
-        const user = await prisma.user.findFirst({
+        const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
 
@@ -81,6 +82,19 @@ export const authOptions: NextAuthOptions = {
         if (!passwordMatch) {
           logger.info({ ip, userId: user.id, action: "auth.login" }, "login failed — wrong password");
           return null;
+        }
+
+        // Transparent rehash: this user's hash may still carry an older, slower
+        // cost factor. Now that we have the plaintext, migrate it to the current
+        // cost so every login after this one is fast too (see lib/password.ts).
+        const currentCost = getBcryptCost(user.password);
+        if (currentCost !== null && currentCost > BCRYPT_COST) {
+          const rehashed = await hash(credentials.password, BCRYPT_COST);
+          await prisma.user
+            .update({ where: { id: user.id }, data: { password: rehashed } })
+            .catch((err) =>
+              logger.error({ err, userId: user.id, action: "auth.rehash" }, "failed to rehash password on login")
+            );
         }
 
         if (!user.active) {
@@ -119,7 +133,7 @@ export const authOptions: NextAuthOptions = {
         const email = profile?.email;
         if (!email) return false;
 
-        const dbUser = await prisma.user.findFirst({
+        const dbUser = await prisma.user.findUnique({
           where: { email },
           include: { artist: { select: { status: true } } },
         });
@@ -150,7 +164,7 @@ export const authOptions: NextAuthOptions = {
 
       // Login via Google — busca o usuário no banco pelo email
       if (account?.provider === "google" && token.email) {
-        const dbUser = await prisma.user.findFirst({
+        const dbUser = await prisma.user.findUnique({
           where: { email: token.email },
         });
         logger.debug(

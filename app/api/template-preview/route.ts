@@ -1,23 +1,22 @@
 import { NextResponse } from "next/server";
+import { assertSuperAdmin } from "@/lib/super-auth";
 import { buildOrc001 } from "@/lib/templates/orcamento/orc-001-classic";
 import { buildOrc002 } from "@/lib/templates/orcamento/orc-002-light";
 
 const SAMPLE_ARTIST = {
-  name: "Givago",
-  legalName: "Victor Givago Barbosa Caneppele",
-  cnpj: "43.778.093/0001-92",
+  name: "Artista Exemplo",
+  legalName: "Artista Exemplo Ltda",
+  cnpj: "00.000.000/0001-00",
   primaryColor: "#E8A045",
   secondaryColor: "#ffffff",
   whatsapp: "(67) 99999-9999",
-  instagram: "@givagooficial",
-  website: "www.givagooficial.com.br",
+  instagram: "@artistaexemplo",
+  website: "www.artistaexemplo.com.br",
   logoUrl: null,
   backgroundUrl: null,
-  basePdfUrl: null,
-  baseContractPdfUrl: null,
-  address: { rua: "Rua das Folhagens", numero: "280", bairro: "Carandá Bosque", cidade: "Campo Grande", estado: "MS" },
-  bankInfo: { titular: "Victor Givago Barbosa Caneppele", pix: "CNPJ 43.778.093/0001-92", banco: "Inter", conta: "22616151-0", agencia: "0001" },
-  pixKey: "43.778.093/0001-92",
+  address: { rua: "Rua Exemplo", numero: "123", bairro: "Centro", cidade: "Campo Grande", estado: "MS" },
+  bankInfo: { titular: "Artista Exemplo Ltda", pix: "00.000.000/0001-00", banco: "Banco Exemplo", conta: "00000-0", agencia: "0000" },
+  pixKey: "00.000.000/0001-00",
   instruments: "Bateria, Percussão, Guitarra, Baixo, Sanfona",
   orcamentoTemplate: "orc-001",
   contratoTemplate: "ctr-001",
@@ -25,12 +24,6 @@ const SAMPLE_ARTIST = {
   contratoFontScale: 1,
   orcamentoLogoScale: 1,
   contratoLogoScale: 1,
-  paperWidth: "21.0",
-  paperHeight: "29.7",
-  contractPaperWidth: "21.0",
-  contractPaperHeight: "29.7",
-  usarBasePdfOrcamento: false,
-  usarBasePdfContrato: false,
 };
 
 const SAMPLE_DATA = {
@@ -55,8 +48,11 @@ const SAMPLE_DATA = {
 };
 
 export async function GET() {
+  const { error } = await assertSuperAdmin();
+  if (error) return error;
+
   const [html001, html002] = await Promise.all([
-    buildOrc001(SAMPLE_ARTIST as any, SAMPLE_DATA, { width: "21.0", height: "29.7" }, null, null),
+    buildOrc001(SAMPLE_ARTIST as any, SAMPLE_DATA, undefined, null, null),
     buildOrc002(SAMPLE_ARTIST as any, SAMPLE_DATA, undefined, null),
   ]);
 
@@ -83,7 +79,7 @@ export async function GET() {
 <body>
   <div class="bar">
     <h1>Template Preview</h1>
-    <span>orc-001 Classic (dark) × orc-002 Light — dados de exemplo com artista Givago</span>
+    <span>orc-001 Classic (dark) × orc-002 Light — dados de exemplo</span>
   </div>
   <div class="grid">
     <div class="panel classic">

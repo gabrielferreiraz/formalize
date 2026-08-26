@@ -3,8 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { LogoCropModal } from "@/components/ui/LogoCropModal";
+import { ScaledIframe } from "@/components/documents/ScaledIframe";
+import { TemplateCarousel } from "@/components/templates/TemplateCarousel";
+import { TemplateGridSheet } from "@/components/templates/TemplateGridSheet";
+import { useTemplatePreviewHtml } from "@/hooks/useTemplatePreviewHtml";
+import type { TemplateInfo } from "@/lib/templates/registry";
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 6;
 
 // Curated artist palettes — named, intentional
 const PALETTES = [
@@ -158,11 +163,11 @@ function StepIntro() {
             border: "1px solid #1e3050",
           }}>
             <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ade80", opacity: 0.85 }} />
-            <span style={{ fontSize: 13, color: "#5a7896", fontWeight: 500 }}>
+            <span style={{ fontSize: 15, color: "#5a7896", fontWeight: 500 }}>
               Leva menos de 2 minutos
             </span>
           </div>
-          <span style={{ fontSize: 13, color: "#4a6888", textAlign: "center", lineHeight: 1.55 }}>
+          <span style={{ fontSize: 15, color: "#4a6888", textAlign: "center", lineHeight: 1.55 }}>
             Você pode pular qualquer etapa.
           </span>
         </div>
@@ -264,7 +269,7 @@ function Step1({
                 />
                 <span
                   style={{
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: active ? 600 : 400,
                     color: active ? "#dde4f0" : "#5a7896",
                     flex: 1,
@@ -311,7 +316,7 @@ function Step1({
             />
             <span
               style={{
-                fontSize: 14,
+                fontSize: 16,
                 fontWeight: !isPalette ? 600 : 400,
                 color: !isPalette ? "#dde4f0" : "#5a7896",
                 flex: 1,
@@ -546,13 +551,13 @@ function Step4({
               >
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              <span style={{ fontSize: 13, color: "#4ade80", fontWeight: 500 }}>
+              <span style={{ fontSize: 15, color: "#4ade80", fontWeight: 500 }}>
                 Logo enviada
               </span>
               <label
                 style={{
                   marginLeft: "auto",
-                  fontSize: 13,
+                  fontSize: 14,
                   color: "#6888a8",
                   cursor: "pointer",
                   fontWeight: 500,
@@ -603,10 +608,10 @@ function Step4({
                     <line x1="12" y1="3" x2="12" y2="15" />
                   </svg>
                 </div>
-                <span style={{ fontSize: 15, color: "#c8d8e8", fontWeight: 600 }}>
+                <span style={{ fontSize: 16, color: "#c8d8e8", fontWeight: 600 }}>
                   Enviar logo
                 </span>
-                <span style={{ fontSize: 12, color: "#4a6888" }}>
+                <span style={{ fontSize: 14, color: "#4a6888" }}>
                   PNG, JPG ou SVG
                 </span>
               </>
@@ -621,6 +626,112 @@ function Step4({
           </label>
         )}
       </Field>
+    </div>
+  );
+}
+
+// ── Step 5/6 — Escolha de template (contrato, depois orçamento) ─
+// Um modelo já vem pré-selecionado (o padrão do artista) — a pessoa só
+// troca se quiser. Preview grande já renderizado com a marca dela mesma,
+// carrossel horizontal pra comparar rápido, e "ver todos" pra quem quiser
+// a lista completa — tudo sem sair do onboarding.
+function TemplateChoiceStep({
+  stepNumber,
+  headline,
+  sub,
+  type,
+  primaryColor,
+  items,
+  itemsLoading,
+  selectedId,
+  onSelect,
+}: {
+  stepNumber: string;
+  headline: React.ReactNode;
+  sub: string;
+  type: "orcamento" | "contrato";
+  primaryColor: string;
+  items: TemplateInfo[];
+  itemsLoading: boolean;
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const { html, error } = useTemplatePreviewHtml(selectedId ? { id: selectedId, type } : null);
+  const selectedTpl = items.find((t) => t.id === selectedId);
+  const sheetTitle = type === "contrato" ? "Modelos de contrato" : "Modelos de orçamento";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <Field>
+        <div className="ob-step-n">{stepNumber}</div>
+        <h1 className="ob-headline">{headline}</h1>
+        <p className="ob-sub">{sub}</p>
+      </Field>
+
+      <Field delay={60}>
+        <div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid #1e3050", height: 260, background: "#4b4f57" }}>
+          {error ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#7090b0", fontSize: 12, fontFamily: "'Inter', sans-serif", textAlign: "center", padding: 24 }}>
+              Não deu pra carregar o preview agora.
+            </div>
+          ) : html ? (
+            <ScaledIframe html={html} title={selectedTpl?.name ?? ""} />
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+              <span
+                className="animate-spin"
+                style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.15)", borderTopColor: "var(--accent-on-dark)", display: "inline-block" }}
+              />
+            </div>
+          )}
+        </div>
+        {selectedTpl && (
+          <div style={{ marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 700, color: "#dde4f0" }}>
+              {selectedTpl.name}
+            </span>
+            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 700, color: "var(--accent-on-dark)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              Selecionado
+            </span>
+          </div>
+        )}
+      </Field>
+
+      <Field delay={110}>
+        <div className="ob-label" style={{ marginBottom: 10 }}>Ou escolha outro</div>
+        <TemplateCarousel items={items} selectedId={selectedId} primaryColor={primaryColor} onSelect={onSelect} loading={itemsLoading} />
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          style={{
+            marginTop: 14,
+            width: "100%",
+            height: 44,
+            borderRadius: 12,
+            border: "1px solid #1e3050",
+            background: "transparent",
+            color: "#7090b0",
+            fontFamily: "'Inter', sans-serif",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Ver todos os modelos
+        </button>
+      </Field>
+
+      <TemplateGridSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        items={items}
+        selectedId={selectedId}
+        primaryColor={primaryColor}
+        onSelect={onSelect}
+        type={type}
+        title={sheetTitle}
+      />
     </div>
   );
 }
@@ -651,6 +762,15 @@ export default function OnboardingPage() {
     whatsapp: "",
     pixKey: "",
   });
+
+  // Templates (step 5) — carregados à parte, não bloqueiam os steps anteriores
+  const [templates, setTemplates] = useState<{ orcamento: TemplateInfo[]; contrato: TemplateInfo[] }>({
+    orcamento: [],
+    contrato: [],
+  });
+  const [templatesLoading, setTemplatesLoading] = useState(true);
+  const [orcamentoTemplate, setOrcamentoTemplate] = useState("orc-001");
+  const [contratoTemplate, setContratoTemplate] = useState("ctr-001");
 
   useEffect(() => {
     // Loop guard: mais de 3 carregamentos em 10s = loop de redirect, volta ao login
@@ -694,11 +814,19 @@ export default function OnboardingPage() {
           pixKey: artist.pixKey || prev.pixKey,
         }));
         if (artist.logoUrl) setLogoUrl(artist.logoUrl);
+        if (artist.orcamentoTemplate) setOrcamentoTemplate(artist.orcamentoTemplate);
+        if (artist.contratoTemplate) setContratoTemplate(artist.contratoTemplate);
       })
       .catch((err) => {
         console.error("[onboarding] fetch /api/artist/me — ERRO:", err?.message ?? err);
         setFetchError(true);
       });
+
+    fetch("/api/templates")
+      .then((r) => r.json())
+      .then((tpl) => setTemplates({ orcamento: tpl?.orcamento || [], contrato: tpl?.contrato || [] }))
+      .catch((err) => console.error("[onboarding] fetch /api/templates — ERRO:", err?.message ?? err))
+      .finally(() => setTemplatesLoading(false));
 
     return () => clearTimeout(loopTimer);
   }, []);
@@ -761,6 +889,10 @@ export default function OnboardingPage() {
       if (ne(data.whatsapp)) f.whatsapp = data.whatsapp;
       if (ne(data.pixKey)) f.pixKey = data.pixKey.trim();
       if (Object.keys(f).length > 0) await patch(f);
+    } else if (step === 5) {
+      await patch({ contratoTemplate });
+    } else if (step === 6) {
+      await patch({ orcamentoTemplate });
     }
     if (step < TOTAL_STEPS) {
       console.log(`[onboarding] avançando para step ${step + 1}`);
@@ -848,7 +980,7 @@ export default function OnboardingPage() {
       const formData = new FormData();
       formData.append("file", new File([blob], "logo.png", { type: "image/png" }));
       formData.append("type", "logo");
-      const res = await fetch("/api/artist/upload", { method: "POST", body: formData });
+      const res = await fetch("/api/artist/me/upload", { method: "POST", body: formData });
       if (res.ok) {
         const { url } = await res.json();
         setLogoUrl(url + "?t=" + Date.now());
@@ -975,7 +1107,7 @@ export default function OnboardingPage() {
           justifyContent: "space-between",
           gap: 10,
         }}>
-          <span style={{ fontSize: 11, color: "#f87171", lineHeight: 1.4 }}>
+          <span style={{ fontSize: 13, color: "#f87171", lineHeight: 1.4 }}>
             {finishError
               ? "Não foi possível salvar. Verifique sua conexão e tente novamente."
               : uploadError
@@ -989,7 +1121,7 @@ export default function OnboardingPage() {
               else if (uploadError) setUploadError(false);
               else { setFetchError(false); window.location.reload(); }
             }}
-            style={{ fontSize: 11, color: "#f87171", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
+            style={{ fontSize: 13, color: "#f87171", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
           >
             {finishError ? "Tentar salvar" : "OK"}
           </button>
@@ -1028,6 +1160,32 @@ export default function OnboardingPage() {
             logoUrl={logoUrl}
             uploading={logoUploading}
             onUpload={handleFileSelect}
+          />
+        )}
+        {step === 5 && (
+          <TemplateChoiceStep
+            stepNumber="05"
+            headline={<>Seu<br />contrato</>}
+            sub="Já deixamos um modelo pronto com sua marca. Troque se quiser — dá pra mudar depois também."
+            type="contrato"
+            primaryColor={data.primaryColor}
+            items={templates.contrato}
+            itemsLoading={templatesLoading}
+            selectedId={contratoTemplate}
+            onSelect={setContratoTemplate}
+          />
+        )}
+        {step === 6 && (
+          <TemplateChoiceStep
+            stepNumber="06"
+            headline={<>Seu<br />orçamento</>}
+            sub="Mesma ideia — já escolhemos um pra você começar."
+            type="orcamento"
+            primaryColor={data.primaryColor}
+            items={templates.orcamento}
+            itemsLoading={templatesLoading}
+            selectedId={orcamentoTemplate}
+            onSelect={setOrcamentoTemplate}
           />
         )}
       </div>
@@ -1115,7 +1273,7 @@ export default function OnboardingPage() {
           margin: 0 0 10px;
         }
         .ob-sub {
-          font-size: 13px;
+          font-size: 15px;
           color: #5a7896;
           line-height: 1.5;
           margin: 0;
@@ -1146,17 +1304,17 @@ export default function OnboardingPage() {
         }
         .ob-input::placeholder { color: #3d5880; }
         .ob-label {
-          font-size: 10px;
+          font-size: 12px;
           font-weight: 700;
           color: #4a6888;
-          letter-spacing: 0.1em;
+          letter-spacing: 0.08em;
           text-transform: uppercase;
           margin-bottom: 6px;
           transition: color 0.15s;
         }
         .ob-label--focus { color: var(--accent-on-dark); }
         .ob-note {
-          font-size: 11px;
+          font-size: 13px;
           color: #4a6080;
           margin-top: 7px;
         }
@@ -1220,7 +1378,7 @@ export default function OnboardingPage() {
           background: none;
           border: none;
           color: #4a6888;
-          font-size: 12px;
+          font-size: 13px;
           font-weight: 500;
           cursor: pointer;
           font-family: inherit;
@@ -1236,7 +1394,7 @@ export default function OnboardingPage() {
           border: none;
           background: transparent;
           color: #4a6888;
-          font-size: 14px;
+          font-size: 15px;
           font-weight: 500;
           cursor: pointer;
           font-family: inherit;
@@ -1251,7 +1409,7 @@ export default function OnboardingPage() {
           border: none;
           background: var(--accent);
           color: var(--accent-text);
-          font-size: 15px;
+          font-size: 16px;
           font-weight: 700;
           cursor: pointer;
           font-family: inherit;
@@ -1343,7 +1501,7 @@ export default function OnboardingPage() {
         }}>
           <div style={{
             animation: "welcomeSlideUp 0.5s ease 0.2s both",
-            fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 500,
+            fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 500,
             color: "#4b5563", letterSpacing: "0.18em", textTransform: "uppercase",
             marginBottom: 20,
           }}>
@@ -1365,7 +1523,7 @@ export default function OnboardingPage() {
           }} />
           <div style={{
             animation: "welcomeSlideUp 0.5s ease 1.3s both",
-            fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 400,
+            fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 400,
             color: "#374151", marginTop: 28,
           }}>
             Preparando seu painel...

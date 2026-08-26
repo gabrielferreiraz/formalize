@@ -2,12 +2,15 @@
 
 import React, { useRef } from "react";
 import { useEffect, useState } from "react";
+import useSWR from "swr";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { IconUpload, IconCheck } from "@/components/ui/icons";
 import { PageTutorial, clearAllTutorials, type TutorialStep } from "@/components/ui/PageTutorial";
 import { LogoCropModal } from "@/components/ui/LogoCropModal";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 const CFG_TUTORIAL: TutorialStep[] = [
   {
@@ -113,18 +116,10 @@ interface ArtistConfig {
     conta: string;
     agencia: string;
   } | null;
-  paperWidth: string | null;
-  paperHeight: string | null;
-  contractPaperWidth: string | null;
-  contractPaperHeight: string | null;
   logoUrl: string | null;
   backgroundUrl: string | null;
-  basePdfUrl: string | null;
-  baseContractPdfUrl: string | null;
   orcamentoTemplate: string | null;
   contratoTemplate: string | null;
-  usarBasePdfOrcamento: boolean;
-  usarBasePdfContrato: boolean;
 }
 
 interface TemplateInfo {
@@ -135,171 +130,6 @@ interface TemplateInfo {
   style: "dark" | "light" | "colorful";
   previewBg: string;
   previewAccent: string;
-}
-
-const PDF_PRESETS = [
-  { id: "a4", label: "A4", sub: "21 × 29,7 cm", w: "21.0", h: "29.7" },
-  { id: "a3", label: "A3", sub: "29,7 × 42 cm", w: "29.7", h: "42.0" },
-  { id: "large", label: "Grande", sub: "34 × 49 cm", w: "34.44", h: "48.71" },
-] as const;
-
-const CM_STEP = 0.5;
-const CM_MIN = 10;
-const CM_MAX = 120;
-
-function parseCm(s: string | null | undefined, whenEmpty = 21): number {
-  const raw = String(s ?? "").trim().replace(",", ".");
-  if (!raw) return whenEmpty;
-  const n = parseFloat(raw);
-  return Number.isFinite(n) ? n : whenEmpty;
-}
-
-function formatCmPtBr(n: number): string {
-  const rounded = Math.round(n * 100) / 100;
-  return rounded.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-}
-
-function presetActive(
-  w: string | null,
-  h: string | null,
-  pw: string,
-  ph: string,
-  wEmpty = 21,
-  hEmpty = 29.7
-): boolean {
-  return (
-    Math.abs(parseCm(w, wEmpty) - parseFloat(pw)) < 0.06 &&
-    Math.abs(parseCm(h, hEmpty) - parseFloat(ph)) < 0.06
-  );
-}
-
-type PaperWKey = "paperWidth" | "contractPaperWidth";
-type PaperHKey = "paperHeight" | "contractPaperHeight";
-
-function PdfPaperControls({
-  data,
-  title,
-  hint,
-  wKey,
-  hKey,
-  wEmpty,
-  hEmpty,
-  onPatch,
-}: {
-  data: ArtistConfig;
-  title: string;
-  hint: string;
-  wKey: PaperWKey;
-  hKey: PaperHKey;
-  wEmpty: number;
-  hEmpty: number;
-  onPatch: (patch: Partial<ArtistConfig>) => void;
-}) {
-  const wCur = parseCm(data[wKey], wEmpty);
-  const hCur = parseCm(data[hKey], hEmpty);
-
-  const step = (key: PaperWKey | PaperHKey, delta: number, emptyFallback: number) => {
-    const cur = parseCm(data[key] as string | null, emptyFallback);
-    const next = Math.min(CM_MAX, Math.max(CM_MIN, Math.round((cur + delta) * 2) / 2));
-    onPatch({ [key]: next.toFixed(2) } as Partial<ArtistConfig>);
-  };
-
-  return (
-    <div className="rounded-xl border border-stage-700 bg-stage-800/40 p-5 space-y-5">
-      <div>
-        <h3 className="text-base font-bold text-gray-200">{title}</h3>
-        <p className="text-xs text-gray-500 mt-1">{hint}</p>
-      </div>
-
-      <div>
-        <p className="label mb-3">Formato rápido</p>
-        <div className="flex flex-wrap gap-2">
-          {PDF_PRESETS.map((p) => {
-            const on = presetActive(data[wKey], data[hKey], p.w, p.h, wEmpty, hEmpty);
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => onPatch({ [wKey]: p.w, [hKey]: p.h } as Partial<ArtistConfig>)}
-                className={`rounded-xl border px-4 py-2.5 text-left transition-colors duration-150 min-w-[7.5rem] ${
-                  on
-                    ? "border-gold-500 bg-gold-500/15 text-gold-400 ring-1 ring-gold-500/40"
-                    : "border-stage-500 bg-stage-900/80 text-gray-300 hover:border-stage-400 hover:bg-stage-700/40"
-                }`}
-              >
-                <span className="block text-sm font-bold">{p.label}</span>
-                <span className="block text-[11px] text-gray-500 mt-0.5">{p.sub}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="rounded-xl border border-stage-600 bg-stage-900/50 p-4">
-          <span className="label mb-3">Largura</span>
-          <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              aria-label="Diminuir largura"
-              onClick={() => step(wKey, -CM_STEP, wEmpty)}
-              disabled={wCur <= CM_MIN}
-              className="shrink-0 w-11 h-11 rounded-xl border border-stage-500 text-lg font-bold text-gray-200 hover:bg-stage-700 hover:border-gold-600/50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
-            >
-              −
-            </button>
-            <div className="flex-1 text-center min-w-0">
-              <span className="text-2xl font-black text-gray-100 tabular-nums tracking-tight">
-                {formatCmPtBr(wCur)}
-              </span>
-              <span className="text-sm text-gray-500 ml-1">cm</span>
-            </div>
-            <button
-              type="button"
-              aria-label="Aumentar largura"
-              onClick={() => step(wKey, CM_STEP, wEmpty)}
-              disabled={wCur >= CM_MAX}
-              className="shrink-0 w-11 h-11 rounded-xl border border-stage-500 text-lg font-bold text-gray-200 hover:bg-stage-700 hover:border-gold-600/50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
-            >
-              +
-            </button>
-          </div>
-          <p className="text-[11px] text-gray-600 mt-2 text-center">passo {CM_STEP} cm</p>
-        </div>
-
-        <div className="rounded-xl border border-stage-600 bg-stage-900/50 p-4">
-          <span className="label mb-3">Altura</span>
-          <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              aria-label="Diminuir altura"
-              onClick={() => step(hKey, -CM_STEP, hEmpty)}
-              disabled={hCur <= CM_MIN}
-              className="shrink-0 w-11 h-11 rounded-xl border border-stage-500 text-lg font-bold text-gray-200 hover:bg-stage-700 hover:border-gold-600/50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
-            >
-              −
-            </button>
-            <div className="flex-1 text-center min-w-0">
-              <span className="text-2xl font-black text-gray-100 tabular-nums tracking-tight">
-                {formatCmPtBr(hCur)}
-              </span>
-              <span className="text-sm text-gray-500 ml-1">cm</span>
-            </div>
-            <button
-              type="button"
-              aria-label="Aumentar altura"
-              onClick={() => step(hKey, CM_STEP, hEmpty)}
-              disabled={hCur >= CM_MAX}
-              className="shrink-0 w-11 h-11 rounded-xl border border-stage-500 text-lg font-bold text-gray-200 hover:bg-stage-700 hover:border-gold-600/50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
-            >
-              +
-            </button>
-          </div>
-          <p className="text-[11px] text-gray-600 mt-2 text-center">passo {CM_STEP} cm</p>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export default function ConfiguracoesPage() {
@@ -324,40 +154,33 @@ export default function ConfiguracoesPage() {
     contrato: [],
   });
 
-  useEffect(() => {
-    fetch("/api/artist/me")
-      .then((res) => res.json())
-      .then((artist) => {
-        const normalized: ArtistConfig = {
-          ...artist,
-          address: typeof artist.address === "string" ? JSON.parse(artist.address) : artist.address || { rua: "", numero: "", bairro: "", cidade: "", estado: "" },
-          bankInfo: typeof artist.bankInfo === "string" ? JSON.parse(artist.bankInfo) : artist.bankInfo || { titular: "", pix: "", banco: "", conta: "", agencia: "" },
-          usarBasePdfOrcamento: artist.usarBasePdfOrcamento ?? true,
-          usarBasePdfContrato: artist.usarBasePdfContrato ?? true,
-        };
-        setData(normalized);
-        setInitialData(normalized);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
-  }, []);
+  // SWR cacheia entre navegações — ao voltar pra essa página os dados já
+  // aparecem na hora (do cache) enquanto revalida em segundo plano.
+  const { data: artistRaw, error: artistErr } = useSWR("/api/artist/me", fetcher);
+  const { data: templatesRaw } = useSWR("/api/templates", fetcher);
 
   useEffect(() => {
-    fetch("/api/templates")
-      .then((res) => res.json())
-      .then((payload) => {
-        setTemplates({
-          orcamento: payload?.orcamento || [],
-          contrato: payload?.contrato || [],
-        });
-      })
-      .catch(() => {
-        setTemplates({ orcamento: [], contrato: [] });
-      });
-  }, []);
+    if (!artistRaw || initialData) return; // já inicializado — nunca sobrescreve edição em andamento
+    const normalized: ArtistConfig = {
+      ...artistRaw,
+      address: typeof artistRaw.address === "string" ? JSON.parse(artistRaw.address) : artistRaw.address || { rua: "", numero: "", bairro: "", cidade: "", estado: "" },
+      bankInfo: typeof artistRaw.bankInfo === "string" ? JSON.parse(artistRaw.bankInfo) : artistRaw.bankInfo || { titular: "", pix: "", banco: "", conta: "", agencia: "" },
+    };
+    setData(normalized);
+    setInitialData(normalized);
+    setLoading(false);
+  }, [artistRaw, initialData]);
+
+  useEffect(() => {
+    if (artistErr) { console.error(artistErr); setLoading(false); }
+  }, [artistErr]);
+
+  useEffect(() => {
+    setTemplates({
+      orcamento: templatesRaw?.orcamento || [],
+      contrato: templatesRaw?.contrato || [],
+    });
+  }, [templatesRaw]);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -398,10 +221,6 @@ export default function ConfiguracoesPage() {
     });
   };
 
-  const patchPaper = (patch: Partial<ArtistConfig>) => {
-    setData((prev) => (prev ? { ...prev, ...patch } : null));
-  };
-
   const handleLogoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) setCropFile(file);
@@ -416,7 +235,7 @@ export default function ConfiguracoesPage() {
       const formData = new FormData();
       formData.append("file", new File([blob], "logo.png", { type: "image/png" }));
       formData.append("type", "logo");
-      const res = await fetch("/api/artist/upload", { method: "POST", body: formData });
+      const res = await fetch("/api/artist/me/upload", { method: "POST", body: formData });
       if (res.ok) {
         const { url } = await res.json();
         const ts = Date.now();
@@ -454,7 +273,7 @@ export default function ConfiguracoesPage() {
     setMessage(null);
 
     try {
-      const res = await fetch("/api/artist/upload", {
+      const res = await fetch("/api/artist/me/upload", {
         method: "POST",
         body: formData,
       });
@@ -464,8 +283,6 @@ export default function ConfiguracoesPage() {
         let field = "";
         if (type === "logo") field = "logoUrl";
         if (type === "background") field = "backgroundUrl";
-        if (type === "base-pdf") field = "basePdfUrl";
-        if (type === "base-contrato-pdf") field = "baseContractPdfUrl";
 
         setData((prev) => (prev ? { ...prev, [field]: url } : prev));
         setUploadTs((prev) => ({ ...prev, [type]: Date.now() }));
@@ -726,42 +543,7 @@ export default function ConfiguracoesPage() {
         <AccordionSection
           id="tut-cfg-templates"
           title="PDF & Templates"
-          filled={!!(data.basePdfUrl || data.baseContractPdfUrl)}
         >
-          <FileUploadRow
-            label="PDF Base — Orçamento"
-            pdfName={data.basePdfUrl ? "orcamento-base.pdf" : undefined}
-            uploaded={!!data.basePdfUrl}
-            uploading={uploading["base-pdf"]}
-            accept="application/pdf"
-            onChange={(e) => handleUpload("base-pdf", e)}
-          />
-          <FToggleRow
-            label="Usar este PDF no orçamento"
-            checked={data.usarBasePdfOrcamento}
-            onChange={(v) => setData({ ...data, usarBasePdfOrcamento: v })}
-          />
-          <FileUploadRow
-            label="PDF Base — Contrato"
-            pdfName={data.baseContractPdfUrl ? "contrato-base.pdf" : undefined}
-            uploaded={!!data.baseContractPdfUrl}
-            uploading={uploading["base-contrato-pdf"]}
-            accept="application/pdf"
-            onChange={(e) => handleUpload("base-contrato-pdf", e)}
-          />
-          <FToggleRow
-            label="Usar este PDF no contrato"
-            checked={data.usarBasePdfContrato}
-            onChange={(v) => setData({ ...data, usarBasePdfContrato: v })}
-          />
-          <PdfPaperControls
-            data={data} title="Tamanho — Orçamento" hint="Tamanho do papel na geração do PDF de orçamento."
-            wKey="paperWidth" hKey="paperHeight" wEmpty={21} hEmpty={29.7} onPatch={patchPaper}
-          />
-          <PdfPaperControls
-            data={data} title="Tamanho — Contrato" hint="Tamanho do papel na geração do PDF de contrato."
-            wKey="contractPaperWidth" hKey="contractPaperHeight" wEmpty={21} hEmpty={29.7} onPatch={patchPaper}
-          />
           <TemplateStatusRow label="Orçamento" templateId={data.orcamentoTemplate || "orc-001"} templates={templates.orcamento} />
           <TemplateStatusRow label="Contrato" templateId={data.contratoTemplate || "ctr-001"} templates={templates.contrato} />
           <Link href="/admin/templates" style={{
@@ -878,34 +660,6 @@ export default function ConfiguracoesPage() {
           onCancel={() => setCropFile(null)}
         />
       )}
-    </div>
-  );
-}
-
-function FToggleRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <div 
-      onClick={() => onChange(!checked)}
-      style={{ 
-        display: "flex", alignItems: "center", justifyContent: "space-between", 
-        padding: "12px 14px", background: "#1a1f2e", border: "1px solid #252d3d", 
-        borderRadius: 12, cursor: "pointer", transition: "border-color 0.15s"
-      }}
-    >
-      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 500, color: "#f1f5f9" }}>{label}</span>
-      <div 
-        style={{
-          width: 44, height: 24, borderRadius: 99, background: checked ? "#e6b800" : "#0e1118",
-          border: "1px solid", borderColor: checked ? "#e6b800" : "#252d3d",
-          position: "relative", transition: "all 0.2s"
-        }}
-      >
-        <div style={{
-          position: "absolute", top: 2, left: checked ? 22 : 2,
-          width: 18, height: 18, borderRadius: "50%", background: checked ? "#1a1200" : "#6b7280",
-          transition: "all 0.2s"
-        }} />
-      </div>
     </div>
   );
 }

@@ -1,8 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendWhatsAppTextMessage } from "@/lib/whatsapp";
+import { logger } from "@/lib/logger";
+
+// Simple in-memory rate limit: 5 requests per IP per 15 min
+const ipMap = new Map<string, { count: number; resetAt: number }>();
+function rateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = ipMap.get(ip);
+  if (!entry || entry.resetAt < now) {
+    ipMap.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 });
+    return true;
+  }
+  if (entry.count >= 5) return false;
+  entry.count++;
+  return true;
+}
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (!rateLimit(ip)) {
+    return NextResponse.json({ error: "Muitas tentativas. Aguarde 15 minutos." }, { status: 429 });
+  }
+
   let body: { name: string; email: string; whatsapp: string; artistName: string; message?: string; categoria?: string; temContrato?: boolean };
 
   try {
@@ -69,7 +89,6 @@ export async function POST(req: NextRequest) {
     number: process.env.ADMIN_NOTIFY_WHATSAPP ?? "5567981783902",
     message: lines.join("\n"),
   }).catch((err: unknown) => {
-    const { logger } = require("@/lib/logger");
     logger.warn({ err, action: "notify.new-request" }, "WhatsApp admin notification failed");
   });
 
