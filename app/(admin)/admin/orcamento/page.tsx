@@ -40,6 +40,7 @@ function OrcamentoContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [documentId, setDocumentId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -56,7 +57,8 @@ function OrcamentoContent() {
     setLoading(true);
     setError("");
     setPdfUrl(null);
-    
+    setDocumentId(null);
+
     abortRef.current = new AbortController();
 
     try {
@@ -77,6 +79,7 @@ function OrcamentoContent() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erro ao gerar PDF");
       setPdfUrl(json.pdfUrl);
+      setDocumentId(json.documentId);
     } catch (err) {
       if ((err as Error).name === 'AbortError') return;
       setError(err instanceof Error ? err.message : "Erro ao gerar PDF");
@@ -197,11 +200,12 @@ function OrcamentoContent() {
         />
       )}
 
-      {pdfUrl && (
+      {pdfUrl && documentId && (
         <PdfReadyModal
           pdfUrl={pdfUrl}
+          documentId={documentId}
           documentType="orcamento"
-          onClose={() => setPdfUrl(null)}
+          onClose={() => { setPdfUrl(null); setDocumentId(null); }}
         />
       )}
 

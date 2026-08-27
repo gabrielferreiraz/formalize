@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { resolveDocumentHtml } from "@/lib/documents/render-html";
+import { logger } from "@/lib/logger";
 import { DocumentFrame } from "./DocumentFrame";
 
 export const dynamic = "force-dynamic";
@@ -12,12 +13,20 @@ export default async function PublicDocumentPage({
 }) {
   const { token } = await params;
 
-  const doc = await prisma.document.findUnique({
-    where: { publicToken: token },
-    select: { id: true, type: true, title: true, data: true, artistId: true },
-  });
+  // Só a consulta ao banco é envolvida em try/catch — notFound() lança um
+  // erro de controle interno do Next.js que não pode ser engolido aqui.
+  const doc = await prisma.document
+    .findUnique({
+      where: { publicToken: token },
+      select: { id: true, type: true, title: true, data: true, artistId: true },
+    })
+    .catch((err) => {
+      logger.error({ err, token, action: "document.public.lookup" }, "falha ao buscar documento público");
+      return null;
+    });
   if (!doc) notFound();
 
+  // resolveDocumentHtml nunca lança — falha vira null, tratado como 404.
   const html = await resolveDocumentHtml(doc.artistId, doc.type, doc.data as Record<string, unknown>);
   if (!html) notFound();
 

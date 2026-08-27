@@ -2,20 +2,39 @@
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { IconCheck, IconWhatsApp, IconShare, IconX, IconDoc } from "./icons";
+import { IconCheck, IconShare, IconX, IconDoc } from "./icons";
 
 interface PdfReadyModalProps {
   pdfUrl: string;
+  documentId: string;
   onClose: () => void;
   documentType: 'orcamento' | 'contrato';
 }
 
-export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalProps) {
+export function PdfReadyModal({ pdfUrl, documentId, onClose, documentType }: PdfReadyModalProps) {
   const [mounted, setMounted] = useState(false);
+  const [webUrl, setWebUrl] = useState<string | null>(null);
+  const [webError, setWebError] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
   const label = documentType === 'contrato' ? 'Contrato' : 'Orçamento';
-  
+
+  // Gera (ou recupera) o link da página web assim que o modal abre — pronto
+  // pra usar sem a pessoa precisar esperar depois de clicar.
+  useEffect(() => {
+    let cancelled = false;
+    setWebUrl(null);
+    setWebError(false);
+    fetch(`/api/documents/${documentId}/share`, { method: "POST" })
+      .then((res) => {
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        return res.json();
+      })
+      .then((json) => { if (!cancelled && json.url) setWebUrl(json.url); })
+      .catch(() => { if (!cancelled) setWebError(true); });
+    return () => { cancelled = true; };
+  }, [documentId]);
+
   useEffect(() => {
     // Bloquear scroll do body
     const originalStyle = window.getComputedStyle(document.body).overflow;
@@ -25,64 +44,22 @@ export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalPr
     };
   }, []);
 
-  const handleShare = async () => {
-    try {
-      const response = await fetch(pdfUrl);
-      const blob = await response.blob();
-      const fileName = `${label}_${new Date().getTime()}.pdf`;
-      const file = new File([blob], fileName, { type: 'application/pdf' });
+  const handleOpenWeb = () => {
+    if (webUrl) window.open(webUrl, '_blank');
+  };
 
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: `${label} gerado pelo Formalize`,
-        });
-      } else if (navigator.share) {
-        await navigator.share({
-          title: `${label} gerado pelo Formalize`,
-          url: pdfUrl
-        });
+  const handleShareWeb = async () => {
+    if (!webUrl) return;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `${label} gerado pelo Formalize`, url: webUrl });
       } else {
-        await navigator.clipboard.writeText(pdfUrl);
+        await navigator.clipboard.writeText(webUrl);
         alert("Link copiado para a área de transferência!");
       }
     } catch {
-      // Fallback para link se der erro no download
-      if (navigator.share) {
-        navigator.share({ url: pdfUrl });
-      } else {
-        navigator.clipboard.writeText(pdfUrl);
-        alert("Link copiado!");
-      }
+      // usuário cancelou o share nativo — sem erro pra mostrar
     }
-  };
-
-  const handleWhatsApp = async () => {
-    try {
-      const response = await fetch(pdfUrl);
-      const blob = await response.blob();
-      const fileName = `${label}_${new Date().getTime()}.pdf`;
-      const file = new File([blob], fileName, { type: 'application/pdf' });
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: `${label} gerado pelo Formalize`,
-        });
-      } else {
-        // Fallback: Se não puder compartilhar o arquivo diretamente, abre o link
-        const text = encodeURIComponent(`${label} gerado pelo Formalize:\n${pdfUrl}`);
-        window.open(`https://wa.me/?text=${text}`, '_blank');
-      }
-    } catch {
-      // Fallback básico em caso de erro no fetch
-      const text = encodeURIComponent(`${label} gerado pelo Formalize:\n${pdfUrl}`);
-      window.open(`https://wa.me/?text=${text}`, '_blank');
-    }
-  };
-
-  const handleOpen = () => {
-    window.open(pdfUrl, '_blank');
   };
 
   if (!mounted) return null;
@@ -90,9 +67,9 @@ export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalPr
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overlay-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100dvh', overscrollBehavior: 'contain' }}>
       <div className="relative w-full max-w-md bg-stage-900 border border-stage-700 rounded-3xl overflow-hidden shadow-2xl modal-scale-in">
-        
+
         {/* Botão Fechar */}
-        <button 
+        <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-colors"
         >
@@ -109,26 +86,45 @@ export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalPr
           </div>
 
           <h2 className="text-2xl font-bold text-white mb-2">
-            PDF gerado com sucesso!
+            {label} pronto!
           </h2>
           <p className="text-gray-400 text-sm mb-8">
-            Seu {label.toLowerCase()} está pronto para ser enviado ou visualizado.
+            Envie a página web pro cliente ver — ou baixe o PDF, se preferir.
           </p>
 
           <div className="grid grid-cols-1 gap-3">
-            {/* Primary: open in new tab (works everywhere) */}
-            <a
-              href={pdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl bg-white font-bold hover:bg-gray-100 transition-colors no-underline"
-              style={{ color: "#0d1117" }}
+            {/* Primary: página web (link rastreável, sempre atualizado) */}
+            <button
+              onClick={handleOpenWeb}
+              disabled={!webUrl}
+              className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl bg-gold-500 font-bold hover:bg-gold-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-stage-950"
             >
-              <IconDoc size={20} />
-              Ver PDF
-            </a>
+              {webUrl ? (
+                <>
+                  <IconDoc size={20} />
+                  Ver página web
+                </>
+              ) : webError ? (
+                "Link indisponível"
+              ) : (
+                <>
+                  <span className="w-4 h-4 rounded-full border-2 border-stage-950/30 border-t-stage-950 animate-spin inline-block" />
+                  Preparando link...
+                </>
+              )}
+            </button>
 
             <div className="grid grid-cols-3 gap-3">
+              {/* Ver PDF diretamente */}
+              <a
+                href={pdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-stage-800 border border-stage-700 text-white font-semibold hover:bg-stage-700 transition-colors no-underline text-sm"
+              >
+                PDF
+              </a>
+
               {/* Download — works on all desktop/mobile browsers */}
               <a
                 href={pdfUrl}
@@ -139,24 +135,17 @@ export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalPr
               </a>
 
               <button
-                onClick={handleShare}
-                className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-stage-800 border border-stage-700 text-white font-semibold hover:bg-stage-700 transition-colors text-sm"
+                onClick={handleShareWeb}
+                disabled={!webUrl}
+                className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-stage-800 border border-stage-700 text-white font-semibold hover:bg-stage-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <IconShare size={16} />
-                Link
-              </button>
-
-              <button
-                onClick={handleWhatsApp}
-                className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-green-600/10 border border-green-600/30 text-green-500 font-semibold hover:bg-green-600/20 transition-colors text-sm"
-              >
-                <IconWhatsApp size={16} />
-                Zap
+                Enviar
               </button>
             </div>
           </div>
         </div>
-        
+
         {/* Rodapé decorativo */}
         <div className="bg-stage-800/50 p-4 border-t border-stage-700/50 text-center">
           <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">
@@ -164,7 +153,7 @@ export function PdfReadyModal({ pdfUrl, onClose, documentType }: PdfReadyModalPr
           </p>
         </div>
       </div>
-      
+
       <style jsx>{`
         .overlay-fade-in {
           animation: fadeIn 0.3s ease-out both;
