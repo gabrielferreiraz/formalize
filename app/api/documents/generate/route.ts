@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { sendToGotenberg } from "@/lib/gotenberg";
 import { uploadToR2, getPublicUrl, getKeyFromUrl, deleteFromR2 } from "@/lib/r2";
 import { buildTemplate } from "@/lib/templates";
-import { getPresetClausulas } from "@/lib/contrato-clausulas";
 import { fetchWithCache } from "@/lib/cache";
 import { requestLogger, getRequestId } from "@/lib/logger";
 import { applyFieldsToBasePdf, buildOverlayVars, type FieldPlacement } from "@/lib/pdf-overlay";
@@ -113,23 +112,9 @@ export async function POST(req: NextRequest) {
       contratoLogoScale: type === "contrato" ? ((data.logoScale as number) ?? artist.contratoLogoScale) : artist.contratoLogoScale,
     };
 
-    // Resolve clausulas for clause-based contract rendering
-    let buildData = data;
-    if (isContrato) {
-      const templateId = data.clausulasTemplateId as string | undefined;
-      const preset = data.clausulasPreset as string | undefined;
-      if (templateId) {
-        const cTemplate = await prisma.contratoTemplate.findFirst({
-          where: { id: templateId, artistId },
-          select: { clausulas: true, titulo: true },
-        });
-        if (cTemplate && Array.isArray(cTemplate.clausulas)) {
-          buildData = { ...data, _clausulas: cTemplate.clausulas, _clausulasTitulo: cTemplate.titulo };
-        }
-      } else if (preset && ["banda", "solo", "dj", "generico"].includes(preset)) {
-        buildData = { ...data, _clausulas: getPresetClausulas(preset as any) };
-      }
-    }
+    // O template visual escolhido (artist.contratoTemplate) manda no design
+    // do PDF — ver comentário em lib/templates/index.ts#buildTemplate.
+    const buildData = data;
 
     let pdfBuffer: Buffer;
 

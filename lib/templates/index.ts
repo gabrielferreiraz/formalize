@@ -13,10 +13,8 @@ import { buildCtr003 } from "./contrato/ctr-003-premium";
 import { buildCtr004 } from "./contrato/ctr-004-formal";
 import { buildCtr005 } from "./contrato/ctr-005-dark-gold";
 import { buildCtr006 } from "./contrato/ctr-006-dark-modern";
-import { buildFromClausulas } from "./contrato/build-from-clausulas";
 import { interpolateTemplate } from "./custom-interpolator";
 import type { AssetResult, ArtistTemplateData } from "./types";
-import type { ClausulaContrato } from "@/lib/contrato-clausulas";
 
 // Cache em memória para evitar query no DB a cada documento gerado
 const _customHtmlCache = new Map<string, { html: string | null; ts: number }>();
@@ -105,12 +103,11 @@ export async function buildTemplate(
     return injectWatermark(await builder(artist, data as Record<string, any>, pageSize, logo, background));
   }
 
-  const clausulas = data._clausulas;
-  if (Array.isArray(clausulas) && clausulas.length > 0) {
-    const titulo = data._clausulasTitulo as string | undefined;
-    return injectWatermark(await buildFromClausulas(artist, data as Record<string, any>, clausulas as ClausulaContrato[], pageSize, logo, titulo));
-  }
-
+  // O template visual escolhido pelo artista (ctr-001..006, ou HTML custom
+  // do super-admin) sempre manda no design do PDF — mesmo quando o contrato
+  // carrega cláusulas customizadas (data._clausulas). O sistema de cláusulas
+  // ainda não sabe se plugar no layout de um template visual, então por
+  // enquanto elas ficam fora da geração; ver buildFromClausulas.
   const templateId = artist.contratoTemplate || "ctr-001";
   const customHtml = await getCustomHtml(templateId);
   if (customHtml) {

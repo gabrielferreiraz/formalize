@@ -372,8 +372,7 @@ export default function FormContrato({
     return Array.isArray(data?.predictions) ? data.predictions : [];
   }, []);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function validate(): boolean {
     const required: (keyof ContratoValues)[] = [
       "contratanteNome", "contratanteCpfCnpj", "evento", "local", "data", "cache", "formaPagamento",
     ];
@@ -391,9 +390,27 @@ export default function FormContrato({
         el.scrollIntoView({ behavior: "smooth", block: "center" });
         el.focus({ preventScroll: true });
       }
-      return;
+      return false;
     }
     setErrors({});
+    return true;
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (validate()) setIsCarouselOpen(true);
+  }
+
+  async function gerarPDF(templateId: string) {
+    try {
+      await fetch("/api/artist/me", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contratoTemplate: templateId }),
+      });
+    } catch (err) {
+      console.error("Falha ao salvar template selecionado", err);
+    }
     onSubmit();
   }
 
@@ -612,15 +629,6 @@ export default function FormContrato({
         </div>
       </Section>
 
-      <button
-        type="button"
-        onClick={() => setIsCarouselOpen(true)}
-        className="w-full h-[54px] rounded-2xl flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
-        style={{ background: "linear-gradient(180deg, #f5c842, #e6b800)", color: "#1a1200", boxShadow: "0 6px 20px rgba(230,184,0,0.3), 0 2px 4px rgba(0,0,0,0.2)" }}
-      >
-        <span className="text-[15px] font-bold">Revisar template</span>
-      </button>
-
       {/* ── Cachê e Pagamento ──────────────────────────────────── */}
       <Section title="Cachê e Pagamento">
         <div className="space-y-4">
@@ -828,10 +836,7 @@ export default function FormContrato({
         isOpen={isCarouselOpen}
         onClose={() => setIsCarouselOpen(false)}
         selectedId={"ctr-001"} // fallback temporário
-        onSelect={(id) => {
-          console.log("Template selecionado:", id);
-          setIsCarouselOpen(false);
-        }}
+        onGenerate={gerarPDF}
       />
     </form>
   );

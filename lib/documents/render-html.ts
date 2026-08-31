@@ -2,7 +2,6 @@ import type { DocumentType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { fetchWithCache } from "@/lib/cache";
 import { buildTemplate } from "@/lib/templates";
-import { getPresetClausulas } from "@/lib/contrato-clausulas";
 import { logger } from "@/lib/logger";
 
 export const DOC_TYPE_TO_TEMPLATE: Partial<Record<DocumentType, "orcamento" | "contrato">> = {
@@ -54,22 +53,9 @@ export async function resolveDocumentHtml(
 
     if (templateId.startsWith("pdf:")) return null;
 
-    let buildData: Record<string, unknown> = data;
-    if (isContrato) {
-      const clausulasTemplateId = data.clausulasTemplateId as string | undefined;
-      const preset = data.clausulasPreset as string | undefined;
-      if (clausulasTemplateId) {
-        const cTemplate = await prisma.contratoTemplate.findFirst({
-          where: { id: clausulasTemplateId, artistId },
-          select: { clausulas: true, titulo: true },
-        });
-        if (cTemplate && Array.isArray(cTemplate.clausulas)) {
-          buildData = { ...data, _clausulas: cTemplate.clausulas, _clausulasTitulo: cTemplate.titulo };
-        }
-      } else if (preset && ["banda", "solo", "dj", "generico"].includes(preset)) {
-        buildData = { ...data, _clausulas: getPresetClausulas(preset as "banda" | "solo" | "dj" | "generico") };
-      }
-    }
+    // O template visual escolhido (artist.contratoTemplate) manda no design
+    // do PDF — ver comentário em lib/templates/index.ts#buildTemplate.
+    const buildData: Record<string, unknown> = data;
 
     // Logo/background quebrados (URL fora do ar, deletada do R2 etc.) não
     // podem derrubar o documento inteiro — degrada pra "sem logo" e loga.
