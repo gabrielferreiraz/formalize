@@ -26,6 +26,7 @@ import {
   salvarFraseRodape,
   removerFraseRodape,
 } from "@/utils/historico";
+import { TemplateCarouselModal } from "@/components/templates/TemplateCarouselModal";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -263,6 +264,7 @@ export default function FormContrato({
   const [eventosSalvos, setEventosSalvos] = useState<string[]>([]);
   const [frasesSalvas, setFrasesSalvas] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isCarouselOpen, setIsCarouselOpen] = useState(false);
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [buscandoCnpj, setBuscandoCnpj] = useState(false);
   const [fraseMode, setFraseMode] = useState<"auto" | "manual">("auto");
@@ -610,6 +612,15 @@ export default function FormContrato({
         </div>
       </Section>
 
+      <button
+        type="button"
+        onClick={() => setIsCarouselOpen(true)}
+        className="w-full h-[54px] rounded-2xl flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+        style={{ background: "linear-gradient(180deg, #f5c842, #e6b800)", color: "#1a1200", boxShadow: "0 6px 20px rgba(230,184,0,0.3), 0 2px 4px rgba(0,0,0,0.2)" }}
+      >
+        <span className="text-[15px] font-bold">Revisar template</span>
+      </button>
+
       {/* ── Cachê e Pagamento ──────────────────────────────────── */}
       <Section title="Cachê e Pagamento">
         <div className="space-y-4">
@@ -811,6 +822,17 @@ export default function FormContrato({
           </button>
         </div>
       </div>
+      
+      <TemplateCarouselModal
+        type="contrato"
+        isOpen={isCarouselOpen}
+        onClose={() => setIsCarouselOpen(false)}
+        selectedId={"ctr-001"} // fallback temporário
+        onSelect={(id) => {
+          console.log("Template selecionado:", id);
+          setIsCarouselOpen(false);
+        }}
+      />
     </form>
   );
 }

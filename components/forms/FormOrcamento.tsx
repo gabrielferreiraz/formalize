@@ -21,6 +21,7 @@ import {
   salvarEvento,
   removerEvento,
 } from "@/utils/historico";
+import { TemplateCarouselModal } from "@/components/templates/TemplateCarouselModal";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -241,6 +242,7 @@ export default function FormOrcamento({
   const [locaisSalvos, setLocaisSalvos] = useState<string[]>([]);
   const [eventosSalvos, setEventosSalvos] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isCarouselOpen, setIsCarouselOpen] = useState(false);
 
   useEffect(() => {
     setLocaisSalvos(carregarLocais());
@@ -472,6 +474,15 @@ export default function FormOrcamento({
         </Field>
       </section>
 
+      <button
+        type="button"
+        onClick={() => setIsCarouselOpen(true)}
+        className="w-full h-[54px] rounded-2xl flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+        style={{ background: "linear-gradient(180deg, #f5c842, #e6b800)", color: "#1a1200", boxShadow: "0 6px 20px rgba(230,184,0,0.3), 0 2px 4px rgba(0,0,0,0.2)" }}
+      >
+        <span className="text-[15px] font-bold">Revisar template</span>
+      </button>
+
       {/* ── Cachê ──────────────────────────────────────────────── */}
       <section className="card space-y-3">
         <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Cachê</h2>
@@ -666,6 +677,19 @@ export default function FormOrcamento({
            </button>
         </div>
       </div>
+      
+      <TemplateCarouselModal
+        type="orcamento"
+        isOpen={isCarouselOpen}
+        onClose={() => setIsCarouselOpen(false)}
+        selectedId={"orc-001"} // fallback temporário; se a lógica mudar, atualiza aqui
+        onSelect={(id) => {
+          console.log("Template selecionado:", id);
+          // Idealmente aqui atualizaremos o template no banco, 
+          // ou no FormContext, mas por enquanto fecha o modal ou loga.
+          setIsCarouselOpen(false);
+        }}
+      />
     </form>
   );
 }
