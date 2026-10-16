@@ -159,7 +159,16 @@ function ContratoContent() {
             <div id="tut-ctr-recent">
               <RecentDocs
                 type="CONTRACT"
-                onLoad={(d) => setContrato({ ...contrato, ...d })}
+                onLoad={(d) => {
+                  // A assinatura é vinculada ao documento público original e
+                  // nunca deve acompanhar dados reaproveitados no formulário.
+                  const {
+                    nomeAssinaturaContratante: _nomeAssinaturaContratante,
+                    assinaturaContratante: _assinaturaContratante,
+                    ...dadosContrato
+                  } = d;
+                  setContrato({ ...contrato, ...dadosContrato });
+                }}
               />
             </div>
           }

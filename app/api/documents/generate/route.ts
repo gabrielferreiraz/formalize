@@ -40,6 +40,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "data obrigatório" }, { status: 400 });
   }
 
+  // A assinatura pertence exclusivamente ao documento que o contratante
+  // assinou na página pública. Dados carregados do histórico não podem levar
+  // esse campo para um contrato novo.
+  const {
+    nomeAssinaturaContratante: _nomeAssinaturaContratante,
+    assinaturaContratante: _assinaturaContratante,
+    ...documentData
+  } = data as Record<string, unknown>;
+
   const artist = await prisma.artist.findUnique({
     where: { id: artistId },
     select: {
@@ -106,15 +115,15 @@ export async function POST(req: NextRequest) {
 
     const artistWithOverride = {
       ...artist,
-      orcamentoFontScale: type === "orcamento" ? ((data.fontScale as number) ?? artist.orcamentoFontScale) : artist.orcamentoFontScale,
-      contratoFontScale: type === "contrato" ? ((data.fontScale as number) ?? artist.contratoFontScale) : artist.contratoFontScale,
-      orcamentoLogoScale: type === "orcamento" ? ((data.logoScale as number) ?? artist.orcamentoLogoScale) : artist.orcamentoLogoScale,
-      contratoLogoScale: type === "contrato" ? ((data.logoScale as number) ?? artist.contratoLogoScale) : artist.contratoLogoScale,
+      orcamentoFontScale: type === "orcamento" ? ((documentData.fontScale as number) ?? artist.orcamentoFontScale) : artist.orcamentoFontScale,
+      contratoFontScale: type === "contrato" ? ((documentData.fontScale as number) ?? artist.contratoFontScale) : artist.contratoFontScale,
+      orcamentoLogoScale: type === "orcamento" ? ((documentData.logoScale as number) ?? artist.orcamentoLogoScale) : artist.orcamentoLogoScale,
+      contratoLogoScale: type === "contrato" ? ((documentData.logoScale as number) ?? artist.contratoLogoScale) : artist.contratoLogoScale,
     };
 
     // O template visual escolhido (artist.contratoTemplate) manda no design
     // do PDF — ver comentário em lib/templates/index.ts#buildTemplate.
-    const buildData = data;
+    const buildData = documentData;
 
     let pdfBuffer: Buffer;
 
@@ -149,7 +158,7 @@ export async function POST(req: NextRequest) {
       log.info({ durationMs: Date.now() - tGotenberg }, "Gotenberg conversion completed");
     }
 
-    const d = data as Record<string, string>;
+    const d = documentData as Record<string, string>;
     const docType = isContrato ? "CONTRACT" : "BUDGET";
     const title = `${isContrato ? "Contrato" : "Orçamento"} — ${d.contratante || d.contratanteNome || ""}`.trim();
 
@@ -160,7 +169,7 @@ export async function POST(req: NextRequest) {
     let docRecord: { id: string };
     try {
       docRecord = await prisma.document.create({
-        data: { artistId, type: docType, title, data: data as object },
+        data: { artistId, type: docType, title, data: documentData as object },
         select: { id: true },
       });
     } catch (err) {
