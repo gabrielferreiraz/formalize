@@ -1,5 +1,6 @@
 import { valorPorExtenso, escapeHtml } from "./utils";
 import type { ArtistTemplateData, AssetResult } from "./types";
+import { contratanteSignatureHtml } from "./contrato/signature";
 
 function fmt(centavos: number) {
   return (centavos / 100).toLocaleString("pt-BR", {
@@ -87,9 +88,12 @@ export function interpolateTemplate(html: string, ctx: InterpolateContext): stri
       : new Date().toLocaleDateString("pt-BR"),
     foro: d.foro || d.cidadeEvento || d.cidade || "",
     hashContrato: d.hashContrato || "",
+    assinaturaContratante: contratanteSignatureHtml(d.nomeAssinaturaContratante),
   };
 
   return html.replace(/\{\{(\w+)\}\}/g, (_, key) =>
-    key === "logoImg" ? (vars[key] ?? `{{${key}}}`) : escapeHtml(vars[key] ?? `{{${key}}}`)
+    key === "logoImg" || key === "assinaturaContratante"
+      ? (vars[key] ?? `{{${key}}}`)
+      : escapeHtml(vars[key] ?? `{{${key}}}`)
   );
 }

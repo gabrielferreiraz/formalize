@@ -2,6 +2,7 @@
 import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
 import { interpolarClausula, type ClausulaContrato, type ClausulaVars } from "@/lib/contrato-clausulas";
+import { contratanteSignatureHtml } from "@/lib/templates/contrato/signature";
 
 type ArtistData = ArtistTemplateData & Record<string, any>;
 
@@ -211,7 +212,8 @@ export async function buildFromClausulas(
         ${vars.cidadeEvento}, ${vars.dataAssinaturaBr}
       </div>
       <div class="grid-assinaturas">
-        <div class="bloco-assinatura">
+        <div class="bloco-assinatura" data-contratante-signature>
+          ${contratanteSignatureHtml(data.nomeAssinaturaContratante)}
           <div class="linha-assinatura">
             <div class="nome-assinatura">${contratanteNomeAssinatura}</div>
             <div class="cargo-assinatura">Contratante</div>

@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
 import { getTextosCategoria } from "@/lib/templates/contrato/artist-texts";
+import { contratanteSignatureHtml } from "@/lib/templates/contrato/signature";
 
 type ArtistData = ArtistTemplateData & Record<string, any>;
 
@@ -422,8 +423,8 @@ export async function buildCtr005(
 
             <!-- Área de Assinatura -->
             <div class="signatures-container">
-                <div class="sig-box">
-                    ${d.assinarDigitalmente !== false ? `<div style="visibility:hidden; margin-bottom:4px; padding:4px 6px; border:1px solid transparent; font-size:${Math.round(7.5 * fs)}px; line-height:1.5;"><div style="font-size:${Math.round(6.5 * fs)}px; margin-bottom:3px; padding-bottom:2px;">placeholder</div><div>placeholder</div><div>placeholder</div><div>placeholder</div><div style="font-size:${Math.round(6 * fs)}px; margin-top:3px;">hash</div></div>` : ""}
+                <div class="sig-box" data-contratante-signature>
+                    ${contratanteSignatureHtml(d.nomeAssinaturaContratante) || (d.assinarDigitalmente !== false ? `<div style="visibility:hidden; margin-bottom:4px; padding:4px 6px; border:1px solid transparent; font-size:${Math.round(7.5 * fs)}px; line-height:1.5;"><div style="font-size:${Math.round(6.5 * fs)}px; margin-bottom:3px; padding-bottom:2px;">placeholder</div><div>placeholder</div><div>placeholder</div><div>placeholder</div><div style="font-size:${Math.round(6 * fs)}px; margin-top:3px;">hash</div></div>` : "")}
                     <div class="sig-line"></div>
                     <p>${escapeHtml(d.contratanteNome || "Contratante")}</p>
                     <span>Contratante</span>

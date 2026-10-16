@@ -2,6 +2,7 @@
 import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
 import { getTextosCategoria } from "@/lib/templates/contrato/artist-texts";
+import { contratanteSignatureHtml } from "@/lib/templates/contrato/signature";
 
 type ArtistData = ArtistTemplateData & Record<string, any>;
 
@@ -322,7 +323,8 @@ export async function buildCtr004(
       <div class="assinaturas">
         <div class="local-data">${escapeHtml(foro)}, ${escapeHtml(dataAssinaturaBr)}</div>
         <div class="linha-assinatura">
-          <div class="assinatura-bloco">
+          <div class="assinatura-bloco" data-contratante-signature>
+            ${contratanteSignatureHtml(d.nomeAssinaturaContratante)}
             <div class="assinatura-linha"></div>
             <div class="assinatura-label">Contratante</div>
           </div>

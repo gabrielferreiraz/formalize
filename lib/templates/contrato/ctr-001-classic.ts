@@ -2,6 +2,7 @@
 import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
 import { getTextosCategoria } from "@/lib/templates/contrato/artist-texts";
+import { contratanteSignatureHtml } from "@/lib/templates/contrato/signature";
 
 type ArtistData = ArtistTemplateData & Record<string, any>;
 
@@ -312,8 +313,8 @@ export async function buildCtr001(
 
                 <!-- Assinaturas -->
                 <div class="signatures-wrapper">
-                    <div class="sig-box">
-                        ${d.assinarDigitalmente !== false ? `<div style="height: 70px;"></div>` : ""}
+                    <div class="sig-box" data-contratante-signature>
+                        ${contratanteSignatureHtml(d.nomeAssinaturaContratante) || (d.assinarDigitalmente !== false ? `<div style="height: 70px;"></div>` : "")}
                         <div class="sig-line"></div>
                         <p>${escapeHtml((d.contratanteNome || "Contratante").toUpperCase())}</p>
                         <span>CONTRATANTE</span>

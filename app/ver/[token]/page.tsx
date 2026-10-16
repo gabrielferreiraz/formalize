@@ -18,7 +18,7 @@ export default async function PublicDocumentPage({
   const doc = await prisma.document
     .findUnique({
       where: { publicToken: token },
-      select: { id: true, type: true, title: true, data: true, artistId: true },
+      select: { id: true, type: true, title: true, data: true, artistId: true, approvedAt: true },
     })
     .catch((err) => {
       logger.error({ err, token, action: "document.public.lookup" }, "falha ao buscar documento público");
@@ -32,7 +32,7 @@ export default async function PublicDocumentPage({
 
   return (
     <div style={{ minHeight: "100dvh", background: "#0e1118", display: "flex", flexDirection: "column" }}>
-      <DocumentFrame html={html} token={token} title={doc.title} />
+      <DocumentFrame html={html} token={token} title={doc.title} canSign={doc.type === "CONTRACT" && !doc.approvedAt} />
     </div>
   );
 }

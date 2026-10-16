@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
 import { getTextosCategoria } from "@/lib/templates/contrato/artist-texts";
+import { contratanteSignatureHtml } from "@/lib/templates/contrato/signature";
 
 type ArtistData = ArtistTemplateData & Record<string, any>;
 
@@ -436,8 +437,8 @@ export async function buildCtr003(
 
             
             <div class="signatures-section">
-                <div class="sig-card">
-                    <div class="sig-handwritten">${escapeHtml(d.contratanteNome || "")}</div>
+                <div class="sig-card" data-contratante-signature>
+                    ${contratanteSignatureHtml(d.nomeAssinaturaContratante) || `<div class="sig-handwritten">${escapeHtml(d.contratanteNome || "")}</div>`}
                     <div class="sig-line"></div>
                     <strong>${escapeHtml(d.contratanteNome || "")}</strong>
                     <span>Contratante</span>

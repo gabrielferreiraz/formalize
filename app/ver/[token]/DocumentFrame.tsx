@@ -1,17 +1,44 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ScaledIframe, type ScaledIframeHandle } from "@/components/documents/ScaledIframe";
 
 interface Props {
   html: string;
   token: string;
   title: string;
+  canSign: boolean;
 }
 
-export function DocumentFrame({ html, token, title }: Props) {
+export function DocumentFrame({ html, token, title, canSign }: Props) {
   const frameRef = useRef<ScaledIframeHandle>(null);
   const trackedRef = useRef(false);
+  const [signerName, setSignerName] = useState("");
+  const [signing, setSigning] = useState(false);
+  const [signError, setSignError] = useState("");
+
+  const sign = async () => {
+    const nomeAssinaturaContratante = signerName.trim();
+    if (nomeAssinaturaContratante.length < 3) {
+      setSignError("Digite seu nome completo para assinar digitalmente.");
+      return;
+    }
+    setSigning(true);
+    setSignError("");
+    try {
+      const response = await fetch(`/api/public/documents/${token}/sign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nomeAssinaturaContratante }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Não foi possível assinar o contrato.");
+      window.location.reload();
+    } catch (err) {
+      setSignError(err instanceof Error ? err.message : "Não foi possível assinar o contrato.");
+      setSigning(false);
+    }
+  };
 
   // Registra a visualização uma única vez por carregamento de página.
   // sendBeacon entrega mesmo se a pessoa fechar a aba antes do JS terminar.
@@ -55,9 +82,10 @@ export function DocumentFrame({ html, token, title }: Props) {
         >
           {title}
         </span>
-        <button
-          onClick={() => frameRef.current?.print()}
-          style={{
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <button
+            onClick={() => frameRef.current?.print()}
+            style={{
             flexShrink: 0,
             display: "inline-flex",
             alignItems: "center",
@@ -80,12 +108,39 @@ export function DocumentFrame({ html, token, title }: Props) {
             <rect x="6" y="14" width="12" height="8" />
           </svg>
           Baixar
-        </button>
+          </button>
+        </div>
       </header>
+
+      {signError && <div style={{ padding: "9px 16px", background: "#3f1d25", color: "#fda4af", fontSize: 13 }}>{signError}</div>}
 
       <div style={{ flex: 1, minHeight: 0 }}>
         <ScaledIframe ref={frameRef} html={html} title={title} />
       </div>
+
+      {canSign && (
+        <form
+          onSubmit={(event) => { event.preventDefault(); sign(); }}
+          style={{ padding: "14px 16px calc(14px + env(safe-area-inset-bottom, 0px))", borderTop: "1px solid #1a1f2e", background: "#101722" }}
+        >
+          <label htmlFor="signer-name" style={{ display: "block", marginBottom: 8, color: "#e2e8f0", fontSize: 14, fontWeight: 700 }}>
+            Digite seu nome para assinar digitalmente
+          </label>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              id="signer-name"
+              value={signerName}
+              onChange={(event) => { setSignerName(event.target.value); setSignError(""); }}
+              placeholder="Seu nome completo"
+              autoComplete="name"
+              style={{ flex: 1, minWidth: 0, height: 42, borderRadius: 8, border: "1px solid #334155", background: "#0b1019", color: "#f8fafc", padding: "0 12px", fontSize: 14 }}
+            />
+            <button type="submit" disabled={signing} style={{ height: 42, border: "none", borderRadius: 8, padding: "0 14px", background: "#22c55e", color: "#062b14", fontWeight: 800, cursor: signing ? "wait" : "pointer" }}>
+              {signing ? "Salvando..." : "Assinar"}
+            </button>
+          </div>
+        </form>
+      )}
     </>
   );
 }

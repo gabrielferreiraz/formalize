@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { escapeHtml, formatData, valorPorExtenso } from "@/lib/templates/utils";
 import type { ArtistTemplateData, AssetResult } from "@/lib/templates/types";
 import { getTextosCategoria } from "@/lib/templates/contrato/artist-texts";
+import { contratanteSignatureHtml } from "@/lib/templates/contrato/signature";
 
 type ArtistData = ArtistTemplateData & Record<string, any>;
 
@@ -447,14 +448,14 @@ export async function buildCtr002(
                 </div>
 
                 <div class="signatures">
-                    <div class="sig-block">
-                        ${d.assinarDigitalmente !== false ? `<div style="visibility:hidden; margin-bottom:5px; padding:5px 7px; border:1px solid transparent; border-radius:4px; font-size:${Math.round(7.5 * fs)}px; line-height:1.5;">
+                    <div class="sig-block" data-contratante-signature>
+                        ${contratanteSignatureHtml(d.nomeAssinaturaContratante) || (d.assinarDigitalmente !== false ? `<div style="visibility:hidden; margin-bottom:5px; padding:5px 7px; border:1px solid transparent; border-radius:4px; font-size:${Math.round(7.5 * fs)}px; line-height:1.5;">
                             <div style="font-size:${Math.round(6.5 * fs)}px; margin-bottom:3px; padding-bottom:2px;">Certificado</div>
                             <div>placeholder</div>
                             <div>placeholder</div>
                             <div>placeholder</div>
                             <div style="font-size:${Math.round(6 * fs)}px; margin-top:3px;">hash</div>
-                        </div>` : ""}
+                        </div>` : "")}
                         <div class="sig-line"></div>
                         <h5>${escapeHtml((d.contratanteNome || "Contratante").toUpperCase())}</h5>
                         <p>Contratante</p>
