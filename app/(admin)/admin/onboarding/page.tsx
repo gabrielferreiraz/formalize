@@ -670,7 +670,7 @@ function TemplateChoiceStep({
       </Field>
 
       <Field delay={60}>
-        <div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid #1e3050", height: 260, background: "#4b4f57" }}>
+        <div className="ob-template-preview" style={{ borderRadius: 16, overflow: "hidden", border: "1px solid #1e3050", background: "#4b4f57" }}>
           {error ? (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#7090b0", fontSize: 12, fontFamily: "'Inter', sans-serif", textAlign: "center", padding: 24 }}>
               Não deu pra carregar o preview agora.
@@ -1131,6 +1131,7 @@ export default function OnboardingPage() {
       {/* Step content */}
       <div
         key={animKey}
+        className="ob-step-content"
         style={{
           flex: 1,
           minHeight: 0,
@@ -1456,6 +1457,15 @@ export default function OnboardingPage() {
         }
         .ob-cta-btn:not(:disabled) {
           animation: ctaGlow 2.8s ease-in-out infinite;
+        }
+        .ob-template-preview { height: 260px; }
+        @media (max-width: 640px) {
+          .ob-step-content { padding-left: 16px !important; padding-right: 16px !important; }
+          .ob-template-preview {
+            height: min(430px, calc((100vw - 32px) * 1.42));
+            min-height: 330px;
+            border-radius: 14px !important;
+          }
         }
         .ob-step-n {
           animation: stepNumPop 0.45s cubic-bezier(0.34,1.56,0.64,1) both;

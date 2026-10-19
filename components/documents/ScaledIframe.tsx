@@ -14,6 +14,12 @@ interface Fit {
   height: number;
 }
 
+// Os templates são documentos A4. Renderizá-los inicialmente com a largura
+// do celular faz o CSS interno reflowar e deixa o preview comprimido. A base
+// fixa preserva o layout do PDF; depois o iframe inteiro é escalado para caber.
+const A4_PREVIEW_WIDTH = 794;
+const A4_PREVIEW_HEIGHT = 1123;
+
 export interface ScaledIframeHandle {
   print: () => void;
 }
@@ -49,8 +55,16 @@ export const ScaledIframe = forwardRef<ScaledIframeHandle, Props>(function Scale
     function measure() {
       const doc = iframe!.contentDocument;
       if (!doc?.documentElement || !wrapper) return;
-      const naturalWidth = doc.documentElement.scrollWidth;
-      const naturalHeight = doc.documentElement.scrollHeight;
+      const naturalWidth = Math.max(
+        A4_PREVIEW_WIDTH,
+        doc.documentElement.scrollWidth,
+        doc.body?.scrollWidth ?? 0,
+      );
+      const naturalHeight = Math.max(
+        A4_PREVIEW_HEIGHT,
+        doc.documentElement.scrollHeight,
+        doc.body?.scrollHeight ?? 0,
+      );
       if (!naturalWidth || !naturalHeight) return;
       const availableWidth = wrapper.clientWidth;
       const scale = availableWidth > 0 ? Math.min(1, availableWidth / naturalWidth) : 1;
@@ -72,7 +86,7 @@ export const ScaledIframe = forwardRef<ScaledIframeHandle, Props>(function Scale
       ref={wrapperRef}
       style={{ width: "100%", height: "100%", overflow: "auto", background, display: "flex", justifyContent: "center" }}
     >
-      <div style={{ width: fit ? fit.width * fit.scale : "100%", height: fit ? fit.height * fit.scale : "100%", flexShrink: 0 }}>
+      <div style={{ width: fit ? fit.width * fit.scale : A4_PREVIEW_WIDTH, height: fit ? fit.height * fit.scale : A4_PREVIEW_HEIGHT, flexShrink: 0 }}>
         <iframe
           ref={iframeRef}
           srcDoc={html}
@@ -82,8 +96,8 @@ export const ScaledIframe = forwardRef<ScaledIframeHandle, Props>(function Scale
             border: "none",
             display: "block",
             background: "#fff",
-            width: fit ? fit.width : "100%",
-            height: fit ? fit.height : "100%",
+            width: fit ? fit.width : A4_PREVIEW_WIDTH,
+            height: fit ? fit.height : A4_PREVIEW_HEIGHT,
             transform: fit ? `scale(${fit.scale})` : undefined,
             transformOrigin: "top left",
           }}
